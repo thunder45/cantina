@@ -30,8 +30,8 @@
     - **Property 3: Group Deletion Protection**
     - **Validates: Requirements 2.4**
 
-- [ ] 3. Implement Catalog Item Service
-  - [ ] 3.1 Create CatalogItem data model and repository
+- [-] 3. Implement Catalog Item Service
+  - [x] 3.1 Create CatalogItem data model and repository
     - Implement CRUD operations for catalog items (with soft delete)
     - Implement search by description and group
     - Ensure edits don't affect existing menus
@@ -46,8 +46,8 @@
     - **Property 24: Soft Delete Catalog Isolation**
     - **Validates: Requirements 3.5**
 
-- [ ] 4. Implement Event Service
-  - [ ] 4.1 Create Event data model and repository
+- [x] 4. Implement Event Service
+  - [x] 4.1 Create Event data model and repository
     - Implement create, list, get, and status update operations
     - Support multiple non-sequential dates
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
@@ -55,8 +55,8 @@
     - **Property 1: Event Creation Completeness**
     - **Validates: Requirements 1.1, 1.2, 1.3**
 
-- [ ] 5. Implement Menu Item Service
-  - [ ] 5.1 Create MenuItem data model and repository
+- [x] 5. Implement Menu Item Service
+  - [x] 5.1 Create MenuItem data model and repository
     - Implement add, update, remove, and list by event
     - Handle stock tracking (0 = infinite)
     - _Requirements: 4.1, 4.2, 4.3, 4.5_
@@ -64,7 +64,7 @@
     - **Property 7: Infinite Stock Behavior**
     - **Validates: Requirements 4.3**
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 3: Backend - Order and Sales
