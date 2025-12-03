@@ -18,8 +18,8 @@
 
 ## Phase 2: Backend - Core Services
 
-- [ ] 2. Implement Menu Group Service
-  - [ ] 2.1 Create MenuGroup data model and repository
+- [x] 2. Implement Menu Group Service
+  - [x] 2.1 Create MenuGroup data model and repository
     - Implement DynamoDB operations for groups (create, list, delete)
     - Add default groups initialization logic
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
