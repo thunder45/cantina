@@ -1,0 +1,16 @@
+{
+  "name": "@cantina-pos/frontend-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@cantina-pos/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
