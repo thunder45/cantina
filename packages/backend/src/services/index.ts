@@ -3,3 +3,5 @@ export * as menuGroupService from './menu-group.service';
 export * as catalogItemService from './catalog-item.service';
 export * as eventService from './event.service';
 export * as menuItemService from './menu-item.service';
+export * as orderService from './order.service';
+export * as salesService from './sales.service';

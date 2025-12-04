@@ -69,8 +69,8 @@
 
 ## Phase 3: Backend - Order and Sales
 
-- [ ] 7. Implement Order Service
-  - [ ] 7.1 Create Order data model and business logic
+- [x] 7. Implement Order Service
+  - [x] 7.1 Create Order data model and business logic
     - Implement order creation, item management, and total calculation
     - Validate stock availability when adding items
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 6.3, 6.4_
@@ -81,18 +81,18 @@
     - **Property 10: Stock Limit Enforcement**
     - **Validates: Requirements 6.4**
 
-- [ ] 8. Implement Sales Service
-  - [ ] 8.1 Create Sale data model and confirmation logic
+- [x] 8. Implement Sales Service
+  - [x] 8.1 Create Sale data model and confirmation logic
     - Implement sale confirmation with payment processing
     - Handle stock decrement on confirmation
     - Support mixed payment methods
     - Include createdBy for audit trail
     - _Requirements: 6.1, 6.2, 7.1, 7.2, 7.3, 7.4, 17.1_
-  - [ ] 8.2 Implement order cancellation
+  - [x] 8.2 Implement order cancellation
     - Cancel pending orders and release reserved stock
     - Mark cancelled orders appropriately
     - _Requirements: 13.1, 13.2, 13.3_
-  - [ ] 8.3 Implement sale refund
+  - [x] 8.3 Implement sale refund
     - Refund confirmed sales with reason
     - Restore stock on refund
     - Adjust customer balance for credit sales
@@ -119,7 +119,7 @@
     - **Property 20: Refund Credit Balance Adjustment**
     - **Validates: Requirements 14.2**
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 4: Backend - Customer and Credit System
