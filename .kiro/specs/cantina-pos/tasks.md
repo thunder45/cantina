@@ -253,21 +253,21 @@
 
 ## Phase 8: Frontend - Sales Mode
 
-- [ ] 20. Implement Sales Mode UI
-  - [ ] 20.1 Create order building interface
+- [x] 20. Implement Sales Mode UI
+  - [x] 20.1 Create order building interface
     - Grid/list of menu items by group
     - Quick add buttons with quantity adjustment
     - Running total display
     - Stock availability indicators
     - Cancel/clear order button
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 6.3, 6.4, 13.1, 13.2, 13.3_
-  - [ ] 20.2 Create payment processing interface
+  - [x] 20.2 Create payment processing interface
     - Payment method selection (cash, card, transfer, credit)
     - Mixed payment support with amount splitting
     - Customer selection/creation for credit sales
     - Sale confirmation with receipt display
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 8.1, 8.2, 8.3, 8.4_
-  - [ ] 20.3 Create receipt and refund interface
+  - [x] 20.3 Create receipt and refund interface
     - Display receipt after sale
     - View past receipts
     - Refund sale with reason input

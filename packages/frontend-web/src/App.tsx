@@ -2,7 +2,7 @@ import React, { useState, useReducer } from 'react';
 import { Event } from '@cantina-pos/shared';
 import { ApiClient } from '@cantina-pos/shared';
 import { appReducer, initialState } from '@cantina-pos/shared';
-import { EventsPage, MenuPage } from './pages';
+import { EventsPage, MenuPage, SalesPage } from './pages';
 
 // Create API client instance
 const apiClient = new ApiClient({
@@ -48,12 +48,13 @@ export const App: React.FC = () => {
           />
         ) : null;
       case 'sales':
-        return (
-          <div style={{ padding: 20, textAlign: 'center' }}>
-            <h2>Sales Mode</h2>
-            <p>Em desenvolvimento...</p>
-          </div>
-        );
+        return selectedEvent ? (
+          <SalesPage
+            apiClient={apiClient}
+            event={selectedEvent}
+            onBack={() => setCurrentView('menu')}
+          />
+        ) : null;
       case 'customers':
         return (
           <div style={{ padding: 20, textAlign: 'center' }}>
