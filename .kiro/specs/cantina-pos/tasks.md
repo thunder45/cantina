@@ -124,11 +124,11 @@
 
 ## Phase 4: Backend - Customer and Credit System
 
-- [ ] 10. Implement Customer Service
-  - [ ] 10.1 Create Customer data model and repository
+- [x] 10. Implement Customer Service
+  - [x] 10.1 Create Customer data model and repository
     - Implement create, search, and get operations
     - _Requirements: 8.2, 8.3_
-  - [ ] 10.2 Implement credit sale association
+  - [x] 10.2 Implement credit sale association
     - Link sales to customers when payment method is 'credit'
     - Mark credit sales as unpaid
     - _Requirements: 8.1, 8.4_
@@ -136,12 +136,12 @@
     - **Property 13: Credit Sale Customer Association**
     - **Validates: Requirements 8.4**
 
-- [ ] 11. Implement Customer Balance and Payment
-  - [ ] 11.1 Create CustomerPayment data model and balance calculation
+- [x] 11. Implement Customer Balance and Payment
+  - [x] 11.1 Create CustomerPayment data model and balance calculation
     - Implement payment registration (partial/full)
     - Calculate pending balance from sales and payments
     - _Requirements: 9.3, 9.4, 9.5, 9.6_
-  - [ ] 11.2 Implement customer history retrieval
+  - [x] 11.2 Implement customer history retrieval
     - Return all sales and payments for a customer
     - _Requirements: 9.2_
   - [ ]* 11.3 Write property test for customer balance
@@ -151,29 +151,29 @@
     - **Property 15: Customer History Completeness**
     - **Validates: Requirements 9.2, 9.6**
 
-- [ ] 12. Checkpoint - Ensure all tests pass
+- [x] 12. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 5: Backend - Reports and API
 
-- [ ] 13. Implement Report Service
-  - [ ] 13.1 Create event report aggregation logic
+- [x] 13. Implement Report Service
+  - [x] 13.1 Create event report aggregation logic
     - Calculate total sales, items sold, payment breakdown
     - Support filtering by category and period
     - Separate paid vs pending vs refunded amounts
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
-  - [ ] 13.2 Implement stock report
+  - [x] 13.2 Implement stock report
     - Show initial stock, sold, available, and surplus per item
     - _Requirements: 10.5_
-  - [ ] 13.3 Implement CSV export
+  - [x] 13.3 Implement CSV export
     - Export report data to CSV format
     - _Requirements: 10.6_
   - [ ]* 13.4 Write property test for report aggregation
     - **Property 16: Event Report Aggregation**
     - **Validates: Requirements 10.1**
 
-- [ ] 14. Create API Layer
-  - [ ] 14.1 Implement REST API endpoints with Lambda handlers
+- [x] 14. Create API Layer
+  - [x] 14.1 Implement REST API endpoints with Lambda handlers
     - Events: POST /events, GET /events, GET /events/{id}, PATCH /events/{id}/status
     - Menu: GET /groups, POST /groups, DELETE /groups/{id}
     - Catalog: GET /catalog, POST /catalog, PUT /catalog/{id}, DELETE /catalog/{id}, GET /catalog/search
@@ -183,7 +183,7 @@
     - Customers: GET /customers/search, POST /customers, GET /customers/{id}, GET /customers/{id}/balance, GET /customers/{id}/history, POST /customers/{id}/payments
     - Reports: GET /events/{id}/report, GET /events/{id}/stock-report, GET /events/{id}/report/export
     - _Requirements: All_
-  - [ ] 14.2 Implement input validation middleware
+  - [x] 14.2 Implement input validation middleware
     - Validate price > 0, non-empty names, positive quantities
     - Return appropriate error codes
     - _Requirements: 15.1, 15.2, 15.3, 15.4_

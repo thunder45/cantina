@@ -5,3 +5,5 @@ export * as eventRepository from './event.repository';
 export * as menuItemRepository from './menu-item.repository';
 export * as orderRepository from './order.repository';
 export * as saleRepository from './sale.repository';
+export * as customerRepository from './customer.repository';
+export * as reportRepository from './report.repository';

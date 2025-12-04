@@ -5,3 +5,5 @@ export * as eventService from './event.service';
 export * as menuItemService from './menu-item.service';
 export * as orderService from './order.service';
 export * as salesService from './sales.service';
+export * as customerService from './customer.service';
+export * as reportService from './report.service';
