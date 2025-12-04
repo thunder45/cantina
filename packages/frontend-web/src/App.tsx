@@ -1,8 +1,10 @@
-import React, { useState, useReducer } from 'react';
-import { Event } from '@cantina-pos/shared';
+import React, { useState, useReducer, useMemo } from 'react';
+import { Event, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 import { ApiClient } from '@cantina-pos/shared';
 import { appReducer, initialState } from '@cantina-pos/shared';
-import { EventsPage, MenuPage, SalesPage } from './pages';
+import { EventsPage, MenuPage, SalesPage, CustomersPage, ReportsPage } from './pages';
+import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from './hooks';
+import { getResponsiveNavStyles, getTouchButtonStyles } from './styles';
 
 // Create API client instance
 const apiClient = new ApiClient({
@@ -23,6 +25,22 @@ export const App: React.FC = () => {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [currentView, setCurrentView] = useState<AppView>('events');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  
+  // Platform detection for responsive design
+  const platformInfo = usePlatform();
+  const { platform, orientation, isTouch } = platformInfo;
+
+  // Keyboard shortcuts for desktop optimization
+  const shortcuts: KeyboardShortcut[] = useMemo(() => [
+    { key: 'e', description: 'Go to Events', action: () => setCurrentView('events') },
+    { key: 'm', description: 'Go to Menu', action: () => selectedEvent && setCurrentView('menu') },
+    { key: 's', description: 'Go to Sales', action: () => selectedEvent && setCurrentView('sales') },
+    { key: 'c', description: 'Go to Customers', action: () => setCurrentView('customers') },
+    { key: 'r', description: 'Go to Reports', action: () => selectedEvent && setCurrentView('reports') },
+  ], [selectedEvent]);
+
+  // Enable keyboard shortcuts only on desktop
+  useKeyboardShortcuts(shortcuts, platform === 'desktop' && selectedEvent !== null);
 
   const handleEventSelect = (event: Event) => {
     setSelectedEvent(event);
@@ -56,106 +74,92 @@ export const App: React.FC = () => {
           />
         ) : null;
       case 'customers':
-        return (
-          <div style={{ padding: 20, textAlign: 'center' }}>
-            <h2>Customer Management</h2>
-            <p>Em desenvolvimento...</p>
-          </div>
-        );
+        return <CustomersPage apiClient={apiClient} />;
       case 'reports':
-        return (
-          <div style={{ padding: 20, textAlign: 'center' }}>
-            <h2>Reports</h2>
-            <p>Em desenvolvimento...</p>
-          </div>
-        );
+        return selectedEvent ? (
+          <ReportsPage apiClient={apiClient} event={selectedEvent} />
+        ) : null;
       default:
         return null;
     }
   };
 
+  // Responsive style options
+  const styleOptions = { platform, orientation, isTouch };
+  const navStyles = getResponsiveNavStyles(styleOptions);
+  const buttonStyles = getTouchButtonStyles(styleOptions);
+
+  // Navigation button style
+  const getNavButtonStyle = (isActive: boolean): React.CSSProperties => ({
+    ...buttonStyles,
+    background: 'none',
+    border: 'none',
+    color: 'white',
+    padding: platform === 'mobile' ? `${Spacing.sm}px ${Spacing.sm}px` : `${Spacing.sm}px ${Spacing.md}px`,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: isActive ? '#374151' : 'transparent',
+    fontSize: platform === 'mobile' ? FontSizes.sm : FontSizes.md,
+    whiteSpace: 'nowrap',
+    minWidth: platform === 'mobile' ? 'auto' : buttonStyles.minWidth,
+  });
+
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ 
+      minHeight: '100vh',
+      // Prevent pull-to-refresh on mobile
+      overscrollBehavior: 'none',
+    }}>
       {/* Navigation - only show when event is selected */}
       {selectedEvent && currentView !== 'events' && (
         <nav style={{
-          display: 'flex',
-          gap: 16,
-          padding: '12px 20px',
+          ...navStyles,
           backgroundColor: '#1f2937',
           color: 'white',
         }}>
           <button
             onClick={() => setCurrentView('events')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 4,
-              backgroundColor: 'transparent',
-            }}
+            style={getNavButtonStyle(false)}
+            title={platform === 'desktop' ? 'Press E' : undefined}
           >
-            ← Eventos
+            ← {platform !== 'mobile' && 'Eventos'}
           </button>
           <button
             onClick={() => setCurrentView('menu')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 4,
-              backgroundColor: currentView === 'menu' ? '#374151' : 'transparent',
-            }}
+            style={getNavButtonStyle(currentView === 'menu')}
+            title={platform === 'desktop' ? 'Press M' : undefined}
           >
             Menu
           </button>
           <button
             onClick={() => setCurrentView('sales')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 4,
-              backgroundColor: currentView === 'sales' ? '#374151' : 'transparent',
-            }}
+            style={getNavButtonStyle(currentView === 'sales')}
+            title={platform === 'desktop' ? 'Press S' : undefined}
           >
             Vendas
           </button>
           <button
             onClick={() => setCurrentView('customers')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 4,
-              backgroundColor: currentView === 'customers' ? '#374151' : 'transparent',
-            }}
+            style={getNavButtonStyle(currentView === 'customers')}
+            title={platform === 'desktop' ? 'Press C' : undefined}
           >
             Clientes
           </button>
           <button
             onClick={() => setCurrentView('reports')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 4,
-              backgroundColor: currentView === 'reports' ? '#374151' : 'transparent',
-            }}
+            style={getNavButtonStyle(currentView === 'reports')}
+            title={platform === 'desktop' ? 'Press R' : undefined}
           >
             Relatórios
           </button>
-          <span style={{ marginLeft: 'auto', padding: '8px 0' }}>
+          <span style={{ 
+            marginLeft: 'auto', 
+            padding: `${Spacing.sm}px 0`,
+            fontSize: platform === 'mobile' ? FontSizes.xs : FontSizes.sm,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: platform === 'mobile' ? 100 : 'none',
+          }}>
             {selectedEvent.name}
           </span>
         </nav>
@@ -163,6 +167,23 @@ export const App: React.FC = () => {
 
       {/* Main Content */}
       {renderCurrentView()}
+
+      {/* Keyboard shortcuts hint for desktop */}
+      {platform === 'desktop' && selectedEvent && currentView !== 'events' && (
+        <div style={{
+          position: 'fixed',
+          bottom: Spacing.md,
+          right: Spacing.md,
+          padding: `${Spacing.xs}px ${Spacing.sm}px`,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          borderRadius: BorderRadius.sm,
+          fontSize: FontSizes.xs,
+          opacity: 0.7,
+        }}>
+          Atalhos: E M S C R
+        </div>
+      )}
     </div>
   );
 };

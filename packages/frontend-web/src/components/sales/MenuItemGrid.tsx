@@ -1,5 +1,7 @@
 import React from 'react';
-import { MenuItem, MenuGroup, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
+import { MenuItem, MenuGroup, Colors, Spacing, FontSizes, BorderRadius, TouchTargets } from '@cantina-pos/shared';
+import { usePlatform } from '../../hooks';
+import { getResponsiveGridStyles, getTouchButtonStyles, getResponsiveFontSize } from '../../styles';
 
 interface MenuItemGridProps {
   menuItems: MenuItem[];
@@ -18,6 +20,9 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
   onAddItem,
   getAvailableStock,
 }) => {
+  const { platform, orientation, isTouch } = usePlatform();
+  const styleOptions = { platform, orientation, isTouch };
+
   const filteredItems = selectedGroupId
     ? menuItems.filter(item => item.groupId === selectedGroupId)
     : menuItems;
@@ -31,30 +36,46 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
     return getAvailableStock(item) > 0;
   };
 
+  // Responsive grid configuration
+  const gridMinWidth = platform === 'tablet' ? 180 : platform === 'mobile' ? 130 : 150;
+  const gridStyles = getResponsiveGridStyles(styleOptions, gridMinWidth);
+  const touchTarget = TouchTargets[platform];
+
+  // Responsive item card height
+  const cardMinHeight = platform === 'tablet' ? 140 : platform === 'mobile' ? 100 : 120;
+
+  // Tab button styles
+  const getTabButtonStyle = (isActive: boolean): React.CSSProperties => ({
+    ...getTouchButtonStyles(styleOptions),
+    padding: `${Spacing.sm}px ${platform === 'tablet' ? Spacing.lg : Spacing.md}px`,
+    backgroundColor: isActive ? Colors.primary : Colors.background,
+    color: isActive ? Colors.textLight : Colors.text,
+    border: `1px solid ${isActive ? Colors.primary : Colors.border}`,
+    borderRadius: BorderRadius.md,
+    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
+    minHeight: touchTarget.minSize,
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Group Tabs */}
+      {/* Group Tabs - scrollable on mobile, fixed on larger screens */}
       <div style={{
         display: 'flex',
-        gap: Spacing.xs,
-        padding: Spacing.sm,
+        gap: platform === 'tablet' ? Spacing.md : Spacing.xs,
+        padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
         backgroundColor: Colors.backgroundSecondary,
         borderBottom: `1px solid ${Colors.border}`,
         overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        // Hide scrollbar on touch devices
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}>
         <button
           onClick={() => onSelectGroup(null)}
-          style={{
-            padding: `${Spacing.sm}px ${Spacing.md}px`,
-            backgroundColor: selectedGroupId === null ? Colors.primary : Colors.background,
-            color: selectedGroupId === null ? Colors.textLight : Colors.text,
-            border: `1px solid ${selectedGroupId === null ? Colors.primary : Colors.border}`,
-            borderRadius: BorderRadius.md,
-            fontSize: FontSizes.sm,
-            fontWeight: 500,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
+          style={getTabButtonStyle(selectedGroupId === null)}
         >
           Todos
         </button>
@@ -62,17 +83,7 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
           <button
             key={group.id}
             onClick={() => onSelectGroup(group.id)}
-            style={{
-              padding: `${Spacing.sm}px ${Spacing.md}px`,
-              backgroundColor: selectedGroupId === group.id ? Colors.primary : Colors.background,
-              color: selectedGroupId === group.id ? Colors.textLight : Colors.text,
-              border: `1px solid ${selectedGroupId === group.id ? Colors.primary : Colors.border}`,
-              borderRadius: BorderRadius.md,
-              fontSize: FontSizes.sm,
-              fontWeight: 500,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
+            style={getTabButtonStyle(selectedGroupId === group.id)}
           >
             {group.name}
           </button>
@@ -82,23 +93,21 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
       {/* Items Grid */}
       <div style={{
         flex: 1,
-        padding: Spacing.md,
+        padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
         overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
       }}>
         {filteredItems.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: Spacing.xl,
             color: Colors.textSecondary,
+            fontSize: getResponsiveFontSize(styleOptions, 'md'),
           }}>
             Nenhum item disponível
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-            gap: Spacing.md,
-          }}>
+          <div style={gridStyles}>
             {filteredItems.map(item => {
               const available = isItemAvailable(item);
               const availableStock = getAvailableStock(item);
@@ -114,17 +123,21 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: Spacing.md,
+                    padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
                     backgroundColor: available ? Colors.background : Colors.backgroundSecondary,
                     border: `2px solid ${available ? Colors.primary : Colors.border}`,
                     borderRadius: BorderRadius.lg,
-                    cursor: available ? 'pointer' : 'not-allowed',
+                    cursor: available ? (isTouch ? 'default' : 'pointer') : 'not-allowed',
                     opacity: available ? 1 : 0.5,
-                    minHeight: 120,
+                    minHeight: cardMinHeight,
                     transition: 'transform 0.1s, box-shadow 0.1s',
+                    // Touch optimization
+                    WebkitTapHighlightColor: 'transparent',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
                   }}
                   onMouseEnter={(e) => {
-                    if (available) {
+                    if (available && !isTouch) {
                       e.currentTarget.style.transform = 'scale(1.02)';
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                     }
@@ -133,18 +146,34 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
                     e.currentTarget.style.transform = 'scale(1)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
+                  // Touch feedback
+                  onTouchStart={(e) => {
+                    if (available && isTouch) {
+                      e.currentTarget.style.transform = 'scale(0.98)';
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
                 >
                   <span style={{
-                    fontSize: FontSizes.md,
+                    fontSize: getResponsiveFontSize(styleOptions, 'md'),
                     fontWeight: 600,
                     color: Colors.text,
                     textAlign: 'center',
                     marginBottom: Spacing.xs,
+                    // Ensure text doesn't overflow on mobile
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: 1.3,
                   }}>
                     {item.description}
                   </span>
                   <span style={{
-                    fontSize: FontSizes.lg,
+                    fontSize: getResponsiveFontSize(styleOptions, 'lg'),
                     fontWeight: 700,
                     color: Colors.primary,
                   }}>
@@ -152,7 +181,7 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
                   </span>
                   {/* Stock indicator */}
                   <span style={{
-                    fontSize: FontSizes.xs,
+                    fontSize: getResponsiveFontSize(styleOptions, 'xs'),
                     color: !available ? Colors.danger : isInfinite ? Colors.success : Colors.textSecondary,
                     marginTop: Spacing.xs,
                   }}>

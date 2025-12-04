@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Order,
   Customer,
@@ -10,8 +10,11 @@ import {
   FontSizes,
   BorderRadius,
   getModalStyles,
+  TouchTargets,
 } from '@cantina-pos/shared';
 import { CustomerSelectModal } from './CustomerSelectModal';
+import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from '../../hooks';
+import { getResponsiveModalStyles, getTouchButtonStyles, getResponsiveFontSize } from '../../styles';
 
 interface PaymentModalProps {
   apiClient: ApiClient;
@@ -21,11 +24,11 @@ interface PaymentModalProps {
   loading?: boolean;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash', label: 'Dinheiro' },
-  { value: 'card', label: 'Cartão' },
-  { value: 'transfer', label: 'Transferência' },
-  { value: 'credit', label: 'Anotar (Fiado)' },
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; shortcut: string }[] = [
+  { value: 'cash', label: 'Dinheiro', shortcut: '1' },
+  { value: 'card', label: 'Cartão', shortcut: '2' },
+  { value: 'transfer', label: 'Transferência', shortcut: '3' },
+  { value: 'credit', label: 'Anotar (Fiado)', shortcut: '4' },
 ];
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -43,7 +46,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [showCustomerSelect, setShowCustomerSelect] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const { platform, orientation, isTouch } = usePlatform();
+  const styleOptions = { platform, orientation, isTouch };
+  const touchTarget = TouchTargets[platform];
+
   const modalStyles = getModalStyles();
+  const responsiveModalStyles = getResponsiveModalStyles(styleOptions);
 
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
@@ -66,7 +75,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     if (method === 'credit') {
       setShowCustomerSelect(true);
     }
-  }, []);
+
+    // Focus amount input for mixed payments
+    if (isMixedPayment && amountInputRef.current) {
+      setTimeout(() => amountInputRef.current?.focus(), 100);
+    }
+  }, [isMixedPayment]);
 
   // Handle customer selection for credit sales
   const handleCustomerSelect = useCallback((customer: Customer) => {
@@ -158,21 +172,68 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   }, [loading, isMixedPayment, paidAmount, order.total, selectedMethod, selectedCustomer]);
 
+  // Keyboard shortcuts for desktop
+  const shortcuts: KeyboardShortcut[] = useMemo(() => [
+    { key: 'Escape', description: 'Cancel', action: onCancel },
+    { key: 'Enter', description: 'Confirm', action: () => canConfirm && handleConfirm() },
+    { key: '1', description: 'Cash', action: () => handleMethodSelect('cash') },
+    { key: '2', description: 'Card', action: () => handleMethodSelect('card') },
+    { key: '3', description: 'Transfer', action: () => handleMethodSelect('transfer') },
+    { key: '4', description: 'Credit', action: () => handleMethodSelect('credit') },
+  ], [onCancel, canConfirm, handleConfirm, handleMethodSelect]);
+
+  useKeyboardShortcuts(shortcuts, platform === 'desktop' && !showCustomerSelect);
+
+  // Auto-focus first payment method on desktop
+  useEffect(() => {
+    if (platform === 'desktop' && !selectedMethod) {
+      // Focus is handled by keyboard shortcuts
+    }
+  }, [platform, selectedMethod]);
+
+  // Button styles
+  const getPaymentButtonStyle = (isSelected: boolean): React.CSSProperties => ({
+    ...getTouchButtonStyles(styleOptions),
+    padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
+    backgroundColor: isSelected ? Colors.primary : Colors.background,
+    color: isSelected ? Colors.textLight : Colors.text,
+    border: `2px solid ${isSelected ? Colors.primary : Colors.border}`,
+    borderRadius: BorderRadius.md,
+    cursor: isTouch ? 'default' : 'pointer',
+    fontSize: getResponsiveFontSize(styleOptions, 'md'),
+    fontWeight: 500,
+    minHeight: touchTarget.recommended,
+  });
+
   return (
     <>
       <div style={modalStyles.overlay} onClick={onCancel}>
         <div
-          style={{ ...modalStyles.container, maxWidth: 500 }}
+          style={{ 
+            ...modalStyles.container, 
+            ...responsiveModalStyles,
+            maxWidth: platform === 'mobile' ? '100%' : 500,
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <div style={modalStyles.header}>
-            <h3 style={modalStyles.title}>Pagamento</h3>
-            <button onClick={onCancel} style={modalStyles.closeButton} disabled={loading}>
+            <h3 style={{ ...modalStyles.title, fontSize: getResponsiveFontSize(styleOptions, 'lg') }}>
+              Pagamento
+            </h3>
+            <button 
+              onClick={onCancel} 
+              style={{
+                ...modalStyles.closeButton,
+                minWidth: touchTarget.minSize,
+                minHeight: touchTarget.minSize,
+              }} 
+              disabled={loading}
+            >
               ×
             </button>
           </div>
 
-          <div style={modalStyles.content}>
+          <div style={{ ...modalStyles.content, padding: platform === 'tablet' ? Spacing.lg : Spacing.md }}>
             {error && (
               <div style={{
                 padding: Spacing.sm,
@@ -180,7 +241,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 color: Colors.textLight,
                 borderRadius: BorderRadius.sm,
                 marginBottom: Spacing.md,
-                fontSize: FontSizes.sm,
+                fontSize: getResponsiveFontSize(styleOptions, 'sm'),
               }}>
                 {error}
               </div>
@@ -188,17 +249,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Order Total */}
             <div style={{
-              padding: Spacing.md,
+              padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
               backgroundColor: Colors.backgroundSecondary,
               borderRadius: BorderRadius.md,
               marginBottom: Spacing.lg,
               textAlign: 'center',
             }}>
-              <div style={{ fontSize: FontSizes.sm, color: Colors.textSecondary }}>
+              <div style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm'), color: Colors.textSecondary }}>
                 Total a pagar
               </div>
               <div style={{
-                fontSize: FontSizes.xl,
+                fontSize: getResponsiveFontSize(styleOptions, 'xl'),
                 fontWeight: 700,
                 color: Colors.primary,
               }}>
@@ -218,14 +279,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   setPayments([]);
                 }}
                 style={{
+                  ...getTouchButtonStyles(styleOptions),
                   flex: 1,
-                  padding: Spacing.sm,
+                  padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                   backgroundColor: !isMixedPayment ? Colors.primary : Colors.background,
                   color: !isMixedPayment ? Colors.textLight : Colors.text,
                   border: `1px solid ${!isMixedPayment ? Colors.primary : Colors.border}`,
                   borderRadius: BorderRadius.md,
-                  cursor: 'pointer',
-                  fontSize: FontSizes.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   fontWeight: 500,
                 }}
               >
@@ -237,14 +298,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   setSelectedMethod(null);
                 }}
                 style={{
+                  ...getTouchButtonStyles(styleOptions),
                   flex: 1,
-                  padding: Spacing.sm,
+                  padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                   backgroundColor: isMixedPayment ? Colors.primary : Colors.background,
                   color: isMixedPayment ? Colors.textLight : Colors.text,
                   border: `1px solid ${isMixedPayment ? Colors.primary : Colors.border}`,
                   borderRadius: BorderRadius.md,
-                  cursor: 'pointer',
-                  fontSize: FontSizes.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   fontWeight: 500,
                 }}
               >
@@ -257,33 +318,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <label style={{
                 display: 'block',
                 marginBottom: Spacing.xs,
-                fontSize: FontSizes.sm,
+                fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                 fontWeight: 500,
                 color: Colors.text,
               }}>
                 Método de pagamento
+                {platform === 'desktop' && (
+                  <span style={{ color: Colors.textSecondary, fontWeight: 400 }}> (1-4)</span>
+                )}
               </label>
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: Spacing.sm,
+                gap: platform === 'tablet' ? Spacing.md : Spacing.sm,
               }}>
                 {PAYMENT_METHODS.map(method => (
                   <button
                     key={method.value}
                     onClick={() => handleMethodSelect(method.value)}
-                    style={{
-                      padding: Spacing.md,
-                      backgroundColor: selectedMethod === method.value ? Colors.primary : Colors.background,
-                      color: selectedMethod === method.value ? Colors.textLight : Colors.text,
-                      border: `2px solid ${selectedMethod === method.value ? Colors.primary : Colors.border}`,
-                      borderRadius: BorderRadius.md,
-                      cursor: 'pointer',
-                      fontSize: FontSizes.md,
-                      fontWeight: 500,
-                    }}
+                    style={getPaymentButtonStyle(selectedMethod === method.value)}
+                    title={platform === 'desktop' ? `Press ${method.shortcut}` : undefined}
                   >
                     {method.label}
+                    {platform === 'desktop' && (
+                      <span style={{ 
+                        marginLeft: Spacing.xs, 
+                        opacity: 0.6,
+                        fontSize: FontSizes.xs,
+                      }}>
+                        [{method.shortcut}]
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -292,7 +357,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Selected Customer (for credit) */}
             {selectedCustomer && (
               <div style={{
-                padding: Spacing.sm,
+                padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                 backgroundColor: Colors.backgroundSecondary,
                 borderRadius: BorderRadius.md,
                 marginBottom: Spacing.md,
@@ -300,18 +365,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <span style={{ fontSize: FontSizes.sm, color: Colors.text }}>
+                <span style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm'), color: Colors.text }}>
                   Cliente: <strong>{selectedCustomer.name}</strong>
                 </span>
                 <button
                   onClick={() => setShowCustomerSelect(true)}
                   style={{
+                    ...getTouchButtonStyles(styleOptions, 'icon'),
                     background: 'none',
                     border: 'none',
                     color: Colors.primary,
-                    cursor: 'pointer',
-                    fontSize: FontSizes.sm,
                     textDecoration: 'underline',
+                    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   }}
                 >
                   Alterar
@@ -325,7 +390,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <label style={{
                   display: 'block',
                   marginBottom: Spacing.xs,
-                  fontSize: FontSizes.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   fontWeight: 500,
                   color: Colors.text,
                 }}>
@@ -333,31 +398,39 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </label>
                 <div style={{ display: 'flex', gap: Spacing.sm }}>
                   <input
+                    ref={amountInputRef}
                     type="number"
                     step="0.01"
                     min="0"
                     max={remainingAmount}
                     value={currentAmount}
                     onChange={(e) => setCurrentAmount(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddPayment();
+                      }
+                    }}
                     placeholder={`Máx: ${formatPrice(remainingAmount)}`}
                     style={{
                       flex: 1,
-                      padding: Spacing.sm,
+                      padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                       border: `1px solid ${Colors.border}`,
                       borderRadius: BorderRadius.md,
-                      fontSize: FontSizes.md,
+                      fontSize: getResponsiveFontSize(styleOptions, 'md'),
+                      minHeight: touchTarget.minSize,
                     }}
                   />
                   <button
                     onClick={handleAddPayment}
                     style={{
+                      ...getTouchButtonStyles(styleOptions),
                       padding: `${Spacing.sm}px ${Spacing.md}px`,
                       backgroundColor: Colors.success,
                       color: Colors.textLight,
                       border: 'none',
                       borderRadius: BorderRadius.md,
-                      cursor: 'pointer',
-                      fontSize: FontSizes.md,
+                      fontSize: getResponsiveFontSize(styleOptions, 'md'),
                     }}
                   >
                     Adicionar
@@ -372,7 +445,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <label style={{
                   display: 'block',
                   marginBottom: Spacing.xs,
-                  fontSize: FontSizes.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   fontWeight: 500,
                   color: Colors.text,
                 }}>
@@ -390,12 +463,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: Spacing.sm,
+                        padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                         backgroundColor: Colors.background,
                         borderBottom: index < payments.length - 1 ? `1px solid ${Colors.border}` : 'none',
+                        minHeight: touchTarget.minSize,
                       }}
                     >
-                      <span style={{ fontSize: FontSizes.sm }}>
+                      <span style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm') }}>
                         {PAYMENT_METHODS.find(m => m.value === payment.method)?.label}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
@@ -403,11 +477,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         <button
                           onClick={() => handleRemovePayment(index)}
                           style={{
+                            ...getTouchButtonStyles(styleOptions, 'icon'),
                             background: 'none',
                             border: 'none',
                             color: Colors.danger,
-                            cursor: 'pointer',
-                            fontSize: FontSizes.md,
+                            fontSize: getResponsiveFontSize(styleOptions, 'lg'),
                           }}
                         >
                           ×
@@ -419,7 +493,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {remainingAmount > 0.01 && (
                   <div style={{
                     marginTop: Spacing.xs,
-                    fontSize: FontSizes.sm,
+                    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                     color: Colors.warning,
                   }}>
                     Restante: {formatPrice(remainingAmount)}
@@ -433,19 +507,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               onClick={handleConfirm}
               disabled={!canConfirm}
               style={{
+                ...getTouchButtonStyles(styleOptions),
                 width: '100%',
-                padding: Spacing.md,
+                padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
                 backgroundColor: canConfirm ? Colors.success : Colors.secondary,
                 color: Colors.textLight,
                 border: 'none',
                 borderRadius: BorderRadius.md,
-                fontSize: FontSizes.lg,
+                fontSize: getResponsiveFontSize(styleOptions, 'lg'),
                 fontWeight: 600,
-                cursor: canConfirm ? 'pointer' : 'not-allowed',
+                cursor: canConfirm ? (isTouch ? 'default' : 'pointer') : 'not-allowed',
                 opacity: canConfirm ? 1 : 0.6,
+                minHeight: platform === 'tablet' ? 56 : touchTarget.recommended,
               }}
             >
               {loading ? 'A processar...' : 'Confirmar Venda'}
+              {platform === 'desktop' && canConfirm && (
+                <span style={{ marginLeft: Spacing.sm, opacity: 0.7, fontSize: FontSizes.sm }}>
+                  [Enter]
+                </span>
+              )}
             </button>
           </div>
         </div>

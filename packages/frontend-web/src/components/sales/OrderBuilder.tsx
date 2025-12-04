@@ -12,9 +12,12 @@ import {
   Colors,
   Spacing,
   FontSizes,
+  BorderRadius,
 } from '@cantina-pos/shared';
 import { MenuItemGrid } from './MenuItemGrid';
 import { OrderSummary } from './OrderSummary';
+import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from '../../hooks';
+import { getResponsiveLayoutStyles, getResponsivePanelWidth, getResponsiveFontSize } from '../../styles';
 
 interface OrderBuilderProps {
   apiClient: ApiClient;
@@ -37,10 +40,23 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
   const [loading, setLoading] = useState(true);
   const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOrderPanel, setShowOrderPanel] = useState(true);
+
+  // Platform detection for responsive layout
+  const { platform, orientation, isTouch } = usePlatform();
+  const styleOptions = { platform, orientation, isTouch };
 
   const groupService = new MenuGroupApiService(apiClient);
   const menuItemService = new MenuItemApiService(apiClient);
   const orderService = new OrderApiService(apiClient);
+
+  // Keyboard shortcuts for desktop
+  const shortcuts: KeyboardShortcut[] = [
+    { key: 'Escape', description: 'Clear order', action: () => handleClearOrder() },
+    { key: 'Enter', ctrl: true, description: 'Checkout', action: () => handleCheckout() },
+    { key: 'o', description: 'Toggle order panel', action: () => setShowOrderPanel(prev => !prev) },
+  ];
+  useKeyboardShortcuts(shortcuts, platform === 'desktop');
 
   // Load menu data
   const loadData = useCallback(async () => {
@@ -140,13 +156,18 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
           },
         ]);
       }
+
+      // On mobile, show order panel when item is added
+      if (platform === 'mobile' && !showOrderPanel) {
+        setShowOrderPanel(true);
+      }
     } catch (err) {
       setError('Erro ao adicionar item');
       console.error('Failed to add item:', err);
     } finally {
       setOrderLoading(false);
     }
-  }, [orderItems, ensureOrder, getAvailableStock]);
+  }, [orderItems, ensureOrder, getAvailableStock, platform, showOrderPanel]);
 
   // Update item quantity
   const handleUpdateQuantity = useCallback(async (menuItemId: string, quantity: number) => {
@@ -244,6 +265,13 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
     onCheckout(orderWithItems);
   }, [currentOrder, orderItems, calculateTotal, onCheckout]);
 
+  // Responsive layout styles
+  const layoutStyles = getResponsiveLayoutStyles(styleOptions);
+  const panelWidth = getResponsivePanelWidth(styleOptions);
+
+  // On mobile, use a bottom sheet style for order panel
+  const isMobileLayout = platform === 'mobile' || (platform === 'tablet' && orientation === 'portrait');
+
   if (loading) {
     return (
       <div style={{ 
@@ -252,6 +280,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         justifyContent: 'center', 
         height: '100%',
         color: Colors.textSecondary,
+        fontSize: getResponsiveFontSize(styleOptions, 'md'),
       }}>
         A carregar menu...
       </div>
@@ -272,7 +301,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
           backgroundColor: Colors.danger,
           color: Colors.textLight,
           textAlign: 'center',
-          fontSize: FontSizes.sm,
+          fontSize: getResponsiveFontSize(styleOptions, 'sm'),
         }}>
           {error}
           <button
@@ -282,8 +311,9 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
               background: 'none',
               border: 'none',
               color: Colors.textLight,
-              cursor: 'pointer',
+              cursor: isTouch ? 'default' : 'pointer',
               textDecoration: 'underline',
+              padding: Spacing.sm,
             }}
           >
             Fechar
@@ -291,14 +321,19 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - Responsive Layout */}
       <div style={{ 
-        display: 'flex', 
+        ...layoutStyles,
         flex: 1, 
         overflow: 'hidden',
       }}>
         {/* Menu Items Grid */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ 
+          flex: 1, 
+          overflow: 'hidden',
+          // On mobile with order panel open, reduce height
+          height: isMobileLayout && showOrderPanel ? '50%' : '100%',
+        }}>
           <MenuItemGrid
             menuItems={menuItems}
             groups={groups}
@@ -309,19 +344,76 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
           />
         </div>
 
-        {/* Order Summary Sidebar */}
-        <div style={{ width: 350, flexShrink: 0 }}>
-          <OrderSummary
-            items={orderItems}
-            total={calculateTotal()}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-            onClearOrder={handleClearOrder}
-            onCheckout={handleCheckout}
-            loading={orderLoading}
-          />
-        </div>
+        {/* Order Summary - Side panel on landscape tablet/desktop, bottom panel on mobile */}
+        {(showOrderPanel || !isMobileLayout) && (
+          <div style={{ 
+            width: isMobileLayout ? '100%' : panelWidth, 
+            height: isMobileLayout ? '50%' : '100%',
+            flexShrink: 0,
+            position: isMobileLayout ? 'relative' : 'static',
+          }}>
+            <OrderSummary
+              items={orderItems}
+              total={calculateTotal()}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              onClearOrder={handleClearOrder}
+              onCheckout={handleCheckout}
+              loading={orderLoading}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Mobile: Floating button to show order when hidden */}
+      {isMobileLayout && !showOrderPanel && orderItems.length > 0 && (
+        <button
+          onClick={() => setShowOrderPanel(true)}
+          style={{
+            position: 'fixed',
+            bottom: Spacing.lg,
+            right: Spacing.lg,
+            padding: `${Spacing.md}px ${Spacing.lg}px`,
+            backgroundColor: Colors.primary,
+            color: Colors.textLight,
+            border: 'none',
+            borderRadius: BorderRadius.full,
+            fontSize: getResponsiveFontSize(styleOptions, 'md'),
+            fontWeight: 600,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            cursor: isTouch ? 'default' : 'pointer',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            gap: Spacing.sm,
+          }}
+        >
+          🛒 {orderItems.length} • €{calculateTotal().toFixed(2)}
+        </button>
+      )}
+
+      {/* Mobile: Toggle button to hide order panel */}
+      {isMobileLayout && showOrderPanel && (
+        <button
+          onClick={() => setShowOrderPanel(false)}
+          style={{
+            position: 'absolute',
+            top: isMobileLayout ? '50%' : Spacing.md,
+            left: '50%',
+            transform: 'translate(-50%, -100%)',
+            padding: `${Spacing.xs}px ${Spacing.md}px`,
+            backgroundColor: Colors.background,
+            color: Colors.textSecondary,
+            border: `1px solid ${Colors.border}`,
+            borderRadius: BorderRadius.full,
+            fontSize: FontSizes.sm,
+            cursor: isTouch ? 'default' : 'pointer',
+            zIndex: 101,
+          }}
+        >
+          ▼ Esconder pedido
+        </button>
+      )}
     </div>
   );
 };

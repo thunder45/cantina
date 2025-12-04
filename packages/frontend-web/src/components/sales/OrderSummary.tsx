@@ -1,5 +1,7 @@
 import React from 'react';
-import { OrderItem, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
+import { OrderItem, Colors, Spacing, FontSizes, BorderRadius, TouchTargets } from '@cantina-pos/shared';
+import { usePlatform } from '../../hooks';
+import { getTouchButtonStyles, getResponsiveFontSize, getResponsivePanelWidth } from '../../styles';
 
 interface OrderSummaryProps {
   items: OrderItem[];
@@ -20,21 +22,32 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   onCheckout,
   loading = false,
 }) => {
+  const { platform, orientation, isTouch } = usePlatform();
+  const styleOptions = { platform, orientation, isTouch };
+  const touchTarget = TouchTargets[platform];
+
   const formatPrice = (price: number): string => {
     return `€${price.toFixed(2)}`;
   };
+
+  // Responsive panel width
+  const panelWidth = getResponsivePanelWidth(styleOptions);
+
+  // Quantity button size based on platform
+  const qtyButtonSize = platform === 'tablet' ? 44 : platform === 'mobile' ? 36 : 28;
 
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
+      width: panelWidth,
       backgroundColor: Colors.background,
-      borderLeft: `1px solid ${Colors.border}`,
+      borderLeft: platform !== 'mobile' ? `1px solid ${Colors.border}` : 'none',
     }}>
       {/* Header */}
       <div style={{
-        padding: Spacing.md,
+        padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
         borderBottom: `1px solid ${Colors.border}`,
         display: 'flex',
         justifyContent: 'space-between',
@@ -42,7 +55,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       }}>
         <h3 style={{
           margin: 0,
-          fontSize: FontSizes.lg,
+          fontSize: getResponsiveFontSize(styleOptions, 'lg'),
           fontWeight: 600,
           color: Colors.text,
         }}>
@@ -53,13 +66,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             onClick={onClearOrder}
             disabled={loading}
             style={{
-              padding: `${Spacing.xs}px ${Spacing.sm}px`,
+              ...getTouchButtonStyles(styleOptions),
+              padding: `${Spacing.sm}px ${Spacing.md}px`,
               backgroundColor: 'transparent',
               color: Colors.danger,
               border: `1px solid ${Colors.danger}`,
               borderRadius: BorderRadius.sm,
-              fontSize: FontSizes.sm,
-              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: getResponsiveFontSize(styleOptions, 'sm'),
+              cursor: loading ? 'not-allowed' : (isTouch ? 'default' : 'pointer'),
               opacity: loading ? 0.5 : 1,
             }}
           >
@@ -72,7 +86,8 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: Spacing.sm,
+        padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
+        WebkitOverflowScrolling: 'touch',
       }}>
         {items.length === 0 ? (
           <div style={{
@@ -80,20 +95,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             padding: Spacing.xl,
             color: Colors.textSecondary,
           }}>
-            <p style={{ margin: 0, fontSize: FontSizes.md }}>
+            <p style={{ margin: 0, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
               Nenhum item no pedido
             </p>
-            <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.sm }}>
+            <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: getResponsiveFontSize(styleOptions, 'sm') }}>
               Selecione itens do menu para adicionar
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: platform === 'tablet' ? Spacing.md : Spacing.sm }}>
             {items.map(item => (
               <div
                 key={item.menuItemId}
                 style={{
-                  padding: Spacing.sm,
+                  padding: platform === 'tablet' ? Spacing.md : Spacing.sm,
                   backgroundColor: Colors.backgroundSecondary,
                   borderRadius: BorderRadius.md,
                   border: `1px solid ${Colors.border}`,
@@ -106,7 +121,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   marginBottom: Spacing.xs,
                 }}>
                   <span style={{
-                    fontSize: FontSizes.sm,
+                    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                     fontWeight: 500,
                     color: Colors.text,
                     flex: 1,
@@ -120,10 +135,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                       background: 'none',
                       border: 'none',
                       color: Colors.danger,
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      padding: Spacing.xs,
-                      fontSize: FontSizes.md,
+                      cursor: loading ? 'not-allowed' : (isTouch ? 'default' : 'pointer'),
+                      padding: Spacing.sm,
+                      fontSize: getResponsiveFontSize(styleOptions, 'lg'),
                       lineHeight: 1,
+                      minWidth: touchTarget.minSize,
+                      minHeight: touchTarget.minSize,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                     title="Remover item"
                   >
@@ -135,36 +155,37 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 }}>
-                  {/* Quantity Controls */}
+                  {/* Quantity Controls - larger touch targets */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: Spacing.xs,
+                    gap: platform === 'tablet' ? Spacing.sm : Spacing.xs,
                   }}>
                     <button
                       onClick={() => onUpdateQuantity(item.menuItemId, item.quantity - 1)}
                       disabled={loading || item.quantity <= 1}
                       style={{
-                        width: 28,
-                        height: 28,
+                        width: qtyButtonSize,
+                        height: qtyButtonSize,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         backgroundColor: Colors.background,
                         border: `1px solid ${Colors.border}`,
                         borderRadius: BorderRadius.sm,
-                        cursor: loading || item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                        cursor: loading || item.quantity <= 1 ? 'not-allowed' : (isTouch ? 'default' : 'pointer'),
                         opacity: loading || item.quantity <= 1 ? 0.5 : 1,
-                        fontSize: FontSizes.md,
+                        fontSize: getResponsiveFontSize(styleOptions, 'md'),
                         fontWeight: 600,
+                        WebkitTapHighlightColor: 'transparent',
                       }}
                     >
                       −
                     </button>
                     <span style={{
-                      minWidth: 30,
+                      minWidth: platform === 'tablet' ? 40 : 30,
                       textAlign: 'center',
-                      fontSize: FontSizes.md,
+                      fontSize: getResponsiveFontSize(styleOptions, 'md'),
                       fontWeight: 600,
                       color: Colors.text,
                     }}>
@@ -174,18 +195,19 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                       onClick={() => onUpdateQuantity(item.menuItemId, item.quantity + 1)}
                       disabled={loading}
                       style={{
-                        width: 28,
-                        height: 28,
+                        width: qtyButtonSize,
+                        height: qtyButtonSize,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         backgroundColor: Colors.background,
                         border: `1px solid ${Colors.border}`,
                         borderRadius: BorderRadius.sm,
-                        cursor: loading ? 'not-allowed' : 'pointer',
+                        cursor: loading ? 'not-allowed' : (isTouch ? 'default' : 'pointer'),
                         opacity: loading ? 0.5 : 1,
-                        fontSize: FontSizes.md,
+                        fontSize: getResponsiveFontSize(styleOptions, 'md'),
                         fontWeight: 600,
+                        WebkitTapHighlightColor: 'transparent',
                       }}
                     >
                       +
@@ -193,7 +215,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   </div>
                   {/* Item Total */}
                   <span style={{
-                    fontSize: FontSizes.sm,
+                    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                     fontWeight: 600,
                     color: Colors.primary,
                   }}>
@@ -201,7 +223,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   </span>
                 </div>
                 <div style={{
-                  fontSize: FontSizes.xs,
+                  fontSize: getResponsiveFontSize(styleOptions, 'xs'),
                   color: Colors.textSecondary,
                   marginTop: Spacing.xs,
                 }}>
@@ -215,7 +237,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
       {/* Footer - Total and Checkout */}
       <div style={{
-        padding: Spacing.md,
+        padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
         borderTop: `1px solid ${Colors.border}`,
         backgroundColor: Colors.backgroundSecondary,
       }}>
@@ -223,17 +245,17 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: Spacing.md,
+          marginBottom: platform === 'tablet' ? Spacing.lg : Spacing.md,
         }}>
           <span style={{
-            fontSize: FontSizes.lg,
+            fontSize: getResponsiveFontSize(styleOptions, 'lg'),
             fontWeight: 600,
             color: Colors.text,
           }}>
             Total
           </span>
           <span style={{
-            fontSize: FontSizes.xl,
+            fontSize: getResponsiveFontSize(styleOptions, 'xl'),
             fontWeight: 700,
             color: Colors.primary,
           }}>
@@ -244,16 +266,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           onClick={onCheckout}
           disabled={items.length === 0 || loading}
           style={{
+            ...getTouchButtonStyles(styleOptions),
             width: '100%',
-            padding: Spacing.md,
+            padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
             backgroundColor: items.length === 0 || loading ? Colors.secondary : Colors.success,
             color: Colors.textLight,
             border: 'none',
             borderRadius: BorderRadius.md,
-            fontSize: FontSizes.lg,
+            fontSize: getResponsiveFontSize(styleOptions, 'lg'),
             fontWeight: 600,
-            cursor: items.length === 0 || loading ? 'not-allowed' : 'pointer',
+            cursor: items.length === 0 || loading ? 'not-allowed' : (isTouch ? 'default' : 'pointer'),
             opacity: items.length === 0 || loading ? 0.6 : 1,
+            minHeight: platform === 'tablet' ? 56 : touchTarget.recommended,
           }}
         >
           {loading ? 'A processar...' : 'Finalizar Pedido'}

@@ -189,8 +189,15 @@ export class CustomerApiService {
 export class ReportApiService {
   constructor(private client: ApiClient) {}
 
-  async getEventReport(eventId: string, category?: string): Promise<EventReport> {
-    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+  async getEventReport(
+    eventId: string,
+    filter?: { category?: string; startDate?: string; endDate?: string }
+  ): Promise<EventReport> {
+    const params = new URLSearchParams();
+    if (filter?.category) params.append('category', filter.category);
+    if (filter?.startDate) params.append('startDate', filter.startDate);
+    if (filter?.endDate) params.append('endDate', filter.endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
     return this.client.get(`/events/${eventId}/report${query}`);
   }
 
