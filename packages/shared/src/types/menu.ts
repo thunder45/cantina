@@ -6,6 +6,7 @@ export interface MenuGroup {
   name: string;
   order: number;
   isDefault: boolean;
+  version: number; // For optimistic locking
 }
 
 /**
@@ -19,6 +20,7 @@ export interface CatalogItem {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string; // Soft delete
+  version: number; // For optimistic locking
 }
 
 export interface CreateCatalogItemInput {
@@ -47,6 +49,7 @@ export interface MenuItem {
   stock: number;           // 0 = infinite
   soldCount: number;
   groupId: string;
+  version: number; // For optimistic locking
 }
 
 export interface AddMenuItemInput {

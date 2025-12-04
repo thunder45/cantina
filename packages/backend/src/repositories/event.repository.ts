@@ -44,6 +44,7 @@ export function createEvent(input: CreateEventInput): Event {
     status: 'active',
     createdAt: now,
     updatedAt: now,
+    version: 1, // Initialize version for optimistic locking
   };
   
   events.set(id, event);
@@ -88,6 +89,7 @@ export function updateEventStatus(id: string, input: UpdateEventStatusInput): Ev
     ...event,
     status: input.status,
     updatedAt: new Date().toISOString(),
+    version: event.version + 1, // Increment version for optimistic locking
   };
   
   events.set(id, updatedEvent);

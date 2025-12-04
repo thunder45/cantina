@@ -43,6 +43,7 @@ export function addMenuItem(eventId: string, input: AddMenuItemInput): MenuItem 
     stock: input.stock, // 0 = infinite (Requirements: 4.3)
     soldCount: 0,
     groupId: input.groupId,
+    version: 1, // Initialize version for optimistic locking
   };
   
   menuItems.set(id, menuItem);
@@ -103,6 +104,7 @@ export function updateMenuItem(id: string, updates: UpdateMenuItemInput): MenuIt
   const updatedItem: MenuItem = {
     ...item,
     ...updates,
+    version: item.version + 1, // Increment version for optimistic locking
   };
   
   menuItems.set(id, updatedItem);
@@ -208,6 +210,7 @@ export function incrementSoldCount(id: string, quantity: number): MenuItem {
   const updatedItem: MenuItem = {
     ...item,
     soldCount: item.soldCount + quantity,
+    version: item.version + 1, // Increment version for optimistic locking
   };
   
   menuItems.set(id, updatedItem);
@@ -239,6 +242,7 @@ export function decrementSoldCount(id: string, quantity: number): MenuItem {
   const updatedItem: MenuItem = {
     ...item,
     soldCount: newSoldCount,
+    version: item.version + 1, // Increment version for optimistic locking
   };
   
   menuItems.set(id, updatedItem);

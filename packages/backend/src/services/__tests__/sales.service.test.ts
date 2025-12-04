@@ -4,6 +4,8 @@ import * as eventService from '../event.service';
 import * as menuItemService from '../menu-item.service';
 import * as menuGroupService from '../menu-group.service';
 import * as catalogItemService from '../catalog-item.service';
+import * as auditLogService from '../audit-log.service';
+import * as auditLogRepository from '../../repositories/audit-log.repository';
 
 describe('Sales Service', () => {
   let testEventId: string;
@@ -58,6 +60,7 @@ describe('Sales Service', () => {
     menuItemService.resetService();
     menuGroupService.resetService();
     catalogItemService.resetService();
+    auditLogRepository.resetRepository();
   });
 
   describe('confirmSale', () => {
@@ -411,7 +414,7 @@ describe('Sales Service', () => {
         suggestedPrice: 5.00,
         groupId: testGroupId,
       });
-      
+
       const infiniteItem = menuItemService.addMenuItem(testEventId, {
         catalogItemId: infiniteCatalog.id,
         description: 'Infinite Item',
@@ -431,6 +434,49 @@ describe('Sales Service', () => {
 
       // Should still be available
       expect(menuItemService.isMenuItemAvailable(infiniteItem.id)).toBe(true);
+    });
+  });
+
+  describe('Audit Log Integration (Requirements: 17.1)', () => {
+    beforeEach(() => {
+      auditLogRepository.resetRepository();
+    });
+
+    it('should create audit log when sale is confirmed', () => {
+      const order = orderService.createOrder(testEventId);
+      orderService.addItem(order.id, { menuItemId, quantity: 2 });
+
+      const sale = salesService.confirmSale(
+        order.id,
+        [{ method: 'cash', amount: 20.00 }],
+        'test-user'
+      );
+
+      const logs = auditLogService.getAuditLogsForEntity('sale', sale.id);
+      expect(logs).toHaveLength(1);
+      expect(logs[0].action).toBe('create');
+      expect(logs[0].userId).toBe('test-user');
+    });
+
+    it('should create audit log when sale is refunded', () => {
+      const order = orderService.createOrder(testEventId);
+      orderService.addItem(order.id, { menuItemId, quantity: 2 });
+      const sale = salesService.confirmSale(
+        order.id,
+        [{ method: 'cash', amount: 20.00 }],
+        'test-user'
+      );
+
+      salesService.refundSale(sale.id, 'Customer request', 'admin-user');
+
+      const logs = auditLogService.getAuditLogsForEntity('sale', sale.id);
+      expect(logs).toHaveLength(2); // create + refund
+
+      // Find the refund log (order may vary due to same-millisecond creation)
+      const refundLog = logs.find(log => log.action === 'refund');
+      expect(refundLog).toBeDefined();
+      expect(refundLog!.userId).toBe('admin-user');
+      expect(refundLog!.newValue).toBe('Customer request');
     });
   });
 });

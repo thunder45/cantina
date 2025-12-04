@@ -26,6 +26,7 @@ export function createCustomer(name: string): Customer {
     id,
     name,
     createdAt: new Date().toISOString(),
+    version: 1, // Initialize version for optimistic locking
   };
   
   customers.set(id, customer);
@@ -99,6 +100,7 @@ export function deleteCustomer(id: string): Customer {
   const updatedCustomer: Customer = {
     ...customer,
     deletedAt: new Date().toISOString(),
+    version: customer.version + 1, // Increment version for optimistic locking
   };
   
   customers.set(id, updatedCustomer);
@@ -125,6 +127,7 @@ export function registerPayment(
     payments: [...payments],
     totalAmount,
     createdAt: new Date().toISOString(),
+    version: 1, // Initialize version for optimistic locking
   };
   
   customerPayments.set(id, customerPayment);

@@ -30,6 +30,7 @@ export interface Sale {
   refundedAt?: string;
   createdBy: string;  // User who created the sale (from Cognito)
   createdAt: string;
+  version: number; // For optimistic locking
 }
 
 export interface ConfirmSaleInput {

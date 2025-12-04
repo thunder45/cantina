@@ -8,6 +8,7 @@ export interface Customer {
   name: string;
   createdAt: string;
   deletedAt?: string; // Soft delete
+  version: number; // For optimistic locking
 }
 
 export interface CreateCustomerInput {
@@ -23,6 +24,7 @@ export interface CustomerPayment {
   payments: PaymentPart[];
   totalAmount: number;
   createdAt: string;
+  version: number; // For optimistic locking
 }
 
 export interface RegisterPaymentInput {

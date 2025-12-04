@@ -3,6 +3,7 @@ import * as menuItemRepository from '../repositories/menu-item.repository';
 import * as eventRepository from '../repositories/event.repository';
 import * as menuGroupRepository from '../repositories/menu-group.repository';
 import * as catalogItemRepository from '../repositories/catalog-item.repository';
+import * as auditLogService from './audit-log.service';
 
 /**
  * Add a menu item to an event
@@ -73,14 +74,29 @@ export function getMenuItemsByEvent(eventId: string): MenuItem[] {
 
 /**
  * Update a menu item
- * Requirements: 4.2
+ * Requirements: 4.2, 17.3
  * @param id - Menu item ID
  * @param updates - Fields to update (price, stock)
+ * @param userId - User performing the update (for audit trail)
  * @returns Updated MenuItem
  * @throws Error if item not found or validation fails
  */
-export function updateMenuItem(id: string, updates: UpdateMenuItemInput): MenuItem {
-  return menuItemRepository.updateMenuItem(id, updates);
+export function updateMenuItem(
+  id: string,
+  updates: UpdateMenuItemInput,
+  userId: string = 'system'
+): MenuItem {
+  // Get current item for audit logging
+  const currentItem = menuItemRepository.getMenuItemById(id);
+
+  const updatedItem = menuItemRepository.updateMenuItem(id, updates);
+
+  // Log price change for audit trail (Requirements: 17.3)
+  if (updates.price !== undefined && currentItem && currentItem.price !== updates.price) {
+    auditLogService.logPriceChange(id, userId, currentItem.price, updates.price);
+  }
+
+  return updatedItem;
 }
 
 /**

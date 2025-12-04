@@ -36,6 +36,7 @@ export function createCatalogItem(input: CreateCatalogItemInput): CatalogItem {
     groupId: input.groupId,
     createdAt: now,
     updatedAt: now,
+    version: 1, // Initialize version for optimistic locking
   };
   
   catalogItems.set(id, catalogItem);
@@ -171,6 +172,7 @@ export function updateCatalogItem(id: string, updates: UpdateCatalogItemInput): 
     ...item,
     ...updates,
     updatedAt: new Date().toISOString(),
+    version: item.version + 1, // Increment version for optimistic locking
   };
   
   catalogItems.set(id, updatedItem);
@@ -201,6 +203,7 @@ export function deleteCatalogItem(id: string): void {
     ...item,
     deletedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    version: item.version + 1, // Increment version for optimistic locking
   };
   
   catalogItems.set(id, deletedItem);

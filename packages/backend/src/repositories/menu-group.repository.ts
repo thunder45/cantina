@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Default menu groups created on system initialization
  * Requirements: 2.1
  */
-const DEFAULT_GROUPS: Omit<MenuGroup, 'id'>[] = [
+const DEFAULT_GROUPS: Omit<MenuGroup, 'id' | 'version'>[] = [
   { name: 'Refeição', order: 1, isDefault: true },
   { name: 'Bebida', order: 2, isDefault: true },
   { name: 'Sobremesa', order: 3, isDefault: true },
@@ -29,7 +29,7 @@ export function initializeDefaultGroups(): MenuGroup[] {
   const createdGroups: MenuGroup[] = [];
   for (const group of DEFAULT_GROUPS) {
     const id = uuidv4();
-    const menuGroup: MenuGroup = { id, ...group };
+    const menuGroup: MenuGroup = { id, ...group, version: 1 };
     menuGroups.set(id, menuGroup);
     createdGroups.push(menuGroup);
   }
@@ -89,6 +89,7 @@ export function createGroup(name: string): MenuGroup {
     name: trimmedName,
     order: maxOrder + 1,
     isDefault: false,
+    version: 1, // Initialize version for optimistic locking
   };
   
   menuGroups.set(id, menuGroup);

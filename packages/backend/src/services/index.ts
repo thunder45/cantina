@@ -7,3 +7,4 @@ export * as orderService from './order.service';
 export * as salesService from './sales.service';
 export * as customerService from './customer.service';
 export * as reportService from './report.service';
+export * as auditLogService from './audit-log.service';

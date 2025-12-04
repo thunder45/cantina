@@ -7,3 +7,7 @@ export * as orderRepository from './order.repository';
 export * as saleRepository from './sale.repository';
 export * as customerRepository from './customer.repository';
 export * as reportRepository from './report.repository';
+export * as auditLogRepository from './audit-log.repository';
+
+// DynamoDB base repository with retry logic and optimistic locking
+export * from './dynamodb-base.repository';

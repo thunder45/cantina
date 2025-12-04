@@ -51,6 +51,7 @@ export function createSale(
     isRefunded: false,
     createdBy,
     createdAt: new Date().toISOString(),
+    version: 1, // Initialize version for optimistic locking
   };
   
   sales.set(id, sale);
@@ -146,6 +147,7 @@ export function refundSale(saleId: string, reason: string, refundedBy: string): 
     isRefunded: true,
     refundReason: reason,
     refundedAt: now,
+    version: sale.version + 1, // Increment version for optimistic locking
   };
   
   sales.set(saleId, updatedSale);
@@ -170,6 +172,7 @@ export function markSaleAsPaid(saleId: string): Sale {
   const updatedSale: Sale = {
     ...sale,
     isPaid: true,
+    version: sale.version + 1, // Increment version for optimistic locking
   };
   
   sales.set(saleId, updatedSale);

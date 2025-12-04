@@ -1,0 +1,204 @@
+import { ApiClient } from './client';
+import {
+  Event,
+  MenuGroup,
+  CatalogItem,
+  MenuItem,
+  Order,
+  Sale,
+  Customer,
+  CustomerPayment,
+  PaymentPart,
+  Receipt,
+  EventReport,
+  StockReport,
+} from '../types';
+
+// Event API Service
+export class EventApiService {
+  constructor(private client: ApiClient) {}
+
+  async createEvent(name: string, dates: string[], categories: string[]): Promise<Event> {
+    return this.client.post('/events', { name, dates, categories });
+  }
+
+  async getEvents(): Promise<Event[]> {
+    return this.client.get('/events');
+  }
+
+  async getEvent(id: string): Promise<Event> {
+    return this.client.get(`/events/${id}`);
+  }
+
+  async updateEventStatus(id: string, status: 'active' | 'closed'): Promise<Event> {
+    return this.client.patch(`/events/${id}/status`, { status });
+  }
+}
+
+// Menu Group API Service
+export class MenuGroupApiService {
+  constructor(private client: ApiClient) {}
+
+  async getGroups(): Promise<MenuGroup[]> {
+    return this.client.get('/groups');
+  }
+
+  async createGroup(name: string): Promise<MenuGroup> {
+    return this.client.post('/groups', { name });
+  }
+
+  async deleteGroup(id: string): Promise<void> {
+    return this.client.delete(`/groups/${id}`);
+  }
+}
+
+// Catalog API Service
+export class CatalogApiService {
+  constructor(private client: ApiClient) {}
+
+  async getCatalogItems(groupId?: string): Promise<CatalogItem[]> {
+    const query = groupId ? `?groupId=${groupId}` : '';
+    return this.client.get(`/catalog${query}`);
+  }
+
+  async searchCatalogItems(query: string): Promise<CatalogItem[]> {
+    return this.client.get(`/catalog/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async createCatalogItem(item: Omit<CatalogItem, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'version'>): Promise<CatalogItem> {
+    return this.client.post('/catalog', item);
+  }
+
+  async updateCatalogItem(id: string, updates: Partial<CatalogItem>): Promise<CatalogItem> {
+    return this.client.put(`/catalog/${id}`, updates);
+  }
+
+  async deleteCatalogItem(id: string): Promise<void> {
+    return this.client.delete(`/catalog/${id}`);
+  }
+}
+
+// Menu Item API Service
+export class MenuItemApiService {
+  constructor(private client: ApiClient) {}
+
+  async getMenuItems(eventId: string): Promise<MenuItem[]> {
+    return this.client.get(`/events/${eventId}/menu`);
+  }
+
+  async addMenuItem(eventId: string, item: Omit<MenuItem, 'id' | 'soldCount'>): Promise<MenuItem> {
+    return this.client.post(`/events/${eventId}/menu`, item);
+  }
+
+  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
+    return this.client.put(`/menu/${id}`, updates);
+  }
+
+  async removeMenuItem(id: string): Promise<void> {
+    return this.client.delete(`/menu/${id}`);
+  }
+}
+
+// Order API Service
+export class OrderApiService {
+  constructor(private client: ApiClient) {}
+
+  async createOrder(eventId: string): Promise<Order> {
+    return this.client.post('/orders', { eventId });
+  }
+
+  async getOrder(orderId: string): Promise<Order> {
+    return this.client.get(`/orders/${orderId}`);
+  }
+
+  // Add or update a single item in the order (matches backend API)
+  async addOrUpdateOrderItem(
+    orderId: string,
+    menuItemId: string,
+    quantity: number
+  ): Promise<Order> {
+    return this.client.put(`/orders/${orderId}/items`, { menuItemId, quantity });
+  }
+
+  // Remove a single item from the order
+  async removeOrderItem(orderId: string, menuItemId: string): Promise<Order> {
+    return this.client.delete(`/orders/${orderId}/items/${menuItemId}`);
+  }
+
+  async cancelOrder(orderId: string): Promise<void> {
+    return this.client.delete(`/orders/${orderId}`);
+  }
+}
+
+// Sales API Service
+export class SalesApiService {
+  constructor(private client: ApiClient) {}
+
+  async confirmSale(
+    orderId: string,
+    payments: PaymentPart[],
+    customerId?: string
+  ): Promise<Sale> {
+    return this.client.post('/sales', { orderId, payments, customerId });
+  }
+
+  async getSales(eventId: string): Promise<Sale[]> {
+    return this.client.get(`/events/${eventId}/sales`);
+  }
+
+  async getReceipt(saleId: string): Promise<Receipt> {
+    return this.client.get(`/sales/${saleId}/receipt`);
+  }
+
+  async refundSale(saleId: string, reason: string): Promise<void> {
+    return this.client.post(`/sales/${saleId}/refund`, { reason });
+  }
+}
+
+// Customer API Service
+export class CustomerApiService {
+  constructor(private client: ApiClient) {}
+
+  async searchCustomers(query: string): Promise<Customer[]> {
+    return this.client.get(`/customers/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async createCustomer(name: string): Promise<Customer> {
+    return this.client.post('/customers', { name });
+  }
+
+  async getCustomer(id: string): Promise<Customer> {
+    return this.client.get(`/customers/${id}`);
+  }
+
+  async getCustomerBalance(customerId: string): Promise<number> {
+    const result = await this.client.get<{ balance: number }>(`/customers/${customerId}/balance`);
+    return result.balance;
+  }
+
+  async getCustomerHistory(customerId: string): Promise<{ sales: Sale[]; payments: CustomerPayment[] }> {
+    return this.client.get(`/customers/${customerId}/history`);
+  }
+
+  async registerPayment(customerId: string, payments: PaymentPart[]): Promise<CustomerPayment> {
+    return this.client.post(`/customers/${customerId}/payments`, { payments });
+  }
+}
+
+// Report API Service
+export class ReportApiService {
+  constructor(private client: ApiClient) {}
+
+  async getEventReport(eventId: string, category?: string): Promise<EventReport> {
+    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+    return this.client.get(`/events/${eventId}/report${query}`);
+  }
+
+  async getStockReport(eventId: string): Promise<StockReport> {
+    return this.client.get(`/events/${eventId}/stock-report`);
+  }
+
+  async exportReportCSV(eventId: string): Promise<string> {
+    return this.client.get(`/events/${eventId}/report/export`);
+  }
+}

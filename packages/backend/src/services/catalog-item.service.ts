@@ -1,6 +1,7 @@
 import { CatalogItem, CreateCatalogItemInput, UpdateCatalogItemInput } from '@cantina-pos/shared';
 import * as catalogItemRepository from '../repositories/catalog-item.repository';
 import * as menuGroupService from './menu-group.service';
+import * as auditLogService from './audit-log.service';
 
 /**
  * Create a new catalog item
@@ -56,20 +57,35 @@ export function searchCatalogItems(query: string): CatalogItem[] {
 
 /**
  * Update a catalog item
- * Requirements: 3.2
+ * Requirements: 3.2, 17.3
  * Note: Edits don't affect existing menus (menus store snapshots)
  * @param id - Catalog item ID
  * @param updates - Fields to update
+ * @param userId - User performing the update (for audit trail)
  * @returns Updated CatalogItem
  * @throws Error if item not found, validation fails, or group doesn't exist
  */
-export function updateCatalogItem(id: string, updates: UpdateCatalogItemInput): CatalogItem {
+export function updateCatalogItem(
+  id: string,
+  updates: UpdateCatalogItemInput,
+  userId: string = 'system'
+): CatalogItem {
   // Validate group exists if being updated
   if (updates.groupId !== undefined && !menuGroupService.groupExists(updates.groupId)) {
     throw new Error('ERR_GROUP_NOT_FOUND');
   }
-  
-  return catalogItemRepository.updateCatalogItem(id, updates);
+
+  // Get current item for audit logging
+  const currentItem = catalogItemRepository.getCatalogItemById(id);
+
+  const updatedItem = catalogItemRepository.updateCatalogItem(id, updates);
+
+  // Log price change for audit trail (Requirements: 17.3)
+  if (updates.suggestedPrice !== undefined && currentItem && currentItem.suggestedPrice !== updates.suggestedPrice) {
+    auditLogService.logPriceChange(id, userId, currentItem.suggestedPrice, updates.suggestedPrice);
+  }
+
+  return updatedItem;
 }
 
 /**

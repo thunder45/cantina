@@ -1,6 +1,7 @@
 import { Customer, CustomerPayment, CustomerHistory, PaymentPart, Sale } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
 import * as salesService from './sales.service';
+import * as auditLogService from './audit-log.service';
 
 /**
  * Create a new customer
@@ -157,10 +158,19 @@ export function registerPayment(
   
   // Register the payment
   const customerPayment = customerRepository.registerPayment(customerId, payments);
-  
+
+  // Log payment for audit trail (Requirements: 17.2)
+  // Note: userId would come from the authenticated user context in production
+  auditLogService.logPaymentReceived(
+    customerPayment.id,
+    customerId,
+    'system', // In production, this would be the authenticated user ID
+    JSON.stringify({ totalAmount: customerPayment.totalAmount, methods: payments.map(p => p.method) })
+  );
+
   // Check if any sales should be marked as paid
   updateSalesPaidStatus(customerId);
-  
+
   return customerPayment;
 }
 

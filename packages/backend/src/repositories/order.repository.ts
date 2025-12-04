@@ -23,6 +23,7 @@ export function createOrder(eventId: string): Order {
     total: 0,
     status: 'pending',
     createdAt: new Date().toISOString(),
+    version: 1, // Initialize version for optimistic locking
   };
   
   orders.set(id, order);

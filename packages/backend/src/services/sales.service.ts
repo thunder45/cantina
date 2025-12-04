@@ -3,6 +3,7 @@ import * as saleRepository from '../repositories/sale.repository';
 import * as orderService from './order.service';
 import * as menuItemService from './menu-item.service';
 import * as eventService from './event.service';
+import * as auditLogService from './audit-log.service';
 
 /**
  * Confirm a sale from an order
@@ -73,7 +74,14 @@ export function confirmSale(
     createdBy,
     customerId
   );
-  
+
+  // Log sale creation for audit trail (Requirements: 17.1)
+  auditLogService.logSaleCreation(
+    sale.id,
+    createdBy,
+    JSON.stringify({ eventId: sale.eventId, total: sale.total, items: sale.items.length })
+  );
+
   return sale;
 }
 
@@ -161,7 +169,10 @@ export function refundSale(saleId: string, reason: string, refundedBy: string): 
   
   // Mark sale as refunded
   const { refund } = saleRepository.refundSale(saleId, reason.trim(), refundedBy);
-  
+
+  // Log refund for audit trail (Requirements: 17.1)
+  auditLogService.logSaleRefund(saleId, refundedBy, reason.trim());
+
   return refund;
 }
 

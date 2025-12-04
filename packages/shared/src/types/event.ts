@@ -9,6 +9,7 @@ export interface Event {
   status: 'active' | 'closed';
   createdAt: string;
   updatedAt: string;
+  version: number; // For optimistic locking
 }
 
 export interface CreateEventInput {

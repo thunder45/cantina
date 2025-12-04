@@ -18,6 +18,7 @@ export interface Order {
   total: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
+  version: number; // For optimistic locking
 }
 
 export interface CreateOrderInput {
