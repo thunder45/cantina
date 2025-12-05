@@ -96,19 +96,19 @@ export function getResponsiveLayoutStyles(
 ): CSSProperties {
   const { platform, orientation } = options;
 
-  // Tablet landscape: side-by-side layout
-  if (platform === 'tablet' && orientation === 'landscape') {
+  // Mobile portrait: stacked layout
+  if (platform === 'mobile' && orientation === 'portrait') {
     return {
       display: 'flex',
-      flexDirection: 'row',
+      flexDirection: 'column',
       height: '100%',
     };
   }
 
-  // Mobile or portrait: stacked layout
+  // Desktop, tablet, or landscape: side-by-side layout
   return {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     height: '100%',
   };
 }

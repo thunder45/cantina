@@ -117,7 +117,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 52px)', // Account for nav bar
+      height: '100%',
       backgroundColor: Colors.backgroundSecondary,
     }}>
       {/* Error Banner */}

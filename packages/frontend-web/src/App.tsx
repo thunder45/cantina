@@ -194,8 +194,8 @@ export const App: React.FC = () => {
 
       {/* Main Content */}
       <div style={{
-        height: 'calc(100vh - 56px)', // 56px is nav height
-        overflow: 'auto',
+        height: 'calc(100vh - 56px)',
+        overflow: 'hidden',
       }}>
         {renderCurrentView()}
       </div>
