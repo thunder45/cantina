@@ -7,7 +7,8 @@
     "packages/shared",
     "packages/backend",
     "packages/frontend-web",
-    "packages/frontend-mobile"
+    "packages/frontend-mobile",
+    "packages/infra"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

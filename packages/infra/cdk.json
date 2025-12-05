@@ -1,0 +1,8 @@
+{
+  "app": "npx ts-node bin/app.ts",
+  "context": {
+    "domainName": "advm.lu",
+    "subDomain": "cantina",
+    "awsRegion": "eu-west-1"
+  }
+}
