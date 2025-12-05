@@ -57,7 +57,7 @@ export class ApiClient {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch(() => ({})) as any;
         throw new ApiClientError({
           code: errorData.code || 'API_ERROR',
           message: errorData.message || 'Request failed',
@@ -66,7 +66,12 @@ export class ApiClient {
         });
       }
 
-      const data = await response.json();
+      // Handle 204 No Content responses (DELETE, etc.)
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return { data: null as T, status: response.status };
+      }
+
+      const data = await response.json() as T;
       return { data, status: response.status };
     } catch (error) {
       if (error instanceof ApiClientError || error instanceof OfflineError) {

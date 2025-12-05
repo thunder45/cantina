@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Event, MenuGroup, MenuItem, CatalogItem, AddMenuItemInput, CreateCatalogItemInput } from '@cantina-pos/shared';
 import { MenuGroupApiService, MenuItemApiService, CatalogApiService, ApiClient } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, getModalStyles } from '@cantina-pos/shared';
-import { MenuGroupList, MenuItemCard } from '../components/menu';
+import { MenuGroupList, MenuItemCard, EditMenuItemModal } from '../components/menu';
 import { CatalogBrowser, AddMenuItemForm, CreateCatalogItemForm } from '../components/catalog';
 
 interface MenuPageProps {
@@ -27,6 +27,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   const [showCatalogBrowser, setShowCatalogBrowser] = useState(false);
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<CatalogItem | null>(null);
   const [showCreateCatalogItem, setShowCreateCatalogItem] = useState(false);
+  const [selectedEditItem, setSelectedEditItem] = useState<MenuItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
   const groupService = new MenuGroupApiService(apiClient);
@@ -87,8 +88,21 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   };
 
   const handleEditItem = (item: MenuItem) => {
-    // TODO: Open edit modal
-    console.log('Edit item:', item);
+    setSelectedEditItem(item);
+  };
+
+  const handleSaveEdit = async (id: string, updates: any) => {
+    try {
+      setFormLoading(true);
+      const updated = await menuItemService.updateMenuItem(id, updates);
+      setMenuItems(menuItems.map(i => i.id === id ? updated : i));
+      setSelectedEditItem(null);
+    } catch (err) {
+      setError('Erro ao atualizar item');
+      console.error('Failed to update menu item:', err);
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleRemoveItem = async (itemId: string) => {
@@ -361,6 +375,16 @@ export const MenuPage: React.FC<MenuPageProps> = ({
             />
           </div>
         </div>
+      )}
+
+      {/* Edit Menu Item Modal */}
+      {selectedEditItem && (
+        <EditMenuItemModal
+          item={selectedEditItem}
+          onSave={handleSaveEdit}
+          onCancel={() => setSelectedEditItem(null)}
+          loading={formLoading}
+        />
       )}
     </div>
   );

@@ -44,8 +44,16 @@ export function detectOrientation(width: number, height: number): Orientation {
 
 // Check if device supports touch
 export function isTouchDevice(): boolean {
-  if (typeof window === 'undefined') return false;
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+  
+  // Type assertion for browser globals
+  const win = window as Window & typeof globalThis;
+  const nav = navigator as Navigator;
+  
+  return 'ontouchstart' in win || nav.maxTouchPoints > 0;
 }
 
 // Get responsive value based on platform

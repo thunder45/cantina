@@ -8,7 +8,7 @@ import { getResponsiveNavStyles, getTouchButtonStyles } from './styles';
 
 // Create API client instance
 const apiClient = new ApiClient({
-  baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
   getAuthToken: async () => {
     // TODO: Integrate with Cognito authentication
     return localStorage.getItem('authToken');
@@ -106,6 +106,7 @@ export const App: React.FC = () => {
   return (
     <div style={{ 
       minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       // Prevent pull-to-refresh on mobile
       overscrollBehavior: 'none',
     }}>
