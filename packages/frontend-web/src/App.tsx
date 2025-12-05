@@ -107,9 +107,30 @@ export const App: React.FC = () => {
     <div style={{ 
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      position: 'relative',
       // Prevent pull-to-refresh on mobile
       overscrollBehavior: 'none',
     }}>
+      {/* ADVM Logo Watermark */}
+      <div style={{
+        position: 'fixed',
+        bottom: Spacing.md,
+        right: Spacing.md,
+        opacity: 0.3,
+        zIndex: 1000,
+        pointerEvents: 'none',
+      }}>
+        <img 
+          src="/logo.jpg" 
+          alt="ADVM" 
+          style={{
+            width: '80px',
+            height: 'auto',
+            borderRadius: BorderRadius.md,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          }}
+        />
+      </div>
       {/* Navigation - only show when event is selected */}
       {selectedEvent && currentView !== 'events' && (
         <nav style={{
