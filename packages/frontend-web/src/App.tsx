@@ -112,45 +112,27 @@ export const App: React.FC = () => {
       // Prevent pull-to-refresh on mobile
       overscrollBehavior: 'none',
     }}>
-      {/* ADVM Logo Watermark */}
-      <div style={{
-        position: 'fixed',
-        bottom: Spacing.md,
-        right: Spacing.md,
-        opacity: 0.3,
-        zIndex: 1000,
-        pointerEvents: 'none',
-      }}>
-        <img 
-          src="/logo.jpg" 
-          alt="ADVM" 
-          style={{
-            width: '80px',
-            height: 'auto',
-            borderRadius: BorderRadius.md,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}
-        />
-      </div>
       {/* Navigation */}
       <nav style={{
         ...navStyles,
         backgroundColor: '#1f2937',
         color: 'white',
+        justifyContent: 'space-between',
       }}>
-        <button
-          onClick={() => setCurrentView('events')}
-          style={getNavButtonStyle(currentView === 'events')}
-          title={platform === 'desktop' ? 'Press E' : undefined}
-        >
-          {platform !== 'mobile' && 'Eventos'}
-          {platform === 'mobile' && '📅'}
-        </button>
-        {selectedEvent && (
-          <>
-            <button
-              onClick={() => setCurrentView('menu')}
-              style={getNavButtonStyle(currentView === 'menu')}
+        <div style={{ display: 'flex', gap: platform === 'mobile' ? Spacing.xs : Spacing.md, alignItems: 'center' }}>
+          <button
+            onClick={() => setCurrentView('events')}
+            style={getNavButtonStyle(currentView === 'events')}
+            title={platform === 'desktop' ? 'Press E' : undefined}
+          >
+            {platform !== 'mobile' && 'Eventos'}
+            {platform === 'mobile' && '📅'}
+          </button>
+          {selectedEvent && (
+            <>
+              <button
+                onClick={() => setCurrentView('menu')}
+                style={getNavButtonStyle(currentView === 'menu')}
             title={platform === 'desktop' ? 'Press M' : undefined}
           >
             Menu
@@ -176,19 +158,38 @@ export const App: React.FC = () => {
           >
             Relatórios
           </button>
-          <span style={{ 
-            marginLeft: 'auto', 
-            padding: `${Spacing.sm}px 0`,
-            fontSize: platform === 'mobile' ? FontSizes.xs : FontSizes.sm,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            maxWidth: platform === 'mobile' ? 100 : 'none',
-          }}>
-            {selectedEvent.name}
-          </span>
           </>
         )}
+        </div>
+
+        {/* ADVM Logo - Centered */}
+        <img 
+          src="/logo.jpg" 
+          alt="ADVM" 
+          style={{
+            height: '36px',
+            width: 'auto',
+            borderRadius: BorderRadius.sm,
+          }}
+        />
+
+        {/* Event name on right */}
+        <div style={{ minWidth: platform === 'mobile' ? 60 : 120 }}>
+          {selectedEvent && (
+            <span style={{ 
+              padding: `${Spacing.sm}px 0`,
+              fontSize: platform === 'mobile' ? FontSizes.xs : FontSizes.sm,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: platform === 'mobile' ? 60 : 120,
+              display: 'block',
+              textAlign: 'right',
+            }}>
+              {selectedEvent.name}
+            </span>
+          )}
+        </div>
       </nav>
 
       {/* Main Content */}
