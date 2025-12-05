@@ -199,23 +199,6 @@ export const App: React.FC = () => {
       }}>
         {renderCurrentView()}
       </div>
-
-      {/* Keyboard shortcuts hint for desktop */}
-      {platform === 'desktop' && selectedEvent && currentView !== 'events' && (
-        <div style={{
-          position: 'fixed',
-          bottom: Spacing.md,
-          right: Spacing.md,
-          padding: `${Spacing.xs}px ${Spacing.sm}px`,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          borderRadius: BorderRadius.sm,
-          fontSize: FontSizes.xs,
-          opacity: 0.7,
-        }}>
-          Atalhos: E M S C R
-        </div>
-      )}
     </div>
   );
 };
