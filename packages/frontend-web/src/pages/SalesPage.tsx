@@ -37,6 +37,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
   const [selectedHistorySale, setSelectedHistorySale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderKey, setOrderKey] = useState(0); // Key to force OrderBuilder reset
 
   const salesService = new SalesApiService(apiClient);
 
@@ -191,6 +192,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
       {/* Main Content - Order Builder */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <OrderBuilder
+          key={orderKey}
           apiClient={apiClient}
           event={event}
           onCheckout={handleCheckout}
@@ -220,6 +222,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
           onClose={() => {
             setShowReceipt(false);
             setLastSale(null);
+            setOrderKey(prev => prev + 1); // Reset order builder
           }}
         />
       )}
