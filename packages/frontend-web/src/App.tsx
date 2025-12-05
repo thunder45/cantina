@@ -131,23 +131,25 @@ export const App: React.FC = () => {
           }}
         />
       </div>
-      {/* Navigation - only show when event is selected */}
-      {selectedEvent && currentView !== 'events' && (
-        <nav style={{
-          ...navStyles,
-          backgroundColor: '#1f2937',
-          color: 'white',
-        }}>
-          <button
-            onClick={() => setCurrentView('events')}
-            style={getNavButtonStyle(false)}
-            title={platform === 'desktop' ? 'Press E' : undefined}
-          >
-            ← {platform !== 'mobile' && 'Eventos'}
-          </button>
-          <button
-            onClick={() => setCurrentView('menu')}
-            style={getNavButtonStyle(currentView === 'menu')}
+      {/* Navigation */}
+      <nav style={{
+        ...navStyles,
+        backgroundColor: '#1f2937',
+        color: 'white',
+      }}>
+        <button
+          onClick={() => setCurrentView('events')}
+          style={getNavButtonStyle(currentView === 'events')}
+          title={platform === 'desktop' ? 'Press E' : undefined}
+        >
+          {platform !== 'mobile' && 'Eventos'}
+          {platform === 'mobile' && '📅'}
+        </button>
+        {selectedEvent && (
+          <>
+            <button
+              onClick={() => setCurrentView('menu')}
+              style={getNavButtonStyle(currentView === 'menu')}
             title={platform === 'desktop' ? 'Press M' : undefined}
           >
             Menu
@@ -184,8 +186,9 @@ export const App: React.FC = () => {
           }}>
             {selectedEvent.name}
           </span>
-        </nav>
-      )}
+          </>
+        )}
+      </nav>
 
       {/* Main Content */}
       {renderCurrentView()}
