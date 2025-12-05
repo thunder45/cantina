@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Customer,
   ApiClient,
@@ -9,6 +9,10 @@ import {
   BorderRadius,
   getModalStyles,
 } from '@cantina-pos/shared';
+
+interface CustomerWithBalance extends Customer {
+  balance?: number;
+}
 
 interface CustomerSelectModalProps {
   apiClient: ApiClient;
@@ -22,203 +26,253 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
   onCancel,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [customers, setCustomers] = useState<CustomerWithBalance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchTimeout = useRef<NodeJS.Timeout>();
 
   const customerService = new CustomerApiService(apiClient);
   const modalStyles = getModalStyles();
 
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setCustomers([]);
-      return;
-    }
-
+  const loadCustomers = useCallback(async (query: string = '') => {
     try {
       setLoading(true);
       setError(null);
-      const results = await customerService.searchCustomers(searchQuery);
-      setCustomers(results);
-    } catch (err) {
-      setError('Erro ao pesquisar clientes');
-      console.error('Failed to search customers:', err);
+      const results = await customerService.searchCustomers(query);
+      const customersWithBalances = await Promise.all(
+        results.map(async (customer) => {
+          try {
+            const balance = await customerService.getCustomerBalance(customer.id);
+            return { ...customer, balance };
+          } catch {
+            return { ...customer, balance: 0 };
+          }
+        })
+      );
+      setCustomers(customersWithBalances);
+    } catch {
+      setError('Erro ao carregar clientes');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => loadCustomers(searchQuery), 300);
+    return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
   }, [searchQuery]);
 
-  const handleCreateCustomer = useCallback(async () => {
-    if (!newCustomerName.trim()) {
-      setError('Nome do cliente é obrigatório');
-      return;
-    }
-
+  const handleCreateCustomer = async () => {
+    if (!newCustomerName.trim()) return;
     try {
       setCreating(true);
-      setError(null);
       const customer = await customerService.createCustomer(newCustomerName.trim());
       onSelect(customer);
-    } catch (err) {
+    } catch {
       setError('Erro ao criar cliente');
-      console.error('Failed to create customer:', err);
-    } finally {
       setCreating(false);
     }
-  }, [newCustomerName, onSelect]);
+  };
+
+  const formatCurrency = (value: number) => `€${value.toFixed(2)}`;
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <div style={modalStyles.overlay} onClick={onCancel}>
       <div
-        style={{ ...modalStyles.container, maxWidth: 500 }}
+        style={{ ...modalStyles.container, maxWidth: 500, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={modalStyles.header}>
+        {/* Header */}
+        <div style={{ ...modalStyles.header, flexShrink: 0 }}>
           <h3 style={modalStyles.title}>Selecionar Cliente</h3>
-          <button onClick={onCancel} style={modalStyles.closeButton}>
-            ×
-          </button>
+          <button onClick={onCancel} style={modalStyles.closeButton}>×</button>
         </div>
 
-        <div style={modalStyles.content}>
-          {error && (
-            <div style={{
-              padding: Spacing.sm,
-              backgroundColor: Colors.danger,
-              color: Colors.textLight,
-              borderRadius: BorderRadius.sm,
-              marginBottom: Spacing.md,
-              fontSize: FontSizes.sm,
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Search Section */}
-          <div style={{ marginBottom: Spacing.lg }}>
-            <label style={{
-              display: 'block',
-              marginBottom: Spacing.xs,
-              fontSize: FontSizes.sm,
-              fontWeight: 500,
-              color: Colors.text,
-            }}>
-              Pesquisar cliente existente
-            </label>
-            <div style={{ display: 'flex', gap: Spacing.sm }}>
+        {/* Search & Create Button */}
+        <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: Spacing.sm }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 18 }}>🔍</span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Nome do cliente..."
+                placeholder="Pesquisar clientes..."
+                autoFocus
                 style={{
-                  flex: 1,
-                  padding: Spacing.sm,
+                  width: '100%',
+                  padding: `${Spacing.sm}px ${Spacing.sm}px ${Spacing.sm}px 40px`,
+                  fontSize: FontSizes.md,
                   border: `1px solid ${Colors.border}`,
                   borderRadius: BorderRadius.md,
-                  fontSize: FontSizes.md,
+                  boxSizing: 'border-box',
                 }}
               />
+            </div>
+            <button
+              onClick={() => setShowCreate(true)}
+              style={{
+                padding: `${Spacing.sm}px ${Spacing.md}px`,
+                backgroundColor: Colors.primary,
+                color: Colors.textLight,
+                border: 'none',
+                borderRadius: BorderRadius.md,
+                fontSize: FontSizes.sm,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              + Novo
+            </button>
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{ padding: Spacing.sm, backgroundColor: Colors.danger, color: Colors.textLight, textAlign: 'center', flexShrink: 0 }}>
+            {error}
+          </div>
+        )}
+
+        {/* Customer List */}
+        <div style={{ flex: 1, overflow: 'auto', padding: Spacing.md }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
+              A carregar...
+            </div>
+          ) : customers.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
+              <p style={{ fontSize: 48, margin: 0 }}>👥</p>
+              <p style={{ margin: `${Spacing.md}px 0 0` }}>
+                {searchQuery ? 'Nenhum cliente encontrado' : 'Nenhum cliente registado'}
+              </p>
               <button
-                onClick={handleSearch}
-                disabled={loading || !searchQuery.trim()}
+                onClick={() => setShowCreate(true)}
                 style={{
-                  padding: `${Spacing.sm}px ${Spacing.md}px`,
+                  marginTop: Spacing.md,
+                  padding: `${Spacing.sm}px ${Spacing.lg}px`,
                   backgroundColor: Colors.primary,
                   color: Colors.textLight,
                   border: 'none',
                   borderRadius: BorderRadius.md,
-                  fontSize: FontSizes.md,
-                  cursor: loading || !searchQuery.trim() ? 'not-allowed' : 'pointer',
-                  opacity: loading || !searchQuery.trim() ? 0.6 : 1,
+                  cursor: 'pointer',
                 }}
               >
-                {loading ? '...' : 'Pesquisar'}
+                Criar primeiro cliente
               </button>
             </div>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+              {customers.map(customer => (
+                <div
+                  key={customer.id}
+                  onClick={() => onSelect(customer)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: Spacing.md,
+                    padding: Spacing.md,
+                    backgroundColor: Colors.background,
+                    borderRadius: BorderRadius.md,
+                    border: `1px solid ${Colors.border}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = Colors.primary;
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = Colors.border;
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Avatar */}
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    backgroundColor: (customer.balance || 0) > 0 ? Colors.warning : Colors.success,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    color: '#000',
+                    fontSize: FontSizes.sm,
+                    flexShrink: 0,
+                  }}>
+                    {getInitials(customer.name)}
+                  </div>
 
-          {/* Search Results */}
-          {customers.length > 0 && (
-            <div style={{ marginBottom: Spacing.lg }}>
-              <label style={{
-                display: 'block',
-                marginBottom: Spacing.xs,
-                fontSize: FontSizes.sm,
-                fontWeight: 500,
-                color: Colors.text,
-              }}>
-                Resultados ({customers.length})
-              </label>
-              <div style={{
-                maxHeight: 200,
-                overflowY: 'auto',
-                border: `1px solid ${Colors.border}`,
-                borderRadius: BorderRadius.md,
-              }}>
-                {customers.map(customer => (
-                  <button
-                    key={customer.id}
-                    onClick={() => onSelect(customer)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: Spacing.sm,
-                      textAlign: 'left',
-                      backgroundColor: Colors.background,
-                      border: 'none',
-                      borderBottom: `1px solid ${Colors.border}`,
-                      cursor: 'pointer',
-                      fontSize: FontSizes.md,
-                      color: Colors.text,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = Colors.backgroundSecondary;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = Colors.background;
-                    }}
-                  >
-                    {customer.name}
-                  </button>
-                ))}
-              </div>
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: Colors.text, fontSize: FontSizes.md }}>
+                      {customer.name}
+                    </div>
+                    <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                      {(customer.balance || 0) > 0 
+                        ? `Saldo: ${formatCurrency(customer.balance || 0)}`
+                        : 'Sem saldo pendente'}
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <span style={{ color: Colors.textSecondary, fontSize: 18 }}>→</span>
+                </div>
+              ))}
             </div>
           )}
+        </div>
 
-          {/* Create New Customer Section */}
-          <div style={{
-            padding: Spacing.md,
+        {/* Create Customer Inline */}
+        {showCreate && (
+          <div style={{ 
+            padding: Spacing.md, 
+            borderTop: `1px solid ${Colors.border}`, 
             backgroundColor: Colors.backgroundSecondary,
-            borderRadius: BorderRadius.md,
+            flexShrink: 0,
           }}>
-            <label style={{
-              display: 'block',
-              marginBottom: Spacing.xs,
-              fontSize: FontSizes.sm,
-              fontWeight: 500,
-              color: Colors.text,
-            }}>
-              Ou criar novo cliente
-            </label>
+            <div style={{ fontWeight: 600, marginBottom: Spacing.sm, fontSize: FontSizes.sm }}>
+              Novo Cliente
+            </div>
             <div style={{ display: 'flex', gap: Spacing.sm }}>
               <input
                 type="text"
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomer()}
-                placeholder="Nome do novo cliente..."
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateCustomer()}
+                placeholder="Nome do cliente"
+                autoFocus
                 style={{
                   flex: 1,
                   padding: Spacing.sm,
+                  fontSize: FontSizes.md,
                   border: `1px solid ${Colors.border}`,
                   borderRadius: BorderRadius.md,
-                  fontSize: FontSizes.md,
                 }}
               />
+              <button
+                onClick={() => { setShowCreate(false); setNewCustomerName(''); }}
+                style={{
+                  padding: `${Spacing.sm}px ${Spacing.md}px`,
+                  backgroundColor: Colors.background,
+                  border: `1px solid ${Colors.border}`,
+                  borderRadius: BorderRadius.md,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
               <button
                 onClick={handleCreateCustomer}
                 disabled={creating || !newCustomerName.trim()}
@@ -228,8 +282,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                   color: Colors.textLight,
                   border: 'none',
                   borderRadius: BorderRadius.md,
-                  fontSize: FontSizes.md,
-                  cursor: creating || !newCustomerName.trim() ? 'not-allowed' : 'pointer',
+                  cursor: creating ? 'not-allowed' : 'pointer',
                   opacity: creating || !newCustomerName.trim() ? 0.6 : 1,
                 }}
               >
@@ -237,7 +290,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
