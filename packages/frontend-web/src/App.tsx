@@ -105,9 +105,10 @@ export const App: React.FC = () => {
 
   return (
     <div style={{ 
-      minHeight: '100vh',
+      height: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       position: 'relative',
+      overflow: 'hidden',
       // Prevent pull-to-refresh on mobile
       overscrollBehavior: 'none',
     }}>
@@ -191,7 +192,12 @@ export const App: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      {renderCurrentView()}
+      <div style={{
+        height: 'calc(100vh - 56px)', // 56px is nav height
+        overflow: 'auto',
+      }}>
+        {renderCurrentView()}
+      </div>
 
       {/* Keyboard shortcuts hint for desktop */}
       {platform === 'desktop' && selectedEvent && currentView !== 'events' && (
