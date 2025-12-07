@@ -65,12 +65,14 @@ export function error(
  */
 const ERROR_MAP: Record<string, { status: number; message: string }> = {
   ERR_EVENT_NOT_FOUND: { status: 404, message: ErrorCodes.ERR_EVENT_NOT_FOUND },
+  ERR_CATEGORY_NOT_FOUND: { status: 404, message: 'Categoria não encontrada' },
   ERR_CUSTOMER_NOT_FOUND: { status: 404, message: ErrorCodes.ERR_CUSTOMER_NOT_FOUND },
   ERR_ORDER_NOT_FOUND: { status: 404, message: 'Pedido não encontrado' },
   ERR_SALE_NOT_FOUND: { status: 404, message: 'Venda não encontrada' },
   ERR_MENU_ITEM_NOT_FOUND: { status: 404, message: 'Item do menu não encontrado' },
   ERR_CATALOG_ITEM_NOT_FOUND: { status: 404, message: 'Item do catálogo não encontrado' },
   ERR_GROUP_NOT_FOUND: { status: 404, message: 'Grupo não encontrado' },
+  ERR_CATEGORY_HAS_EVENTS: { status: 400, message: 'Categoria possui eventos associados' },
   ERR_STOCK_INSUFFICIENT: { status: 400, message: ErrorCodes.ERR_STOCK_INSUFFICIENT },
   ERR_DUPLICATE_NAME: { status: 409, message: ErrorCodes.ERR_DUPLICATE_NAME },
   ERR_INVALID_PRICE: { status: 400, message: ErrorCodes.ERR_INVALID_PRICE },

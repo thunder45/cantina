@@ -4,6 +4,8 @@
  * - GET /events/{id}/report - Get event report
  * - GET /events/{id}/stock-report - Get stock report
  * - GET /events/{id}/report/export - Export report as CSV
+ * - GET /categories/{id}/report - Get category report (aggregated from all events)
+ * - GET /categories/{id}/report/export - Export category report as CSV
  */
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, handleError, error } from '../response';
@@ -12,21 +14,35 @@ import { ReportFilter } from '@cantina-pos/shared';
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, queryStringParameters, path } = event;
-  const eventId = pathParameters?.id;
+  const id = pathParameters?.id;
 
   try {
+    // Category report endpoints
+    if (path.includes('/categories/')) {
+      // GET /categories/{id}/report/export - Export category CSV
+      if (httpMethod === 'GET' && id && path.includes('/report/export')) {
+        return exportCategoryReportCSV(id);
+      }
+
+      // GET /categories/{id}/report - Get category report
+      if (httpMethod === 'GET' && id && path.includes('/report')) {
+        return getCategoryReport(id);
+      }
+    }
+
+    // Event report endpoints
     // GET /events/{id}/report/export - Export CSV
-    if (httpMethod === 'GET' && eventId && path.includes('/report/export')) {
-      return exportReportCSV(eventId);
+    if (httpMethod === 'GET' && id && path.includes('/report/export')) {
+      return exportReportCSV(id);
     }
 
     // GET /events/{id}/stock-report - Get stock report
-    if (httpMethod === 'GET' && eventId && path.includes('/stock-report')) {
-      return getStockReport(eventId);
+    if (httpMethod === 'GET' && id && path.includes('/stock-report')) {
+      return getStockReport(id);
     }
 
     // GET /events/{id}/report - Get event report
-    if (httpMethod === 'GET' && eventId && path.includes('/report')) {
+    if (httpMethod === 'GET' && id && path.includes('/report')) {
       const filter: ReportFilter = {};
       if (queryStringParameters?.category) {
         filter.category = queryStringParameters.category;
@@ -37,7 +53,7 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
       if (queryStringParameters?.endDate) {
         filter.endDate = queryStringParameters.endDate;
       }
-      return getEventReport(eventId, filter);
+      return getEventReport(id, filter);
     }
 
     return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
@@ -63,6 +79,24 @@ function exportReportCSV(eventId: string): APIGatewayResponse {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="report-${eventId}.csv"`,
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: csv,
+  };
+}
+
+function getCategoryReport(categoryId: string): APIGatewayResponse {
+  const report = reportService.getCategoryReport(categoryId);
+  return success(report);
+}
+
+function exportCategoryReportCSV(categoryId: string): APIGatewayResponse {
+  const csv = reportService.exportCategoryReportCSV(categoryId);
+  return {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="category-report-${categoryId}.csv"`,
       'Access-Control-Allow-Origin': '*',
     },
     body: csv,

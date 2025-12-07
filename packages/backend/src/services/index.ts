@@ -1,4 +1,5 @@
 // Service exports
+export * as eventCategoryService from './event-category.service';
 export * as menuGroupService from './menu-group.service';
 export * as catalogItemService from './catalog-item.service';
 export * as eventService from './event.service';

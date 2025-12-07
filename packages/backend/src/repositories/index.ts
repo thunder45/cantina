@@ -1,4 +1,5 @@
 // Repository exports
+export * as eventCategoryRepository from './event-category.repository';
 export * as menuGroupRepository from './menu-group.repository';
 export * as catalogItemRepository from './catalog-item.repository';
 export * as eventRepository from './event.repository';

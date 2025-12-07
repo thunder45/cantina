@@ -1,15 +1,36 @@
 import { Event, CreateEventInput, UpdateEventStatusInput } from '@cantina-pos/shared';
 import * as eventRepository from '../repositories/event.repository';
+import * as eventCategoryRepository from '../repositories/event-category.repository';
 
 /**
  * Create a new event
- * Requirements: 1.1, 1.2, 1.3
- * @param input - Event data with name, dates, and categories
+ * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
+ * @param input - Event data with categoryId, name, and dates
  * @returns Created Event
- * @throws Error if validation fails
+ * @throws Error if validation fails or category not found
  */
 export function createEvent(input: CreateEventInput): Event {
+  // Validate category exists (Requirements: 2.2)
+  if (!eventCategoryRepository.categoryExists(input.categoryId)) {
+    throw new Error('ERR_CATEGORY_NOT_FOUND');
+  }
+  
   return eventRepository.createEvent(input);
+}
+
+/**
+ * Get events by category ID
+ * Requirements: 2.1 - Display all events for a selected category
+ * @param categoryId - Category ID to filter by
+ * @returns Array of Events belonging to the category
+ */
+export function getEventsByCategory(categoryId: string): Event[] {
+  // Validate category exists
+  if (!eventCategoryRepository.categoryExists(categoryId)) {
+    throw new Error('ERR_CATEGORY_NOT_FOUND');
+  }
+  
+  return eventRepository.getEventsByCategory(categoryId);
 }
 
 /**

@@ -1,6 +1,9 @@
 import { ApiClient } from './client';
 import {
   Event,
+  EventCategory,
+  CreateEventCategoryInput,
+  UpdateEventCategoryInput,
   MenuGroup,
   CatalogItem,
   MenuItem,
@@ -12,14 +15,49 @@ import {
   Receipt,
   EventReport,
   StockReport,
+  CategoryReport,
 } from '../types';
+
+// Event Category API Service
+export class EventCategoryApiService {
+  constructor(private client: ApiClient) {}
+
+  async getCategories(): Promise<EventCategory[]> {
+    return this.client.get('/categories');
+  }
+
+  async getCategory(id: string): Promise<EventCategory> {
+    return this.client.get(`/categories/${id}`);
+  }
+
+  async createCategory(input: CreateEventCategoryInput): Promise<EventCategory> {
+    return this.client.post('/categories', input);
+  }
+
+  async updateCategory(id: string, input: UpdateEventCategoryInput): Promise<EventCategory> {
+    return this.client.put(`/categories/${id}`, input);
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    return this.client.delete(`/categories/${id}`);
+  }
+
+  async getCategoryEvents(categoryId: string): Promise<Event[]> {
+    return this.client.get(`/categories/${categoryId}/events`);
+  }
+
+  async getCategoryEventCount(categoryId: string): Promise<number> {
+    const events = await this.getCategoryEvents(categoryId);
+    return events.length;
+  }
+}
 
 // Event API Service
 export class EventApiService {
   constructor(private client: ApiClient) {}
 
-  async createEvent(name: string, dates: string[], categories: string[]): Promise<Event> {
-    return this.client.post('/events', { name, dates, categories });
+  async createEvent(categoryId: string, name: string, dates: string[]): Promise<Event> {
+    return this.client.post('/events', { categoryId, name, dates });
   }
 
   async getEvents(): Promise<Event[]> {
@@ -201,11 +239,19 @@ export class ReportApiService {
     return this.client.get(`/events/${eventId}/report${query}`);
   }
 
+  async getCategoryReport(categoryId: string): Promise<CategoryReport> {
+    return this.client.get(`/categories/${categoryId}/report`);
+  }
+
   async getStockReport(eventId: string): Promise<StockReport> {
     return this.client.get(`/events/${eventId}/stock-report`);
   }
 
   async exportReportCSV(eventId: string): Promise<string> {
     return this.client.get(`/events/${eventId}/report/export`);
+  }
+
+  async exportCategoryReportCSV(categoryId: string): Promise<string> {
+    return this.client.get(`/categories/${categoryId}/report/export`);
   }
 }

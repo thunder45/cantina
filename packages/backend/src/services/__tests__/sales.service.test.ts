@@ -1,6 +1,7 @@
 import * as salesService from '../sales.service';
 import * as orderService from '../order.service';
 import * as eventService from '../event.service';
+import * as eventCategoryService from '../event-category.service';
 import * as menuItemService from '../menu-item.service';
 import * as menuGroupService from '../menu-group.service';
 import * as catalogItemService from '../catalog-item.service';
@@ -12,21 +13,28 @@ describe('Sales Service', () => {
   let testGroupId: string;
   let menuItemId: string;
   let catalogItemId: string;
+  let testCategoryId: string;
 
   beforeEach(() => {
     // Reset all services
     salesService.resetService();
     orderService.resetService();
     eventService.resetService();
+    eventCategoryService.resetService();
     menuItemService.resetService();
     menuGroupService.resetService();
     catalogItemService.resetService();
 
+    // Initialize default categories
+    eventCategoryService.initializeDefaultCategories();
+    const categories = eventCategoryService.getCategories();
+    testCategoryId = categories[0].id;
+
     // Create test event
     const event = eventService.createEvent({
+      categoryId: testCategoryId,
       name: 'Test Event',
       dates: ['2024-01-15'],
-      categories: ['test'],
     });
     testEventId = event.id;
 

@@ -1,23 +1,32 @@
-import React, { useState } from 'react';
-import { CreateEventInput } from '@cantina-pos/shared';
+import React, { useState, useEffect } from 'react';
+import { CreateEventInput, EventCategory } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
 interface EventFormProps {
+  categories: EventCategory[];
+  preSelectedCategoryId?: string;
   onSubmit: (data: CreateEventInput) => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
 export const EventForm: React.FC<EventFormProps> = ({
+  categories,
+  preSelectedCategoryId,
   onSubmit,
   onCancel,
   loading = false,
 }) => {
+  const [categoryId, setCategoryId] = useState(preSelectedCategoryId || '');
   const [name, setName] = useState('');
   const [dates, setDates] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [newCategory, setNewCategory] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (preSelectedCategoryId) {
+      setCategoryId(preSelectedCategoryId);
+    }
+  }, [preSelectedCategoryId]);
 
   const handleAddDate = (date: string) => {
     if (date && !dates.includes(date)) {
@@ -30,27 +39,12 @@ export const EventForm: React.FC<EventFormProps> = ({
     setDates(dates.filter(d => d !== date));
   };
 
-  const handleAddCategory = () => {
-    const trimmed = newCategory.trim();
-    if (trimmed && !categories.includes(trimmed)) {
-      setCategories([...categories, trimmed]);
-      setNewCategory('');
-    }
-  };
-
-  const handleRemoveCategory = (category: string) => {
-    setCategories(categories.filter(c => c !== category));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddCategory();
-    }
-  };
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+    
+    if (!categoryId) {
+      newErrors.categoryId = 'Selecione uma categoria';
+    }
     
     if (!name.trim()) {
       newErrors.name = 'O nome é obrigatório';
@@ -67,7 +61,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit({ name: name.trim(), dates, categories });
+      onSubmit({ categoryId, name: name.trim(), dates });
     }
   };
 
@@ -104,6 +98,31 @@ export const EventForm: React.FC<EventFormProps> = ({
         Novo Evento
       </h2>
 
+      {/* Categoria */}
+      <div style={{ marginBottom: Spacing.md }}>
+        <label style={labelStyle}>Categoria *</label>
+        <select
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            setErrors({ ...errors, categoryId: '' });
+          }}
+          style={{
+            ...inputStyle,
+            borderColor: errors.categoryId ? Colors.error : Colors.border,
+          }}
+          disabled={loading}
+        >
+          <option value="">Selecione uma categoria</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+        {errors.categoryId && <p style={errorStyle}>{errors.categoryId}</p>}
+      </div>
+
       {/* Nome */}
       <div style={{ marginBottom: Spacing.md }}>
         <label style={labelStyle}>Nome do Evento *</label>
@@ -114,7 +133,7 @@ export const EventForm: React.FC<EventFormProps> = ({
             setName(e.target.value);
             setErrors({ ...errors, name: '' });
           }}
-          placeholder="Ex: Festa de Verão 2025"
+          placeholder="Ex: Culto Domingo 15/12"
           style={{
             ...inputStyle,
             borderColor: errors.name ? Colors.error : Colors.border,
@@ -125,7 +144,7 @@ export const EventForm: React.FC<EventFormProps> = ({
       </div>
 
       {/* Datas */}
-      <div style={{ marginBottom: Spacing.md }}>
+      <div style={{ marginBottom: Spacing.lg }}>
         <label style={labelStyle}>Datas do Evento *</label>
         <input
           type="date"
@@ -175,76 +194,9 @@ export const EventForm: React.FC<EventFormProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Categorias */}
-      <div style={{ marginBottom: Spacing.lg }}>
-        <label style={labelStyle}>Categorias (opcional)</label>
-        <div style={{ display: 'flex', gap: Spacing.sm }}>
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ex: Almoço, Jantar, Festival"
-            style={{ ...inputStyle, flex: 1 }}
-            disabled={loading}
-          />
-          <button
-            type="button"
-            onClick={handleAddCategory}
-            style={{
-              padding: `${Spacing.sm}px ${Spacing.md}px`,
-              backgroundColor: Colors.secondary,
-              color: Colors.textLight,
-              border: 'none',
-              borderRadius: BorderRadius.md,
-              fontSize: FontSizes.md,
-              cursor: 'pointer',
-            }}
-            disabled={loading || !newCategory.trim()}
-          >
-            Adicionar
-          </button>
-        </div>
-        
-        {categories.length > 0 && (
-          <div style={{ display: 'flex', gap: Spacing.xs, flexWrap: 'wrap', marginTop: Spacing.sm }}>
-            {categories.map((category) => (
-              <span
-                key={category}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: Spacing.xs,
-                  padding: `${Spacing.xs}px ${Spacing.sm}px`,
-                  backgroundColor: Colors.backgroundSecondary,
-                  color: Colors.text,
-                  borderRadius: BorderRadius.md,
-                  fontSize: FontSizes.sm,
-                }}
-              >
-                {category}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCategory(category)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: Colors.textSecondary,
-                    cursor: 'pointer',
-                    padding: 0,
-                    fontSize: FontSizes.md,
-                    lineHeight: 1,
-                  }}
-                  disabled={loading}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+        <p style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: Spacing.xs }}>
+          Pode selecionar múltiplas datas não sequenciais
+        </p>
       </div>
 
       {/* Botões */}

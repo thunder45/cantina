@@ -8,17 +8,22 @@ let events: Map<string, Event> = new Map();
 
 /**
  * Create a new event
- * Requirements: 1.1, 1.2, 1.3
- * @param input - Event data with name, dates, and categories
+ * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
+ * @param input - Event data with categoryId, name, and dates
  * @returns Created Event
  * @throws Error if validation fails
  */
 export function createEvent(input: CreateEventInput): Event {
   const trimmedName = input.name.trim();
   
-  // Validate name is not empty (Requirements: 15.2)
+  // Validate name is not empty (Requirements: 16.2)
   if (!trimmedName) {
     throw new Error('ERR_EMPTY_NAME');
+  }
+
+  // Validate categoryId is provided (Requirements: 2.2)
+  if (!input.categoryId || !input.categoryId.trim()) {
+    throw new Error('ERR_CATEGORY_REQUIRED');
   }
 
   // Validate dates array is not empty
@@ -38,9 +43,10 @@ export function createEvent(input: CreateEventInput): Event {
   
   const event: Event = {
     id,
+    categoryId: input.categoryId.trim(), // Required category reference (Req 2.2)
     name: trimmedName,
-    dates: [...input.dates], // Support multiple non-sequential dates (Req 1.2)
-    categories: [...(input.categories || [])], // Store categories for reports (Req 1.3)
+    dates: [...input.dates], // Support multiple non-sequential dates (Req 2.3)
+    categories: [...(input.categories || [])], // Legacy field for backward compatibility
     status: 'active',
     createdAt: now,
     updatedAt: now,
@@ -62,12 +68,36 @@ export function getEventById(id: string): Event | undefined {
 
 /**
  * Get all events
- * Requirements: 1.4
+ * Requirements: 2.5
  * @returns Array of Events sorted by creation date (newest first)
  */
 export function getEvents(): Event[] {
   return Array.from(events.values())
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
+ * Get events by category ID
+ * Requirements: 2.1 - Display all events for a selected category
+ * @param categoryId - Category ID to filter by
+ * @returns Array of Events belonging to the category, sorted by creation date (newest first)
+ */
+export function getEventsByCategory(categoryId: string): Event[] {
+  return Array.from(events.values())
+    .filter(event => event.categoryId === categoryId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
+ * Count events by category ID
+ * Requirements: 1.2 - Display event count per category
+ * @param categoryId - Category ID to count events for
+ * @returns Number of events in the category
+ */
+export function countEventsByCategory(categoryId: string): number {
+  return Array.from(events.values())
+    .filter(event => event.categoryId === categoryId)
+    .length;
 }
 
 /**

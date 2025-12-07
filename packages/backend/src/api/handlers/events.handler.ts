@@ -4,18 +4,20 @@
  * - POST /events - Create event
  * - GET /events - List events
  * - GET /events/{id} - Get event by ID
+ * - GET /categories/{id}/events - List events by category
  * - PATCH /events/{id}/status - Update event status
  */
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, handleError, error } from '../response';
-import { validateName, validateNonEmptyArray, parseBody, combineValidationErrors } from '../validation';
+import { validateName, validateNonEmptyArray, validateId, parseBody, combineValidationErrors } from '../validation';
 import * as eventService from '../../services/event.service';
 import { CreateEventInput } from '@cantina-pos/shared';
 
 interface CreateEventBody {
+  categoryId: string;
   name: string;
   dates: string[];
-  categories: string[];
+  categories?: string[]; // Legacy/optional
 }
 
 interface UpdateStatusBody {
@@ -28,6 +30,11 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   const path = event.path;
 
   try {
+    // GET /categories/{id}/events - List events by category
+    if (httpMethod === 'GET' && id && path.includes('/categories/')) {
+      return getEventsByCategory(id);
+    }
+
     // POST /events - Create event
     if (httpMethod === 'POST' && !id) {
       return createEvent(event);
@@ -61,9 +68,9 @@ function createEvent(event: APIGatewayEvent): APIGatewayResponse {
   }
 
   const validation = combineValidationErrors(
+    validateId(body.categoryId, 'categoryId'),
     validateName(body.name, 'name'),
-    validateNonEmptyArray(body.dates, 'dates'),
-    validateNonEmptyArray(body.categories, 'categories')
+    validateNonEmptyArray(body.dates, 'dates')
   );
 
   if (!validation.valid) {
@@ -73,13 +80,19 @@ function createEvent(event: APIGatewayEvent): APIGatewayResponse {
   }
 
   const input: CreateEventInput = {
+    categoryId: body.categoryId,
     name: body.name.trim(),
     dates: body.dates,
-    categories: body.categories,
+    categories: body.categories, // Legacy/optional
   };
 
   const createdEvent = eventService.createEvent(input);
   return created(createdEvent);
+}
+
+function getEventsByCategory(categoryId: string): APIGatewayResponse {
+  const events = eventService.getEventsByCategory(categoryId);
+  return success(events);
 }
 
 function listEvents(): APIGatewayResponse {

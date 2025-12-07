@@ -1,11 +1,13 @@
 import React from 'react';
-import { Event, TouchTargets } from '@cantina-pos/shared';
+import { Event, EventCategory, TouchTargets } from '@cantina-pos/shared';
 import { getCardStyles, getListStyles, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 import { usePlatform } from '../../hooks';
 import { getTouchButtonStyles, getResponsiveFontSize, getResponsiveContainerStyles } from '../../styles';
 
 interface EventListProps {
   events: Event[];
+  categories?: EventCategory[];
+  groupByCategory?: boolean;
   loading: boolean;
   onEventSelect: (event: Event) => void;
   onCreateEvent: () => void;
@@ -13,6 +15,8 @@ interface EventListProps {
 
 export const EventList: React.FC<EventListProps> = ({
   events,
+  categories = [],
+  groupByCategory = false,
   loading,
   onEventSelect,
   onCreateEvent,
@@ -29,7 +33,6 @@ export const EventList: React.FC<EventListProps> = ({
       return new Date(dates[0]).toLocaleDateString('pt-PT');
     }
     const sorted = [...dates].sort();
-    // On mobile, use shorter format
     if (platform === 'mobile') {
       return `${dates.length} dias`;
     }
@@ -51,6 +54,97 @@ export const EventList: React.FC<EventListProps> = ({
       >
         {isActive ? 'Ativo' : 'Encerrado'}
       </span>
+    );
+  };
+
+  const getCategoryName = (categoryId: string): string => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || 'Sem categoria';
+  };
+
+  // Group events by category if needed
+  const groupedEvents = React.useMemo(() => {
+    if (!groupByCategory || categories.length === 0) {
+      return { ungrouped: events };
+    }
+    
+    const groups: Record<string, Event[]> = {};
+    events.forEach(event => {
+      const categoryId = event.categoryId || 'uncategorized';
+      if (!groups[categoryId]) {
+        groups[categoryId] = [];
+      }
+      groups[categoryId].push(event);
+    });
+    return groups;
+  }, [events, groupByCategory, categories]);
+
+  const renderEventCard = (event: Event, showCategory: boolean = false) => {
+    const cardStyles = getCardStyles({ onPress: () => onEventSelect(event) });
+    return (
+      <button
+        key={event.id}
+        onClick={() => onEventSelect(event)}
+        style={{
+          ...cardStyles.container,
+          cursor: isTouch ? 'default' : 'pointer',
+          transition: 'all 0.2s ease',
+          padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
+          minHeight: touchTarget.recommended,
+          textAlign: 'left',
+          width: '100%',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          if (!isTouch) {
+            e.currentTarget.style.borderColor = Colors.primary;
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = Colors.border;
+          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start',
+          gap: Spacing.sm,
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ 
+              ...cardStyles.title, 
+              fontSize: getResponsiveFontSize(styleOptions, 'md'),
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {event.name}
+            </h3>
+            <p style={{ 
+              ...cardStyles.subtitle,
+              fontSize: getResponsiveFontSize(styleOptions, 'sm'),
+            }}>
+              {formatDates(event.dates)}
+            </p>
+            {showCategory && event.categoryId && (
+              <span style={{
+                display: 'inline-block',
+                marginTop: Spacing.xs,
+                padding: `${Spacing.xs}px ${Spacing.sm}px`,
+                backgroundColor: Colors.backgroundSecondary,
+                borderRadius: BorderRadius.sm,
+                fontSize: getResponsiveFontSize(styleOptions, 'xs'),
+                color: Colors.textSecondary,
+              }}>
+                {getCategoryName(event.categoryId)}
+              </span>
+            )}
+          </div>
+          {getStatusBadge(event.status)}
+        </div>
+      </button>
     );
   };
 
@@ -116,111 +210,82 @@ export const EventList: React.FC<EventListProps> = ({
             Crie um novo evento para começar
           </p>
         </div>
+      ) : groupByCategory && Object.keys(groupedEvents).length > 1 ? (
+        // Render grouped by category
+        <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.lg }}>
+          {categories.map(category => {
+            const categoryEvents = groupedEvents[category.id] || [];
+            if (categoryEvents.length === 0) return null;
+            
+            return (
+              <div key={category.id}>
+                <h2 style={{
+                  fontSize: getResponsiveFontSize(styleOptions, 'lg'),
+                  fontWeight: 600,
+                  color: Colors.text,
+                  marginBottom: Spacing.md,
+                  paddingBottom: Spacing.xs,
+                  borderBottom: `2px solid ${Colors.primary}`,
+                }}>
+                  {category.name}
+                  <span style={{
+                    marginLeft: Spacing.sm,
+                    fontSize: getResponsiveFontSize(styleOptions, 'sm'),
+                    fontWeight: 400,
+                    color: Colors.textSecondary,
+                  }}>
+                    ({categoryEvents.length})
+                  </span>
+                </h2>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: platform === 'tablet' ? Spacing.md : Spacing.sm,
+                }}>
+                  {categoryEvents.map(event => renderEventCard(event, false))}
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Uncategorized events */}
+          {groupedEvents['uncategorized']?.length > 0 && (
+            <div>
+              <h2 style={{
+                fontSize: getResponsiveFontSize(styleOptions, 'lg'),
+                fontWeight: 600,
+                color: Colors.textSecondary,
+                marginBottom: Spacing.md,
+                paddingBottom: Spacing.xs,
+                borderBottom: `2px solid ${Colors.border}`,
+              }}>
+                Sem categoria
+                <span style={{
+                  marginLeft: Spacing.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'sm'),
+                  fontWeight: 400,
+                }}>
+                  ({groupedEvents['uncategorized'].length})
+                </span>
+              </h2>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: platform === 'tablet' ? Spacing.md : Spacing.sm,
+              }}>
+                {groupedEvents['uncategorized'].map(event => renderEventCard(event, false))}
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
+        // Render flat list
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column', 
           gap: platform === 'tablet' ? Spacing.md : Spacing.sm,
         }}>
-          {events.map((event) => {
-            const cardStyles = getCardStyles({ onPress: () => onEventSelect(event) });
-            return (
-              <button
-                key={event.id}
-                onClick={() => onEventSelect(event)}
-                style={{
-                  ...cardStyles.container,
-                  cursor: isTouch ? 'default' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
-                  minHeight: touchTarget.recommended,
-                  textAlign: 'left',
-                  width: '100%',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isTouch) {
-                    e.currentTarget.style.borderColor = Colors.primary;
-                    e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = Colors.border;
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-                }}
-                onTouchStart={(e) => {
-                  if (isTouch) {
-                    e.currentTarget.style.backgroundColor = Colors.backgroundSecondary;
-                  }
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.backgroundColor = Colors.background;
-                }}
-              >
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'flex-start',
-                  gap: Spacing.sm,
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ 
-                      ...cardStyles.title, 
-                      fontSize: getResponsiveFontSize(styleOptions, 'md'),
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {event.name}
-                    </h3>
-                    <p style={{ 
-                      ...cardStyles.subtitle,
-                      fontSize: getResponsiveFontSize(styleOptions, 'sm'),
-                    }}>
-                      {formatDates(event.dates)}
-                    </p>
-                  </div>
-                  {getStatusBadge(event.status)}
-                </div>
-                {event.categories.length > 0 && (
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: Spacing.xs, 
-                    flexWrap: 'wrap', 
-                    marginTop: Spacing.sm,
-                  }}>
-                    {event.categories.slice(0, platform === 'mobile' ? 3 : event.categories.length).map((category, idx) => (
-                      <span
-                        key={idx}
-                        style={{
-                          padding: `${Spacing.xs}px ${Spacing.sm}px`,
-                          backgroundColor: Colors.backgroundSecondary,
-                          borderRadius: BorderRadius.sm,
-                          fontSize: getResponsiveFontSize(styleOptions, 'xs'),
-                          color: Colors.textSecondary,
-                        }}
-                      >
-                        {category}
-                      </span>
-                    ))}
-                    {platform === 'mobile' && event.categories.length > 3 && (
-                      <span
-                        style={{
-                          padding: `${Spacing.xs}px ${Spacing.sm}px`,
-                          backgroundColor: Colors.backgroundSecondary,
-                          borderRadius: BorderRadius.sm,
-                          fontSize: getResponsiveFontSize(styleOptions, 'xs'),
-                          color: Colors.textSecondary,
-                        }}
-                      >
-                        +{event.categories.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </button>
-            );
-          })}
+          {events.map(event => renderEventCard(event, groupByCategory && categories.length > 0))}
         </div>
       )}
     </div>

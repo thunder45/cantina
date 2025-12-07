@@ -45,3 +45,25 @@ export interface ReportFilter {
   startDate?: string;
   endDate?: string;
 }
+
+/**
+ * CategoryReport - Relatório agregado de uma categoria
+ * Requirements: 11.2
+ */
+export interface CategoryReport {
+  categoryId: string;
+  categoryName: string;
+  eventCount: number;
+  totalSales: number;
+  totalPaid: number;
+  totalPending: number;
+  totalRefunded: number;
+  eventBreakdown: EventBreakdownItem[];
+  paymentBreakdown: PaymentBreakdown[];
+}
+
+export interface EventBreakdownItem {
+  eventId: string;
+  eventName: string;
+  total: number;
+}

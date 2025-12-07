@@ -3,11 +3,14 @@ import * as salesService from '../sales.service';
 import * as orderService from '../order.service';
 import * as menuItemService from '../menu-item.service';
 import * as eventService from '../event.service';
+import * as eventCategoryService from '../event-category.service';
 import * as menuGroupService from '../menu-group.service';
 import * as catalogItemService from '../catalog-item.service';
 import { PaymentPart } from '@cantina-pos/shared';
 
 describe('CustomerService', () => {
+  let testCategoryId: string;
+
   beforeEach(() => {
     // Reset all services before each test
     customerService.resetService();
@@ -15,8 +18,14 @@ describe('CustomerService', () => {
     orderService.resetService();
     menuItemService.resetService();
     eventService.resetService();
+    eventCategoryService.resetService();
     menuGroupService.resetService();
     catalogItemService.resetService();
+
+    // Initialize default categories
+    eventCategoryService.initializeDefaultCategories();
+    const categories = eventCategoryService.getCategories();
+    testCategoryId = categories[0].id;
   });
 
   describe('createCustomer', () => {
@@ -117,7 +126,7 @@ describe('CustomerService', () => {
 
     beforeEach(() => {
       // Setup event and menu item for sales
-      const event = eventService.createEvent({ name: 'Test Event', dates: ['2024-01-01'], categories: ['Food'] });
+      const event = eventService.createEvent({ categoryId: testCategoryId, name: 'Test Event', dates: ['2024-01-01'] });
       eventId = event.id;
       
       const group = menuGroupService.getGroups()[0];
@@ -202,7 +211,7 @@ describe('CustomerService', () => {
     let customerId: string;
 
     beforeEach(() => {
-      const event = eventService.createEvent({ name: 'Test Event', dates: ['2024-01-01'], categories: ['Food'] });
+      const event = eventService.createEvent({ categoryId: testCategoryId, name: 'Test Event', dates: ['2024-01-01'] });
       eventId = event.id;
       
       const group = menuGroupService.getGroups()[0];
@@ -273,7 +282,7 @@ describe('CustomerService', () => {
     let customerId: string;
 
     beforeEach(() => {
-      const event = eventService.createEvent({ name: 'Test Event', dates: ['2024-01-01'], categories: ['Food'] });
+      const event = eventService.createEvent({ categoryId: testCategoryId, name: 'Test Event', dates: ['2024-01-01'] });
       eventId = event.id;
       
       const group = menuGroupService.getGroups()[0];

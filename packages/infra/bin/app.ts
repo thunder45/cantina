@@ -7,12 +7,11 @@ const app = new cdk.App();
 
 const domainName = app.node.tryGetContext('domainName') || 'advm.lu';
 const subDomain = app.node.tryGetContext('subDomain') || 'cantina';
-const awsRegion = app.node.tryGetContext('awsRegion') || 'eu-west-1';
 
 new CantinaStack(app, 'CantinaStack', {
   env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: awsRegion,
+    account: '625272706584',
+    region: 'eu-west-1',
   },
   domainName,
   subDomain,

@@ -4,6 +4,7 @@
 import { APIGatewayEvent, APIGatewayResponse } from './types';
 import { error } from './response';
 
+import * as categoriesHandler from './handlers/categories.handler';
 import * as eventsHandler from './handlers/events.handler';
 import * as groupsHandler from './handlers/groups.handler';
 import * as catalogHandler from './handlers/catalog.handler';
@@ -43,6 +44,14 @@ function parsePathParams(path: string, pattern: string): Record<string, string> 
  */
 function matchRoute(path: string): { handler: string; params: Record<string, string> } | null {
   const routes = [
+    // Categories - CRUD
+    { pattern: '/categories', handler: 'categories' },
+    { pattern: '/categories/{id}', handler: 'categories' },
+    // Categories - Reports and Events
+    { pattern: '/categories/{id}/report', handler: 'reports' },
+    { pattern: '/categories/{id}/report/export', handler: 'reports' },
+    { pattern: '/categories/{id}/events', handler: 'events' },
+    
     // Events
     { pattern: '/events', handler: 'events' },
     { pattern: '/events/{id}', handler: 'events' },
@@ -138,6 +147,8 @@ export async function router(event: APIGatewayEvent): Promise<APIGatewayResponse
 
   // Route to appropriate handler
   switch (route.handler) {
+    case 'categories':
+      return categoriesHandler.handler(event);
     case 'events':
       return eventsHandler.handler(event);
     case 'groups':

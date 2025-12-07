@@ -1,6 +1,7 @@
-import { EventReport, StockReport, ReportFilter, PaymentMethod } from '@cantina-pos/shared';
+import { EventReport, StockReport, ReportFilter, PaymentMethod, CategoryReport } from '@cantina-pos/shared';
 import * as reportRepository from '../repositories/report.repository';
 import * as eventRepository from '../repositories/event.repository';
+import * as eventCategoryRepository from '../repositories/event-category.repository';
 
 /**
  * Get event report with optional filtering
@@ -77,6 +78,23 @@ export function getReportByPeriod(startDate: string, endDate: string): EventRepo
       .map(([method, total]) => ({ method, total }))
       .sort((a, b) => b.total - a.total),
   };
+}
+
+/**
+ * Get category report with aggregated data from all events
+ * Requirements: 11.2
+ * @param categoryId - Category ID
+ * @returns CategoryReport
+ * @throws Error if category not found
+ */
+export function getCategoryReport(categoryId: string): CategoryReport {
+  // Verify category exists
+  const category = eventCategoryRepository.getCategoryById(categoryId);
+  if (!category) {
+    throw new Error('ERR_CATEGORY_NOT_FOUND');
+  }
+  
+  return reportRepository.aggregateCategoryReport(categoryId);
 }
 
 /**
@@ -173,4 +191,49 @@ function translatePaymentMethod(method: PaymentMethod): string {
     credit: 'Fiado',
   };
   return translations[method] || method;
+}
+
+/**
+ * Export category report to CSV format
+ * Requirements: 11.6
+ * @param categoryId - Category ID
+ * @returns CSV string
+ * @throws Error if category not found
+ */
+export function exportCategoryReportCSV(categoryId: string): string {
+  const report = getCategoryReport(categoryId);
+  
+  const lines: string[] = [];
+  
+  // Header
+  lines.push(`Relatório de Categoria - ${report.categoryName}`);
+  lines.push(`Gerado em: ${new Date().toISOString()}`);
+  lines.push(`Total de Eventos: ${report.eventCount}`);
+  lines.push('');
+  
+  // Summary
+  lines.push('RESUMO');
+  lines.push(`Total de Vendas,€${report.totalSales.toFixed(2)}`);
+  lines.push(`Total Pago,€${report.totalPaid.toFixed(2)}`);
+  lines.push(`Total Pendente,€${report.totalPending.toFixed(2)}`);
+  lines.push(`Total Estornado,€${report.totalRefunded.toFixed(2)}`);
+  lines.push('');
+  
+  // Event breakdown
+  lines.push('EVENTOS');
+  lines.push('Nome do Evento,Total');
+  for (const event of report.eventBreakdown) {
+    lines.push(`${escapeCSV(event.eventName)},€${event.total.toFixed(2)}`);
+  }
+  lines.push('');
+  
+  // Payment breakdown
+  lines.push('FORMAS DE PAGAMENTO');
+  lines.push('Método,Total');
+  for (const payment of report.paymentBreakdown) {
+    const methodName = translatePaymentMethod(payment.method);
+    lines.push(`${methodName},€${payment.total.toFixed(2)}`);
+  }
+  
+  return lines.join('\n');
 }

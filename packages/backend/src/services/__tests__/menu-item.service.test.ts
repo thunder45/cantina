@@ -2,12 +2,14 @@ import * as menuItemService from '../menu-item.service';
 import * as menuGroupService from '../menu-group.service';
 import * as catalogItemService from '../catalog-item.service';
 import * as eventService from '../event.service';
+import * as eventCategoryService from '../event-category.service';
 import { resetRepository as resetMenuItemRepo } from '../../repositories/menu-item.repository';
 
 describe('MenuItemService', () => {
   let eventId: string;
   let groupId: string;
   let catalogItemId: string;
+  let testCategoryId: string;
 
   beforeEach(() => {
     // Reset all services
@@ -15,12 +17,18 @@ describe('MenuItemService', () => {
     menuGroupService.resetService();
     catalogItemService.resetService();
     eventService.resetService();
+    eventCategoryService.resetService();
+
+    // Initialize default categories
+    eventCategoryService.initializeDefaultCategories();
+    const categories = eventCategoryService.getCategories();
+    testCategoryId = categories[0].id;
 
     // Create test event
     const event = eventService.createEvent({
+      categoryId: testCategoryId,
       name: 'Test Event',
       dates: ['2024-01-15'],
-      categories: ['Food'],
     });
     eventId = event.id;
 

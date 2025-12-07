@@ -1,5 +1,6 @@
 // Domain Types for Cantina POS
 export * from './event';
+export * from './event-category';
 export * from './menu';
 export * from './order';
 export * from './sale';
