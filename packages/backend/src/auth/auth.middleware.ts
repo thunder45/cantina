@@ -29,7 +29,7 @@ export async function requireAuth(
     return;
   }
 
-  const session = sessionService.getSession(sessionId);
+  const session = await sessionService.getSession(sessionId);
 
   if (!session) {
     res.status(401).json({ code: 'SESSION_NOT_FOUND', message: 'Session not found' });
@@ -39,19 +39,19 @@ export async function requireAuth(
   // Check if access token is expired and refresh if needed
   if (sessionService.isAccessTokenExpired(session)) {
     if (!session.refreshToken) {
-      sessionService.deleteSession(sessionId);
+      await sessionService.deleteSession(sessionId);
       res.status(401).json({ code: 'SESSION_EXPIRED', message: 'Session expired' });
       return;
     }
 
     try {
       const tokens = await zohoOAuth.refreshAccessToken(session.refreshToken);
-      sessionService.updateSession(sessionId, {
+      await sessionService.updateSession(sessionId, {
         accessToken: tokens.access_token,
         accessTokenExpiresAt: Date.now() + (tokens.expires_in * 1000),
       });
     } catch (error) {
-      sessionService.deleteSession(sessionId);
+      await sessionService.deleteSession(sessionId);
       res.status(401).json({ code: 'SESSION_EXPIRED', message: 'Failed to refresh session' });
       return;
     }

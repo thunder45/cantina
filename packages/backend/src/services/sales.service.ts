@@ -35,7 +35,7 @@ export async function confirmSale(
     order.eventId, orderId, order.items, order.total, payments, createdBy, customerId
   );
 
-  auditLogService.logSaleCreation(sale.id, createdBy, 
+  await auditLogService.logSaleCreation(sale.id, createdBy, 
     JSON.stringify({ eventId: sale.eventId, total: sale.total, items: sale.items.length }));
 
   return sale;
@@ -74,7 +74,7 @@ export async function refundSale(saleId: string, reason: string, refundedBy: str
   }
 
   const { refund } = await saleRepository.refundSale(saleId, reason.trim(), refundedBy);
-  auditLogService.logSaleRefund(saleId, refundedBy, reason.trim());
+  await auditLogService.logSaleRefund(saleId, refundedBy, reason.trim());
   return refund;
 }
 

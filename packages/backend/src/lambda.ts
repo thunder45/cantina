@@ -5,10 +5,13 @@ import { APIGatewayEvent } from './api/types';
 import * as zohoOAuth from './auth/zoho-oauth.service';
 import * as sessionService from './auth/session.service';
 import { isAllowedDomain } from './auth/domain-validator';
-import { authConfig } from './auth/config';
+import { loadAuthConfig, getAuthConfig } from './auth/config';
 
 // Set environment for DynamoDB repositories
 process.env.USE_DYNAMODB = 'true';
+
+// Load secrets on cold start
+const configPromise = loadAuthConfig();
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || '*',
@@ -24,6 +27,9 @@ export const handler = async (
   event: APIGatewayProxyEvent,
   _context: Context
 ): Promise<APIGatewayProxyResult> => {
+  // Ensure secrets are loaded
+  await configPromise;
+  
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: CORS_HEADERS, body: '' };
@@ -44,6 +50,7 @@ async function handleAuthRoute(
   path: string,
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
+  const authConfig = getAuthConfig();
   const frontendUrl = authConfig.frontendUrl;
   
   try {
@@ -84,7 +91,7 @@ async function handleAuthRoute(
       }
       
       // Create session
-      const session = sessionService.createSession(userInfo, tokens);
+      const session = await sessionService.createSession(userInfo, tokens);
       
       // Redirect to frontend with session token in URL (frontend will store it)
       return {
@@ -104,7 +111,7 @@ async function handleAuthRoute(
       if (!sessionId) {
         return jsonResponse(401, { error: 'Not authenticated' });
       }
-      const session = sessionService.getSession(sessionId);
+      const session = await sessionService.getSession(sessionId);
       if (!session) {
         return jsonResponse(401, { error: 'Session expired' });
       }
@@ -115,7 +122,7 @@ async function handleAuthRoute(
     if (path === '/api/auth/logout' && event.httpMethod === 'POST') {
       const sessionId = cookies.session;
       if (sessionId) {
-        sessionService.deleteSession(sessionId);
+        await sessionService.deleteSession(sessionId);
       }
       return {
         statusCode: 200,

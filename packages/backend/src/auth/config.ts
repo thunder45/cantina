@@ -14,33 +14,23 @@ export interface AuthConfig {
   session: {
     secret: string;
     cookieName: string;
-    maxAge: number; // milliseconds
+    maxAge: number;
   };
   allowedEmailDomain: string;
   frontendUrl: string;
   isProduction: boolean;
 }
 
-const requiredEnvVars = ['ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REDIRECT_URI', 'SESSION_SECRET'];
+let cachedConfig: AuthConfig | null = null;
+let secretLoaded = false;
 
-export function getAuthConfig(): AuthConfig {
-  // Only validate in non-test environment
-  if (process.env.NODE_ENV !== 'test') {
-    for (const envVar of requiredEnvVars) {
-      if (!process.env[envVar]) {
-        throw new Error(`Missing required environment variable: ${envVar}`);
-      }
-    }
-  }
-
+function getBaseConfig(): AuthConfig {
   const isProduction = process.env.NODE_ENV === 'production';
-
   return {
     zoho: {
       clientId: process.env.ZOHO_CLIENT_ID || '',
       clientSecret: process.env.ZOHO_CLIENT_SECRET || '',
       redirectUri: process.env.ZOHO_REDIRECT_URI || 'http://localhost:3001/api/auth/callback',
-      // EU datacenter endpoints
       authUrl: 'https://accounts.zoho.eu/oauth/v2/auth',
       tokenUrl: 'https://accounts.zoho.eu/oauth/v2/token',
       userInfoUrl: 'https://accounts.zoho.eu/oauth/user/info',
@@ -49,7 +39,7 @@ export function getAuthConfig(): AuthConfig {
     session: {
       secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
       cookieName: 'cantina_session',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     },
     allowedEmailDomain: process.env.ALLOWED_EMAIL_DOMAIN || 'advm.lu',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -57,4 +47,34 @@ export function getAuthConfig(): AuthConfig {
   };
 }
 
-export const authConfig = getAuthConfig();
+export async function loadAuthConfig(): Promise<AuthConfig> {
+  if (cachedConfig && secretLoaded) return cachedConfig;
+  
+  cachedConfig = getBaseConfig();
+  
+  // Load secret from Secrets Manager in production
+  const secretArn = process.env.ZOHO_SECRET_ARN;
+  if (secretArn && cachedConfig.isProduction) {
+    try {
+      const { SecretsManagerClient, GetSecretValueCommand } = await import('@aws-sdk/client-secrets-manager');
+      const client = new SecretsManagerClient({});
+      const response = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
+      if (response.SecretString) {
+        const secret = JSON.parse(response.SecretString);
+        cachedConfig.zoho.clientSecret = secret.client_secret;
+      }
+      secretLoaded = true;
+    } catch (error) {
+      console.error('Failed to load Zoho secret from Secrets Manager:', error);
+    }
+  }
+  
+  return cachedConfig;
+}
+
+// Sync version for backward compatibility (uses cached or base config)
+export function getAuthConfig(): AuthConfig {
+  return cachedConfig || getBaseConfig();
+}
+
+export const authConfig = getBaseConfig();

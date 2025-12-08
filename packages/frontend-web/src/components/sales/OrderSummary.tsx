@@ -282,6 +282,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         >
           {loading ? 'A processar...' : 'Finalizar Pedido'}
         </button>
+        <div style={{ height: 10 }} />
       </div>
     </div>
   );

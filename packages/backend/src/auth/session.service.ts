@@ -1,5 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { TokenResponse, ZohoUserInfo } from './zoho-oauth.service';
+
+const TABLE_NAME = process.env.SESSIONS_TABLE;
+const isProduction = !!TABLE_NAME;
+
+let docClient: DynamoDBDocumentClient | null = null;
+if (isProduction) {
+  docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+}
+
+// In-memory fallback for local dev
+const sessions = new Map<string, Session>();
+
+// Session TTL: 7 days
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export interface Session {
   id: string;
@@ -10,15 +26,11 @@ export interface Session {
   refreshToken: string;
   accessTokenExpiresAt: number;
   createdAt: number;
+  ttl?: number;
 }
 
-// In-memory session store (for MVP - migrate to DynamoDB for production)
-const sessions = new Map<string, Session>();
-
-/**
- * Creates a new session for authenticated user
- */
-export function createSession(user: ZohoUserInfo, tokens: TokenResponse): Session {
+export async function createSession(user: ZohoUserInfo, tokens: TokenResponse): Promise<Session> {
+  const now = Date.now();
   const session: Session = {
     id: uuidv4(),
     userId: user.ZUID,
@@ -26,59 +38,55 @@ export function createSession(user: ZohoUserInfo, tokens: TokenResponse): Sessio
     displayName: user.Display_Name || user.Email,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || '',
-    accessTokenExpiresAt: Date.now() + (tokens.expires_in * 1000),
-    createdAt: Date.now(),
+    accessTokenExpiresAt: now + (tokens.expires_in * 1000),
+    createdAt: now,
+    ttl: Math.floor(now / 1000) + SESSION_TTL_SECONDS,
   };
 
-  sessions.set(session.id, session);
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: session }));
+  } else {
+    sessions.set(session.id, session);
+  }
   return session;
 }
 
-/**
- * Gets session by ID
- */
-export function getSession(sessionId: string): Session | null {
+export async function getSession(sessionId: string): Promise<Session | null> {
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id: sessionId } }));
+    return (result.Item as Session) || null;
+  }
   return sessions.get(sessionId) || null;
 }
 
-/**
- * Updates session with new data
- */
-export function updateSession(sessionId: string, updates: Partial<Session>): void {
-  const session = sessions.get(sessionId);
+export async function updateSession(sessionId: string, updates: Partial<Session>): Promise<void> {
+  const session = await getSession(sessionId);
   if (session) {
-    sessions.set(sessionId, { ...session, ...updates });
+    const updated = { ...session, ...updates };
+    if (isProduction) {
+      await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+    } else {
+      sessions.set(sessionId, updated);
+    }
   }
 }
 
-/**
- * Deletes session
- */
-export function deleteSession(sessionId: string): void {
-  sessions.delete(sessionId);
+export async function deleteSession(sessionId: string): Promise<void> {
+  if (isProduction) {
+    await docClient!.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { id: sessionId } }));
+  } else {
+    sessions.delete(sessionId);
+  }
 }
 
-/**
- * Checks if access token is expired
- */
 export function isAccessTokenExpired(session: Session): boolean {
-  // Add 60 second buffer to avoid edge cases
   return Date.now() >= session.accessTokenExpiresAt - 60000;
 }
 
-/**
- * Gets user info from session (safe to expose to frontend)
- */
 export function getSessionUser(session: Session): { email: string; displayName: string } {
-  return {
-    email: session.email,
-    displayName: session.displayName,
-  };
+  return { email: session.email, displayName: session.displayName };
 }
 
-/**
- * Clears all sessions (for testing)
- */
 export function clearAllSessions(): void {
   sessions.clear();
 }

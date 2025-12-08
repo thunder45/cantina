@@ -2,15 +2,13 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-import * as iam from 'aws-cdk-lib/aws-iam';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -119,37 +117,28 @@ export class CantinaStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
-    // ========== Cognito ==========
-    const userPool = new cognito.UserPool(this, 'UserPool', {
-      userPoolName: 'cantina-users',
-      selfSignUpEnabled: false, // Admin creates users
-      signInAliases: { email: true },
-      autoVerify: { email: true },
-      passwordPolicy: {
-        minLength: 8,
-        requireLowercase: true,
-        requireUppercase: true,
-        requireDigits: true,
-        requireSymbols: false,
-      },
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    const sessionsTable = new dynamodb.Table(this, 'SessionsTable', {
+      tableName: 'cantina-sessions',
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    const userPoolClient = new cognito.UserPoolClient(this, 'UserPoolClient', {
-      userPool,
-      userPoolClientName: 'cantina-web',
-      authFlows: {
-        userPassword: true,
-        userSrp: true,
-      },
-      oAuth: {
-        flows: { authorizationCodeGrant: true },
-        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
-        callbackUrls: [`https://${fullDomain}/callback`, 'http://localhost:3000/callback'],
-        logoutUrls: [`https://${fullDomain}`, 'http://localhost:3000'],
-      },
+    const auditLogsTable = new dynamodb.Table(this, 'AuditLogsTable', {
+      tableName: 'cantina-audit-logs',
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
+    auditLogsTable.addGlobalSecondaryIndex({
+      indexName: 'entityType-entityId-index',
+      partitionKey: { name: 'entityType', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'entityId', type: dynamodb.AttributeType.STRING },
+    });
+
+    // ========== Secrets ==========
+    const zohoSecret = secretsmanager.Secret.fromSecretNameV2(this, 'ZohoSecret', 'cantina/zoho-oauth');
 
     // ========== Lambda Backend ==========
     const backendLambda = new lambda.Function(this, 'BackendLambda', {
@@ -168,12 +157,12 @@ export class CantinaStack extends cdk.Stack {
         CUSTOMERS_TABLE: customersTable.tableName,
         MENU_GROUPS_TABLE: menuGroupsTable.tableName,
         CATALOG_ITEMS_TABLE: catalogItemsTable.tableName,
-        USER_POOL_ID: userPool.userPoolId,
+        SESSIONS_TABLE: sessionsTable.tableName,
+        AUDIT_LOGS_TABLE: auditLogsTable.tableName,
         CORS_ORIGIN: `https://${fullDomain}`,
-        // Zoho OAuth - set ZOHO_CLIENT_SECRET via AWS Console or CLI
         ZOHO_CLIENT_ID: '1000.GSSH23YGG1TFLSXYQG8EMLC54340GW',
         ZOHO_REDIRECT_URI: `https://${fullDomain}/api/auth/callback`,
-        ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET || 'SET_VIA_CONSOLE',
+        ZOHO_SECRET_ARN: zohoSecret.secretArn,
         SESSION_SECRET: process.env.SESSION_SECRET || 'cantina-session-secret-change-in-prod',
         ALLOWED_EMAIL_DOMAIN: 'advm.lu',
         FRONTEND_URL: `https://${fullDomain}`,
@@ -190,6 +179,9 @@ export class CantinaStack extends cdk.Stack {
     customersTable.grantReadWriteData(backendLambda);
     menuGroupsTable.grantReadWriteData(backendLambda);
     catalogItemsTable.grantReadWriteData(backendLambda);
+    sessionsTable.grantReadWriteData(backendLambda);
+    auditLogsTable.grantReadWriteData(backendLambda);
+    zohoSecret.grantRead(backendLambda);
 
     // ========== API Gateway ==========
     const api = new apigateway.RestApi(this, 'CantinaApi', {
@@ -254,8 +246,6 @@ export class CantinaStack extends cdk.Stack {
     // ========== Outputs ==========
     new cdk.CfnOutput(this, 'WebsiteURL', { value: `https://${fullDomain}` });
     new cdk.CfnOutput(this, 'ApiURL', { value: api.url });
-    new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
-    new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'BucketName', { value: websiteBucket.bucketName });
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
   }

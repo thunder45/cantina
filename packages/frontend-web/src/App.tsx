@@ -1,4 +1,4 @@
-import React, { useState, useReducer, useMemo } from 'react';
+import React, { useState, useReducer, useMemo, useEffect } from 'react';
 import { Event, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 import { ApiClient } from '@cantina-pos/shared';
 import { appReducer, initialState } from '@cantina-pos/shared';
@@ -18,11 +18,43 @@ const apiClient = new ApiClient({
 
 type AppView = 'events' | 'menu' | 'sales' | 'customers' | 'reports';
 
+const getViewFromHash = (): AppView => {
+  const hash = window.location.hash.slice(1) as AppView;
+  return ['events', 'menu', 'sales', 'customers', 'reports'].includes(hash) ? hash : 'events';
+};
+
+const getStoredEvent = (): Event | null => {
+  try {
+    const stored = localStorage.getItem('selectedEvent');
+    return stored ? JSON.parse(stored) : null;
+  } catch { return null; }
+};
+
 const AppContent: React.FC = () => {
   const { user, logout } = useAuth();
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const [currentView, setCurrentView] = useState<AppView>('events');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [currentView, setCurrentView] = useState<AppView>(getViewFromHash);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(getStoredEvent);
+
+  // Sync URL hash with currentView
+  useEffect(() => {
+    window.location.hash = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
+    const onHashChange = () => setCurrentView(getViewFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  // Persist selectedEvent to localStorage
+  useEffect(() => {
+    if (selectedEvent) {
+      localStorage.setItem('selectedEvent', JSON.stringify(selectedEvent));
+    } else {
+      localStorage.removeItem('selectedEvent');
+    }
+  }, [selectedEvent]);
   
   // Platform detection for responsive design
   const platformInfo = usePlatform();

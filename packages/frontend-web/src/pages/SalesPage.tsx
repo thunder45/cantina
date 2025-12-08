@@ -99,6 +99,8 @@ export const SalesPage: React.FC<SalesPageProps> = ({
       history.map(s => s.id === sale.id ? { ...s, isRefunded: true } : s)
     );
     setSelectedHistorySale(null);
+    // Reload menu items to update stock quantities
+    setOrderKey(prev => prev + 1);
   }, []);
 
   // Format price

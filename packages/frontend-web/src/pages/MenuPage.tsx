@@ -4,6 +4,7 @@ import { MenuGroupApiService, MenuItemApiService, CatalogApiService, ApiClient }
 import { Colors, Spacing, FontSizes, BorderRadius, getModalStyles } from '@cantina-pos/shared';
 import { MenuGroupList, MenuItemCard, EditMenuItemModal } from '../components/menu';
 import { CatalogBrowser, AddMenuItemForm, CreateCatalogItemForm } from '../components/catalog';
+import { usePlatform } from '../hooks';
 
 interface MenuPageProps {
   apiClient: ApiClient;
@@ -29,6 +30,9 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   const [showCreateCatalogItem, setShowCreateCatalogItem] = useState(false);
   const [selectedEditItem, setSelectedEditItem] = useState<MenuItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  const { platform } = usePlatform();
+  const isMobile = platform === 'mobile';
 
   const groupService = new MenuGroupApiService(apiClient);
   const menuItemService = new MenuItemApiService(apiClient);
@@ -172,7 +176,11 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: Colors.backgroundSecondary }}>
+    <div style={{ 
+      height: '100%',
+      overflow: 'auto',
+      backgroundColor: Colors.backgroundSecondary,
+    }}>
       {/* Error Banner */}
       {error && (
         <div style={{
@@ -250,9 +258,16 @@ export const MenuPage: React.FC<MenuPageProps> = ({
         </div>
 
         {/* Main Content */}
-        <div style={{ display: 'flex', gap: Spacing.lg }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: Spacing.lg,
+        }}>
           {/* Sidebar - Groups */}
-          <div style={{ width: 250, flexShrink: 0 }}>
+          <div style={{ 
+            width: isMobile ? '100%' : 250, 
+            flexShrink: 0,
+          }}>
             <MenuGroupList
               groups={groups}
               selectedGroupId={selectedGroupId}
@@ -264,7 +279,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
           </div>
 
           {/* Main - Menu Items */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {filteredItems.length === 0 ? (
               <div style={{
                 backgroundColor: Colors.background,
@@ -282,7 +297,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
             ) : (
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: Spacing.md,
               }}>
                 {filteredItems.map((item) => (

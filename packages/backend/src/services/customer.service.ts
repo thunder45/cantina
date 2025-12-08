@@ -62,7 +62,7 @@ export async function registerPayment(customerId: string, payments: PaymentPart[
 
   const customerPayment = await customerRepository.registerPayment(customerId, payments);
 
-  auditLogService.logPaymentReceived(customerPayment.id, customerId, 'system',
+  await auditLogService.logPaymentReceived(customerPayment.id, customerId, 'system',
     JSON.stringify({ totalAmount: customerPayment.totalAmount, methods: payments.map(p => p.method) }));
 
   await updateSalesPaidStatus(customerId);

@@ -36,7 +36,7 @@ export async function updateMenuItem(id: string, updates: UpdateMenuItemInput, u
   const currentItem = await menuItemRepository.getMenuItemById(id);
   const updatedItem = await menuItemRepository.updateMenuItem(id, updates);
   if (updates.price !== undefined && currentItem && currentItem.price !== updates.price) {
-    auditLogService.logPriceChange(id, userId, currentItem.price, updates.price);
+    await auditLogService.logPriceChange(id, userId, currentItem.price, updates.price);
   }
   return updatedItem;
 }

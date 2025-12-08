@@ -32,7 +32,7 @@ export async function updateCatalogItem(id: string, updates: UpdateCatalogItemIn
   const updatedItem = await catalogItemRepository.updateCatalogItem(id, updates);
 
   if (updates.suggestedPrice !== undefined && currentItem && currentItem.suggestedPrice !== updates.suggestedPrice) {
-    auditLogService.logPriceChange(id, userId, currentItem.suggestedPrice, updates.suggestedPrice);
+    await auditLogService.logPriceChange(id, userId, currentItem.suggestedPrice, updates.suggestedPrice);
   }
   return updatedItem;
 }
