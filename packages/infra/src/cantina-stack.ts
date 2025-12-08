@@ -158,6 +158,14 @@ export class CantinaStack extends cdk.Stack {
         CATALOG_ITEMS_TABLE: catalogItemsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
         CORS_ORIGIN: `https://${fullDomain}`,
+        // Zoho OAuth - set ZOHO_CLIENT_SECRET via AWS Console or CLI
+        ZOHO_CLIENT_ID: '1000.GSSH23YGG1TFLSXYQG8EMLC54340GW',
+        ZOHO_REDIRECT_URI: `https://${fullDomain}/api/auth/callback`,
+        ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET || 'SET_VIA_CONSOLE',
+        SESSION_SECRET: process.env.SESSION_SECRET || 'cantina-session-secret-change-in-prod',
+        ALLOWED_EMAIL_DOMAIN: 'advm.lu',
+        FRONTEND_URL: `https://${fullDomain}`,
+        NODE_ENV: 'production',
       },
     });
 
