@@ -203,11 +203,26 @@ export class CantinaStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    // API Gateway origin for /api/* routes
+    const apiOrigin = new origins.HttpOrigin(
+      `${api.restApiId}.execute-api.${this.region}.amazonaws.com`,
+      { originPath: '/prod' }
+    );
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      },
+      additionalBehaviors: {
+        '/api/*': {
+          origin: apiOrigin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
       },
       domainNames: [fullDomain],
       certificate: cfCertificate,
