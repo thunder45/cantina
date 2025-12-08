@@ -4,6 +4,7 @@ import * as zohoOAuth from './zoho-oauth.service';
 import * as sessionService from './session.service';
 import { isAllowedDomain } from './domain-validator';
 import { setSessionCookie, clearSessionCookie } from './auth.middleware';
+import { authConfig } from './config';
 
 // Store state tokens temporarily (for CSRF protection)
 const stateTokens = new Map<string, number>();
@@ -17,6 +18,8 @@ setInterval(() => {
     }
   }
 }, 60 * 1000);
+
+const frontendUrl = authConfig.frontendUrl;
 
 /**
  * GET /api/auth/login
@@ -39,19 +42,19 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
 
   // Handle Zoho errors
   if (error) {
-    res.redirect(`/?error=${encodeURIComponent(error as string)}`);
+    res.redirect(`${frontendUrl}/?error=${encodeURIComponent(error as string)}`);
     return;
   }
 
   // Validate state token (CSRF protection)
   if (!state || !stateTokens.has(state as string)) {
-    res.redirect('/?error=invalid_state');
+    res.redirect(`${frontendUrl}/?error=invalid_state`);
     return;
   }
   stateTokens.delete(state as string);
 
   if (!code || typeof code !== 'string') {
-    res.redirect('/?error=missing_code');
+    res.redirect(`${frontendUrl}/?error=missing_code`);
     return;
   }
 
@@ -64,7 +67,7 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
 
     // Validate email domain
     if (!isAllowedDomain(userInfo.Email)) {
-      res.redirect('/?error=domain_not_allowed');
+      res.redirect(`${frontendUrl}/?error=domain_not_allowed`);
       return;
     }
 
@@ -74,11 +77,11 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
     // Set session cookie
     setSessionCookie(res, session.id);
 
-    // Redirect to app
-    res.redirect('/');
+    // Redirect to frontend
+    res.redirect(frontendUrl);
   } catch (err) {
     console.error('OAuth callback error:', err);
-    res.redirect('/?error=auth_failed');
+    res.redirect(`${frontendUrl}/?error=auth_failed`);
   }
 }
 

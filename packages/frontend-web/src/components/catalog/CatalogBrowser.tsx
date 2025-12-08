@@ -92,23 +92,9 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
           <p style={{ textAlign: 'center', color: Colors.textSecondary }}>A carregar...</p>
         ) : filteredItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
-            <p style={{ color: Colors.textSecondary, marginBottom: Spacing.md }}>
+            <p style={{ color: Colors.textSecondary }}>
               {searchQuery ? 'Nenhum item encontrado' : 'Catálogo vazio'}
             </p>
-            <button
-              onClick={onCreateItem}
-              style={{
-                padding: `${Spacing.sm}px ${Spacing.md}px`,
-                backgroundColor: Colors.primary,
-                color: Colors.textLight,
-                border: 'none',
-                borderRadius: BorderRadius.md,
-                fontSize: FontSizes.sm,
-                cursor: 'pointer',
-              }}
-            >
-              + Criar Novo Item
-            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.xs }}>
@@ -152,25 +138,23 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
         )}
       </div>
 
-      {/* Create New Button */}
-      {filteredItems.length > 0 && (
-        <button
-          onClick={onCreateItem}
-          style={{
-            marginTop: Spacing.md,
-            padding: Spacing.sm,
-            backgroundColor: Colors.backgroundSecondary,
-            color: Colors.text,
-            border: `1px dashed ${Colors.border}`,
-            borderRadius: BorderRadius.md,
-            fontSize: FontSizes.sm,
-            cursor: 'pointer',
-            textAlign: 'center',
-          }}
-        >
-          + Criar Novo Item no Catálogo
-        </button>
-      )}
+      {/* Create New Button - always visible */}
+      <button
+        onClick={onCreateItem}
+        style={{
+          marginTop: Spacing.md,
+          padding: Spacing.sm,
+          backgroundColor: Colors.primary,
+          color: Colors.textLight,
+          border: 'none',
+          borderRadius: BorderRadius.md,
+          fontSize: FontSizes.sm,
+          cursor: 'pointer',
+          textAlign: 'center',
+        }}
+      >
+        + Criar Novo Item no Catálogo
+      </button>
     </div>
   );
 };

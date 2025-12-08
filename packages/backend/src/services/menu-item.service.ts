@@ -29,6 +29,11 @@ export function addMenuItem(eventId: string, input: AddMenuItemInput): MenuItem 
     throw new Error('ERR_CATALOG_ITEM_NOT_FOUND');
   }
   
+  // Update catalog suggestedPrice to match this event's price
+  if (input.catalogItemId) {
+    catalogItemRepository.updateCatalogItem(input.catalogItemId, { suggestedPrice: input.price });
+  }
+  
   return menuItemRepository.addMenuItem(eventId, input);
 }
 

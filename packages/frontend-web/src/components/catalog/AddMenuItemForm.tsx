@@ -95,7 +95,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
         <label style={labelStyle}>Preço de Venda (€) *</label>
         <input
           type="number"
-          step="0.01"
+          step="0.50"
           min="0.01"
           value={price}
           onChange={(e) => {

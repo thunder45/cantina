@@ -27,9 +27,12 @@ app.use('/api/auth', authRouter);
 
 // API routes (handled by our custom router)
 app.all('/api/*', async (req, res) => {
+  // Remove /api prefix for the router
+  const path = req.path.replace(/^\/api/, '');
+  
   const event: APIGatewayEvent = {
     httpMethod: req.method,
-    path: req.path,
+    path: path,
     pathParameters: req.params,
     queryStringParameters: req.query as Record<string, string>,
     body: req.body ? JSON.stringify(req.body) : undefined,
@@ -37,8 +40,8 @@ app.all('/api/*', async (req, res) => {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'local-test-user',
-          'cognito:username': 'testuser',
+          sub: req.user?.email || 'local-test-user',
+          'cognito:username': req.user?.email || 'testuser',
         },
       },
     },
@@ -49,7 +52,10 @@ app.all('/api/*', async (req, res) => {
     
     if (response.headers) {
       Object.entries(response.headers).forEach(([key, value]) => {
-        res.setHeader(key, value);
+        // Skip CORS headers - Express cors middleware handles these
+        if (!key.toLowerCase().startsWith('access-control-')) {
+          res.setHeader(key, value);
+        }
       });
     }
     

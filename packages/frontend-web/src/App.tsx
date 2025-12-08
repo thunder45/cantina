@@ -9,7 +9,7 @@ import { AuthProvider, ProtectedRoute, useAuth } from './auth';
 
 // Create API client instance
 const apiClient = new ApiClient({
-  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseUrl: (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api',
   getAuthToken: async () => null, // Using cookies now
   onUnauthorized: () => {
     window.location.reload(); // Will show login page

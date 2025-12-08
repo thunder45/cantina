@@ -108,7 +108,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
             <label style={labelStyle}>Preço de Venda (€) *</label>
             <input
               type="number"
-              step="0.01"
+              step="0.50"
               min="0.01"
               value={price}
               onChange={(e) => {

@@ -17,6 +17,7 @@ export interface AuthConfig {
     maxAge: number; // milliseconds
   };
   allowedEmailDomain: string;
+  frontendUrl: string;
   isProduction: boolean;
 }
 
@@ -51,6 +52,7 @@ export function getAuthConfig(): AuthConfig {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
     allowedEmailDomain: process.env.ALLOWED_EMAIL_DOMAIN || 'advm.lu',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
     isProduction,
   };
 }

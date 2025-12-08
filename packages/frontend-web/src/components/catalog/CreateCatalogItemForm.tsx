@@ -104,7 +104,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
         <label style={labelStyle}>Preço Sugerido (€) *</label>
         <input
           type="number"
-          step="0.01"
+          step="0.50"
           min="0.01"
           value={suggestedPrice}
           onChange={(e) => {

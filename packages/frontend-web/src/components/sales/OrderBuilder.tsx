@@ -325,14 +325,13 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
       <div style={{ 
         ...layoutStyles,
         flex: 1, 
-        overflow: 'hidden',
+        minHeight: 0, // Allow flex children to shrink
       }}>
         {/* Menu Items Grid */}
         <div style={{ 
-          flex: 1, 
+          flex: 1,
+          minHeight: 0,
           overflow: 'hidden',
-          // On mobile with order panel open, reduce height
-          height: isMobileLayout && showOrderPanel ? '50%' : '100%',
         }}>
           <MenuItemGrid
             menuItems={menuItems}
@@ -348,9 +347,10 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         {(showOrderPanel || !isMobileLayout) && (
           <div style={{ 
             width: isMobileLayout ? '100%' : panelWidth, 
-            height: isMobileLayout ? '50%' : '100%',
+            flex: isMobileLayout ? 1 : 'none',
+            minHeight: isMobileLayout ? 0 : 'auto',
+            height: isMobileLayout ? 'auto' : '100%',
             flexShrink: 0,
-            position: isMobileLayout ? 'relative' : 'static',
           }}>
             <OrderSummary
               items={orderItems}

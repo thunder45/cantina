@@ -45,6 +45,7 @@ export class ApiClient {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include', // Send cookies for auth
       });
 
       if (response.status === 401) {
