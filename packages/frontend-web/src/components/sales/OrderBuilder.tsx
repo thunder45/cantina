@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Event,
   MenuItem,
@@ -41,6 +41,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
   const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOrderPanel, setShowOrderPanel] = useState(true);
+  const orderCreatingRef = useRef<Promise<Order> | null>(null);
 
   // Platform detection for responsive layout
   const { platform, orientation, isTouch } = usePlatform();
@@ -94,16 +95,33 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
     return orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [orderItems]);
 
-  // Create order if not exists
+  // Create order if not exists (with race condition protection)
   const ensureOrder = useCallback(async (): Promise<Order> => {
     if (currentOrder) return currentOrder;
-    const order = await orderService.createOrder(event.id);
-    setCurrentOrder(order);
-    return order;
+    
+    // If already creating, wait for that promise
+    if (orderCreatingRef.current) {
+      return orderCreatingRef.current;
+    }
+    
+    // Create new order and store promise
+    const createPromise = orderService.createOrder(event.id);
+    orderCreatingRef.current = createPromise;
+    
+    try {
+      const order = await createPromise;
+      setCurrentOrder(order);
+      return order;
+    } finally {
+      orderCreatingRef.current = null;
+    }
   }, [currentOrder, event.id]);
 
   // Add item to order
   const handleAddItem = useCallback(async (menuItem: MenuItem) => {
+    // Prevent double-clicks while loading
+    if (orderLoading) return;
+
     try {
       setOrderLoading(true);
       setError(null);
