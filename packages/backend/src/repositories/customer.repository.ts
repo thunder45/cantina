@@ -14,6 +14,11 @@ if (isProduction) {
 let customers: Map<string, Customer> = new Map();
 let customerPayments: Map<string, CustomerPayment> = new Map();
 
+// Helper to check if item is a customer (not a payment record)
+function isCustomerRecord(item: any): item is Customer {
+  return item && typeof item.name === 'string' && !item.id?.startsWith('payment#');
+}
+
 export async function createCustomer(name: string): Promise<Customer> {
   const customer: Customer = {
     id: uuidv4(),
@@ -34,7 +39,7 @@ export async function getCustomerById(id: string): Promise<Customer | undefined>
   if (isProduction) {
     const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
     const customer = result.Item as Customer | undefined;
-    if (customer?.deletedAt) return undefined;
+    if (!customer || customer.deletedAt) return undefined;
     return customer;
   }
   const customer = customers.get(id);
@@ -51,8 +56,8 @@ export async function searchCustomers(query: string): Promise<Customer[]> {
   const normalizedQuery = query.toLowerCase().trim();
   if (isProduction) {
     const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
-    return ((result.Items || []) as Customer[])
-      .filter(c => !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
+    return ((result.Items || []) as any[])
+      .filter(c => isCustomerRecord(c) && !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
   return Array.from(customers.values())
@@ -63,8 +68,8 @@ export async function searchCustomers(query: string): Promise<Customer[]> {
 export async function getAllCustomers(): Promise<Customer[]> {
   if (isProduction) {
     const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
-    return ((result.Items || []) as Customer[])
-      .filter(c => !c.deletedAt)
+    return ((result.Items || []) as any[])
+      .filter(c => isCustomerRecord(c) && !c.deletedAt)
       .sort((a, b) => a.name.localeCompare(b.name));
   }
   return Array.from(customers.values())
@@ -108,9 +113,7 @@ export async function registerPayment(customerId: string, payments: PaymentPart[
     version: 1,
   };
 
-  // Store payments embedded in customer record for production
   if (isProduction) {
-    // For simplicity, store as separate scan-able items with type prefix
     await docClient!.send(new PutCommand({ 
       TableName: TABLE_NAME, 
       Item: { ...payment, id: `payment#${payment.id}`, pk: customerId } 
@@ -128,7 +131,7 @@ export async function getPaymentsByCustomer(customerId: string): Promise<Custome
       FilterExpression: 'pk = :cid AND begins_with(id, :prefix)',
       ExpressionAttributeValues: { ':cid': customerId, ':prefix': 'payment#' },
     }));
-    return ((result.Items || []) as CustomerPayment[])
+    return ((result.Items || []) as any[])
       .map(p => ({ ...p, id: p.id.replace('payment#', '') }))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
