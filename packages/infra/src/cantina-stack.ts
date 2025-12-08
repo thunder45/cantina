@@ -227,10 +227,8 @@ export class CantinaStack extends cdk.Stack {
       domainNames: [fullDomain],
       certificate: cfCertificate,
       defaultRootObject: 'index.html',
-      errorResponses: [
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html' },
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html' },
-      ],
+      // Note: errorResponses removed - they were converting API 404s to index.html
+      // SPA routing handled by React Router client-side
     });
 
     // DNS Records
