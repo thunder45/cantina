@@ -1,180 +1,166 @@
 import { Customer, CustomerPayment, PaymentPart } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
-/**
- * In-memory storage for customers (simulates DynamoDB)
- * Key: customerId, Value: Customer
- */
+const TABLE_NAME = process.env.CUSTOMERS_TABLE;
+const isProduction = !!TABLE_NAME;
+
+let docClient: DynamoDBDocumentClient | null = null;
+if (isProduction) {
+  docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+}
+
 let customers: Map<string, Customer> = new Map();
-
-/**
- * In-memory storage for customer payments
- * Key: paymentId, Value: CustomerPayment
- */
 let customerPayments: Map<string, CustomerPayment> = new Map();
 
-/**
- * Create a new customer
- * Requirements: 8.3
- * @param name - Customer name
- * @returns Created Customer
- */
-export function createCustomer(name: string): Customer {
-  const id = uuidv4();
-  
+export async function createCustomer(name: string): Promise<Customer> {
   const customer: Customer = {
-    id,
+    id: uuidv4(),
     name,
     createdAt: new Date().toISOString(),
-    version: 1, // Initialize version for optimistic locking
+    version: 1,
   };
-  
-  customers.set(id, customer);
-  return customer;
-}
 
-/**
- * Get a customer by ID
- * @param id - Customer ID
- * @returns Customer or undefined
- */
-export function getCustomerById(id: string): Customer | undefined {
-  const customer = customers.get(id);
-  if (customer && customer.deletedAt) {
-    return undefined; // Soft deleted
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: customer }));
+  } else {
+    customers.set(customer.id, customer);
   }
   return customer;
 }
 
-/**
- * Check if a customer exists
- * @param id - Customer ID
- * @returns true if customer exists and is not deleted
- */
-export function customerExists(id: string): boolean {
+export async function getCustomerById(id: string): Promise<Customer | undefined> {
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
+    const customer = result.Item as Customer | undefined;
+    if (customer?.deletedAt) return undefined;
+    return customer;
+  }
   const customer = customers.get(id);
-  return customer !== undefined && !customer.deletedAt;
+  if (customer?.deletedAt) return undefined;
+  return customer;
 }
 
+export async function customerExists(id: string): Promise<boolean> {
+  const customer = await getCustomerById(id);
+  return !!customer;
+}
 
-/**
- * Search customers by name
- * Requirements: 8.2
- * @param query - Search query
- * @returns Array of matching Customers
- */
-export function searchCustomers(query: string): Customer[] {
+export async function searchCustomers(query: string): Promise<Customer[]> {
   const normalizedQuery = query.toLowerCase().trim();
-  
-  return Array.from(customers.values())
-    .filter(customer => 
-      !customer.deletedAt && 
-      customer.name.toLowerCase().includes(normalizedQuery)
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/**
- * Get all customers (excluding soft deleted)
- * @returns Array of Customers
- */
-export function getAllCustomers(): Customer[] {
-  return Array.from(customers.values())
-    .filter(customer => !customer.deletedAt)
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/**
- * Soft delete a customer
- * @param id - Customer ID
- * @returns Updated Customer
- * @throws Error if customer not found
- */
-export function deleteCustomer(id: string): Customer {
-  const customer = customers.get(id);
-  
-  if (!customer || customer.deletedAt) {
-    throw new Error('ERR_CUSTOMER_NOT_FOUND');
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
+    return ((result.Items || []) as Customer[])
+      .filter(c => !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
-  
-  const updatedCustomer: Customer = {
+  return Array.from(customers.values())
+    .filter(c => !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
+    return ((result.Items || []) as Customer[])
+      .filter(c => !c.deletedAt)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return Array.from(customers.values())
+    .filter(c => !c.deletedAt)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function deleteCustomer(id: string): Promise<Customer> {
+  let customer: Customer | undefined;
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
+    customer = result.Item as Customer | undefined;
+  } else {
+    customer = customers.get(id);
+  }
+
+  if (!customer || customer.deletedAt) throw new Error('ERR_CUSTOMER_NOT_FOUND');
+
+  const updated: Customer = {
     ...customer,
     deletedAt: new Date().toISOString(),
-    version: customer.version + 1, // Increment version for optimistic locking
+    version: customer.version + 1,
   };
-  
-  customers.set(id, updatedCustomer);
-  return updatedCustomer;
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+  } else {
+    customers.set(id, updated);
+  }
+  return updated;
 }
 
-/**
- * Register a payment for a customer
- * Requirements: 9.4, 9.5, 9.6
- * @param customerId - Customer ID
- * @param payments - Payment parts
- * @returns Created CustomerPayment
- */
-export function registerPayment(
-  customerId: string,
-  payments: PaymentPart[]
-): CustomerPayment {
-  const id = uuidv4();
+export async function registerPayment(customerId: string, payments: PaymentPart[]): Promise<CustomerPayment> {
   const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  
-  const customerPayment: CustomerPayment = {
-    id,
+  const payment: CustomerPayment = {
+    id: uuidv4(),
     customerId,
     payments: [...payments],
     totalAmount,
     createdAt: new Date().toISOString(),
-    version: 1, // Initialize version for optimistic locking
+    version: 1,
   };
-  
-  customerPayments.set(id, customerPayment);
-  return customerPayment;
+
+  // Store payments embedded in customer record for production
+  if (isProduction) {
+    // For simplicity, store as separate scan-able items with type prefix
+    await docClient!.send(new PutCommand({ 
+      TableName: TABLE_NAME, 
+      Item: { ...payment, id: `payment#${payment.id}`, pk: customerId } 
+    }));
+  } else {
+    customerPayments.set(payment.id, payment);
+  }
+  return payment;
 }
 
-/**
- * Get payments by customer
- * Requirements: 9.2
- * @param customerId - Customer ID
- * @returns Array of CustomerPayments
- */
-export function getPaymentsByCustomer(customerId: string): CustomerPayment[] {
+export async function getPaymentsByCustomer(customerId: string): Promise<CustomerPayment[]> {
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'pk = :cid AND begins_with(id, :prefix)',
+      ExpressionAttributeValues: { ':cid': customerId, ':prefix': 'payment#' },
+    }));
+    return ((result.Items || []) as CustomerPayment[])
+      .map(p => ({ ...p, id: p.id.replace('payment#', '') }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
   return Array.from(customerPayments.values())
-    .filter(payment => payment.customerId === customerId)
+    .filter(p => p.customerId === customerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-/**
- * Get total payments amount by customer
- * @param customerId - Customer ID
- * @returns Total amount paid
- */
-export function getTotalPaymentsByCustomer(customerId: string): number {
-  return Array.from(customerPayments.values())
-    .filter(payment => payment.customerId === customerId)
-    .reduce((sum, payment) => sum + payment.totalAmount, 0);
+export async function getTotalPaymentsByCustomer(customerId: string): Promise<number> {
+  const payments = await getPaymentsByCustomer(customerId);
+  return payments.reduce((sum, p) => sum + p.totalAmount, 0);
 }
 
-/**
- * Reset the repository (for testing purposes)
- */
 export function resetRepository(): void {
   customers = new Map();
   customerPayments = new Map();
 }
 
-/**
- * Get count of customers (for testing purposes)
- */
-export function getCustomerCount(): number {
-  return Array.from(customers.values()).filter(c => !c.deletedAt).length;
+export async function getCustomerCount(): Promise<number> {
+  const all = await getAllCustomers();
+  return all.length;
 }
 
-/**
- * Get count of payments (for testing purposes)
- */
-export function getPaymentCount(): number {
+export async function getPaymentCount(): Promise<number> {
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'begins_with(id, :prefix)',
+      ExpressionAttributeValues: { ':prefix': 'payment#' },
+      Select: 'COUNT',
+    }));
+    return result.Count || 0;
+  }
   return customerPayments.size;
 }

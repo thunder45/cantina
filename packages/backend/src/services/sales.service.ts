@@ -5,202 +5,92 @@ import * as menuItemService from './menu-item.service';
 import * as eventService from './event.service';
 import * as auditLogService from './audit-log.service';
 
-/**
- * Confirm a sale from an order
- * Requirements: 6.1, 6.2, 7.1, 7.2, 7.3, 7.4, 17.1
- * @param orderId - Order ID
- * @param payments - Payment parts
- * @param createdBy - User who created the sale
- * @param customerId - Optional customer ID for credit sales
- * @returns Created Sale
- * @throws Error if validation fails
- */
-export function confirmSale(
+export async function confirmSale(
   orderId: string,
   payments: PaymentPart[],
   createdBy: string,
   customerId?: string
-): Sale {
-  // Get and validate order
-  const order = orderService.getOrder(orderId);
-  
-  if (order.status !== 'pending') {
-    throw new Error('ERR_ORDER_NOT_PENDING');
-  }
-  
-  if (order.items.length === 0) {
-    throw new Error('ERR_ORDER_EMPTY');
-  }
-  
-  // Validate payments
-  if (!payments || payments.length === 0) {
-    throw new Error('ERR_NO_PAYMENT');
-  }
-  
-  // Validate payment total matches order total (Requirements: 7.3)
+): Promise<Sale> {
+  const order = await orderService.getOrder(orderId);
+  if (order.status !== 'pending') throw new Error('ERR_ORDER_NOT_PENDING');
+  if (order.items.length === 0) throw new Error('ERR_ORDER_EMPTY');
+  if (!payments?.length) throw new Error('ERR_NO_PAYMENT');
+
   const paymentTotal = payments.reduce((sum, p) => sum + p.amount, 0);
-  if (Math.abs(paymentTotal - order.total) > 0.01) { // Allow small floating point difference
-    throw new Error('ERR_PAYMENT_MISMATCH');
-  }
-  
-  // Validate each payment amount is positive
+  if (Math.abs(paymentTotal - order.total) > 0.01) throw new Error('ERR_PAYMENT_MISMATCH');
   for (const payment of payments) {
-    if (payment.amount <= 0) {
-      throw new Error('ERR_INVALID_PAYMENT_AMOUNT');
-    }
+    if (payment.amount <= 0) throw new Error('ERR_INVALID_PAYMENT_AMOUNT');
   }
-  
-  // If credit payment, customer ID is required (Requirements: 8.1)
+
   const hasCredit = payments.some(p => p.method === 'credit');
-  if (hasCredit && !customerId) {
-    throw new Error('ERR_CUSTOMER_REQUIRED_FOR_CREDIT');
-  }
-  
-  // Decrement stock for each item (Requirements: 6.1)
+  if (hasCredit && !customerId) throw new Error('ERR_CUSTOMER_REQUIRED_FOR_CREDIT');
+
   for (const item of order.items) {
-    menuItemService.incrementSoldCount(item.menuItemId, item.quantity);
+    await menuItemService.incrementSoldCount(item.menuItemId, item.quantity);
   }
-  
-  // Mark order as confirmed
-  orderService.confirmOrder(orderId);
-  
-  // Create sale record
-  const sale = saleRepository.createSale(
-    order.eventId,
-    orderId,
-    order.items,
-    order.total,
-    payments,
-    createdBy,
-    customerId
+
+  await orderService.confirmOrder(orderId);
+
+  const sale = await saleRepository.createSale(
+    order.eventId, orderId, order.items, order.total, payments, createdBy, customerId
   );
 
-  // Log sale creation for audit trail (Requirements: 17.1)
-  auditLogService.logSaleCreation(
-    sale.id,
-    createdBy,
-    JSON.stringify({ eventId: sale.eventId, total: sale.total, items: sale.items.length })
-  );
+  auditLogService.logSaleCreation(sale.id, createdBy, 
+    JSON.stringify({ eventId: sale.eventId, total: sale.total, items: sale.items.length }));
 
   return sale;
 }
 
-/**
- * Get a sale by ID
- * @param saleId - Sale ID
- * @returns Sale
- * @throws Error if sale not found
- */
-export function getSale(saleId: string): Sale {
-  const sale = saleRepository.getSaleById(saleId);
-  if (!sale) {
-    throw new Error('ERR_SALE_NOT_FOUND');
-  }
+export async function getSale(saleId: string): Promise<Sale> {
+  const sale = await saleRepository.getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
   return sale;
 }
 
-/**
- * Get a sale by ID (returns undefined if not found)
- * @param saleId - Sale ID
- * @returns Sale or undefined
- */
-export function getSaleById(saleId: string): Sale | undefined {
+export async function getSaleById(saleId: string): Promise<Sale | undefined> {
   return saleRepository.getSaleById(saleId);
 }
 
-/**
- * Get sales by event
- * @param eventId - Event ID
- * @returns Array of Sales
- */
-export function getSalesByEvent(eventId: string): Sale[] {
+export async function getSalesByEvent(eventId: string): Promise<Sale[]> {
   return saleRepository.getSalesByEvent(eventId);
 }
 
-/**
- * Get sales by customer
- * Requirements: 9.2
- * @param customerId - Customer ID
- * @returns Array of Sales
- */
-export function getSalesByCustomer(customerId: string): Sale[] {
+export async function getSalesByCustomer(customerId: string): Promise<Sale[]> {
   return saleRepository.getSalesByCustomer(customerId);
 }
 
-/**
- * Get unpaid sales by customer
- * Requirements: 9.3
- * @param customerId - Customer ID
- * @returns Array of unpaid Sales
- */
-export function getUnpaidSalesByCustomer(customerId: string): Sale[] {
+export async function getUnpaidSalesByCustomer(customerId: string): Promise<Sale[]> {
   return saleRepository.getUnpaidSalesByCustomer(customerId);
 }
 
-/**
- * Refund a sale
- * Requirements: 14.1, 14.2, 14.3, 14.4
- * @param saleId - Sale ID
- * @param reason - Refund reason
- * @param refundedBy - User who performed the refund
- * @returns Refund record
- * @throws Error if sale not found or already refunded
- */
-export function refundSale(saleId: string, reason: string, refundedBy: string): Refund {
-  const sale = saleRepository.getSaleById(saleId);
-  
-  if (!sale) {
-    throw new Error('ERR_SALE_NOT_FOUND');
-  }
-  
-  if (sale.isRefunded) {
-    throw new Error('ERR_SALE_ALREADY_REFUNDED');
-  }
-  
-  // Validate reason is not empty
-  if (!reason || !reason.trim()) {
-    throw new Error('ERR_EMPTY_REFUND_REASON');
-  }
-  
-  // Restore stock for each item (Requirements: 14.1)
+export async function refundSale(saleId: string, reason: string, refundedBy: string): Promise<Refund> {
+  const sale = await saleRepository.getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
+  if (sale.isRefunded) throw new Error('ERR_SALE_ALREADY_REFUNDED');
+  if (!reason?.trim()) throw new Error('ERR_EMPTY_REFUND_REASON');
+
   for (const item of sale.items) {
-    menuItemService.decrementSoldCount(item.menuItemId, item.quantity);
+    await menuItemService.decrementSoldCount(item.menuItemId, item.quantity);
   }
-  
-  // Mark sale as refunded
-  const { refund } = saleRepository.refundSale(saleId, reason.trim(), refundedBy);
 
-  // Log refund for audit trail (Requirements: 17.1)
+  const { refund } = await saleRepository.refundSale(saleId, reason.trim(), refundedBy);
   auditLogService.logSaleRefund(saleId, refundedBy, reason.trim());
-
   return refund;
 }
 
-/**
- * Get receipt for a sale
- * Requirements: 16.1, 16.2, 16.3
- * @param saleId - Sale ID
- * @returns Receipt
- * @throws Error if sale not found
- */
-export function getReceipt(saleId: string): Receipt {
-  const sale = saleRepository.getSaleById(saleId);
-  
-  if (!sale) {
-    throw new Error('ERR_SALE_NOT_FOUND');
-  }
-  
-  // Get event name
-  const event = eventService.getEvent(sale.eventId);
-  
+export async function getReceipt(saleId: string): Promise<Receipt> {
+  const sale = await saleRepository.getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
+
+  const event = await eventService.getEvent(sale.eventId);
   const receiptItems = sale.items.map(item => ({
     description: item.description,
     quantity: item.quantity,
     unitPrice: item.price,
     total: item.price * item.quantity,
   }));
-  
-  const receipt: Receipt = {
+
+  return {
     saleId: sale.id,
     eventName: event.name,
     items: receiptItems,
@@ -210,31 +100,16 @@ export function getReceipt(saleId: string): Receipt {
     createdAt: sale.createdAt,
     createdBy: sale.createdBy,
   };
-  
-  return receipt;
 }
 
-/**
- * Mark a sale as paid (for credit sales that are later paid)
- * @param saleId - Sale ID
- * @returns Updated Sale
- */
-export function markSaleAsPaid(saleId: string): Sale {
+export async function markSaleAsPaid(saleId: string): Promise<Sale> {
   return saleRepository.markSaleAsPaid(saleId);
 }
 
-/**
- * Check if a sale exists
- * @param saleId - Sale ID
- * @returns true if sale exists
- */
-export function saleExists(saleId: string): boolean {
+export async function saleExists(saleId: string): Promise<boolean> {
   return saleRepository.saleExists(saleId);
 }
 
-/**
- * Reset the service (for testing purposes)
- */
 export function resetService(): void {
   saleRepository.resetRepository();
 }

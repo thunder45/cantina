@@ -1,12 +1,3 @@
-/**
- * Catalog API Handler
- * Endpoints:
- * - GET /catalog - List catalog items
- * - POST /catalog - Create catalog item
- * - PUT /catalog/{id} - Update catalog item
- * - DELETE /catalog/{id} - Delete catalog item (soft delete)
- * - GET /catalog/search?q={query} - Search catalog items
- */
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, noContent, handleError, error } from '../response';
 import { validateName, validatePrice, validateId, parseBody, combineValidationErrors } from '../validation';
@@ -30,78 +21,58 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   const id = pathParameters?.id;
 
   try {
-    // GET /catalog/search - Search catalog items
     if (httpMethod === 'GET' && path.includes('/search')) {
-      return searchCatalogItems(queryStringParameters?.q || '');
+      return await searchCatalogItems(queryStringParameters?.q || '');
     }
-
-    // GET /catalog - List catalog items
     if (httpMethod === 'GET' && !id) {
-      const groupId = queryStringParameters?.groupId;
-      const includeDeleted = queryStringParameters?.includeDeleted === 'true';
-      return listCatalogItems(groupId, includeDeleted);
+      return await listCatalogItems(queryStringParameters?.groupId, queryStringParameters?.includeDeleted === 'true');
     }
-
-    // GET /catalog/{id} - Get catalog item
     if (httpMethod === 'GET' && id) {
-      return getCatalogItem(id);
+      return await getCatalogItem(id);
     }
-
-    // POST /catalog - Create catalog item
     if (httpMethod === 'POST' && !id) {
-      return createCatalogItem(event);
+      return await createCatalogItem(event);
     }
-
-    // PUT /catalog/{id} - Update catalog item
     if (httpMethod === 'PUT' && id) {
-      return updateCatalogItem(id, event);
+      return await updateCatalogItem(id, event);
     }
-
-    // DELETE /catalog/{id} - Delete catalog item
     if (httpMethod === 'DELETE' && id) {
-      return deleteCatalogItem(id);
+      return await deleteCatalogItem(id);
     }
-
     return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
   } catch (err) {
     return handleError(err);
   }
 }
 
-function listCatalogItems(groupId?: string, includeDeleted = false): APIGatewayResponse {
-  const items = catalogItemService.getCatalogItems(groupId, includeDeleted);
+async function listCatalogItems(groupId?: string, includeDeleted = false): Promise<APIGatewayResponse> {
+  const items = await catalogItemService.getCatalogItems(groupId, includeDeleted);
   return success(items);
 }
 
-function getCatalogItem(id: string): APIGatewayResponse {
-  const item = catalogItemService.getCatalogItemById(id);
-  if (!item) {
-    return error('ERR_CATALOG_ITEM_NOT_FOUND', 'Item do catálogo não encontrado', 404);
-  }
+async function getCatalogItem(id: string): Promise<APIGatewayResponse> {
+  const item = await catalogItemService.getCatalogItemById(id);
+  if (!item) return error('ERR_CATALOG_ITEM_NOT_FOUND', 'Item do catálogo não encontrado', 404);
   return success(item);
 }
 
-function searchCatalogItems(query: string): APIGatewayResponse {
-  const items = catalogItemService.searchCatalogItems(query);
+async function searchCatalogItems(query: string): Promise<APIGatewayResponse> {
+  const items = await catalogItemService.searchCatalogItems(query);
   return success(items);
 }
 
-function createCatalogItem(event: APIGatewayEvent): APIGatewayResponse {
+async function createCatalogItem(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const body = parseBody<CreateCatalogItemBody>(event.body);
-  if (!body) {
-    return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  }
+  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
 
   const validation = combineValidationErrors(
     validateName(body.description, 'description'),
     validatePrice(body.suggestedPrice, 'suggestedPrice'),
     validateId(body.groupId, 'groupId')
   );
-
   if (!validation.valid) {
     return error('ERR_VALIDATION', 'Erro de validação', 400,
-      Object.fromEntries(validation.errors.map(e => [e.field, e.message]))
-    );
+      Object.fromEntries(validation.errors.map(e => [e.field, e.message])));
   }
 
   const input: CreateCatalogItemInput = {
@@ -109,38 +80,30 @@ function createCatalogItem(event: APIGatewayEvent): APIGatewayResponse {
     suggestedPrice: body.suggestedPrice,
     groupId: body.groupId,
   };
-
-  const item = catalogItemService.createCatalogItem(input);
+  const item = await catalogItemService.createCatalogItem(input);
   return created(item);
 }
 
-function updateCatalogItem(id: string, event: APIGatewayEvent): APIGatewayResponse {
+async function updateCatalogItem(id: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const body = parseBody<UpdateCatalogItemBody>(event.body);
-  if (!body) {
-    return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  }
+  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
 
   const errors: { field: string; message: string }[] = [];
-
   if (body.description !== undefined) {
     const descError = validateName(body.description, 'description');
     if (descError) errors.push(descError);
   }
-
   if (body.suggestedPrice !== undefined) {
     const priceError = validatePrice(body.suggestedPrice, 'suggestedPrice');
     if (priceError) errors.push(priceError);
   }
-
   if (body.groupId !== undefined) {
     const groupError = validateId(body.groupId, 'groupId');
     if (groupError) errors.push(groupError);
   }
-
   if (errors.length > 0) {
     return error('ERR_VALIDATION', 'Erro de validação', 400,
-      Object.fromEntries(errors.map(e => [e.field, e.message]))
-    );
+      Object.fromEntries(errors.map(e => [e.field, e.message])));
   }
 
   const updates: UpdateCatalogItemInput = {};
@@ -148,11 +111,11 @@ function updateCatalogItem(id: string, event: APIGatewayEvent): APIGatewayRespon
   if (body.suggestedPrice !== undefined) updates.suggestedPrice = body.suggestedPrice;
   if (body.groupId !== undefined) updates.groupId = body.groupId;
 
-  const item = catalogItemService.updateCatalogItem(id, updates);
+  const item = await catalogItemService.updateCatalogItem(id, updates);
   return success(item);
 }
 
-function deleteCatalogItem(id: string): APIGatewayResponse {
-  catalogItemService.deleteCatalogItem(id);
+async function deleteCatalogItem(id: string): Promise<APIGatewayResponse> {
+  await catalogItemService.deleteCatalogItem(id);
   return noContent();
 }

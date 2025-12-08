@@ -3,114 +3,48 @@ import * as catalogItemRepository from '../repositories/catalog-item.repository'
 import * as menuGroupService from './menu-group.service';
 import * as auditLogService from './audit-log.service';
 
-/**
- * Create a new catalog item
- * Requirements: 3.1, 4.4
- * @param input - Catalog item data
- * @returns Created CatalogItem
- * @throws Error if validation fails or group doesn't exist
- */
-export function createCatalogItem(input: CreateCatalogItemInput): CatalogItem {
-  // Validate group exists
-  if (!menuGroupService.groupExists(input.groupId)) {
-    throw new Error('ERR_GROUP_NOT_FOUND');
-  }
-  
+export async function createCatalogItem(input: CreateCatalogItemInput): Promise<CatalogItem> {
+  if (!await menuGroupService.groupExists(input.groupId)) throw new Error('ERR_GROUP_NOT_FOUND');
   return catalogItemRepository.createCatalogItem(input);
 }
 
-/**
- * Get a catalog item by ID
- * @param id - Catalog item ID
- * @param includeDeleted - Whether to include soft-deleted items
- * @returns CatalogItem or undefined
- */
-export function getCatalogItemById(id: string, includeDeleted = false): CatalogItem | undefined {
+export async function getCatalogItemById(id: string, includeDeleted = false): Promise<CatalogItem | undefined> {
   return catalogItemRepository.getCatalogItemById(id, includeDeleted);
 }
 
-/**
- * Get all catalog items
- * Requirements: 3.4
- * @param groupId - Optional filter by group
- * @param includeDeleted - Whether to include soft-deleted items
- * @returns Array of CatalogItems sorted by group and description
- */
-export function getCatalogItems(groupId?: string, includeDeleted = false): CatalogItem[] {
+export async function getCatalogItems(groupId?: string, includeDeleted = false): Promise<CatalogItem[]> {
   return catalogItemRepository.getCatalogItems(groupId, includeDeleted);
 }
 
-/**
- * Search catalog items by description or group name
- * Requirements: 3.3
- * Never includes soft-deleted items
- * @param query - Search query string
- * @returns Array of matching CatalogItems
- */
-export function searchCatalogItems(query: string): CatalogItem[] {
+export async function searchCatalogItems(query: string): Promise<CatalogItem[]> {
   return catalogItemRepository.searchCatalogItems(query, (groupId) => {
-    const group = menuGroupService.getGroupById(groupId);
+    const group = menuGroupService.getGroupByIdSync(groupId);
     return group?.name;
   });
 }
 
-
-/**
- * Update a catalog item
- * Requirements: 3.2, 17.3
- * Note: Edits don't affect existing menus (menus store snapshots)
- * @param id - Catalog item ID
- * @param updates - Fields to update
- * @param userId - User performing the update (for audit trail)
- * @returns Updated CatalogItem
- * @throws Error if item not found, validation fails, or group doesn't exist
- */
-export function updateCatalogItem(
-  id: string,
-  updates: UpdateCatalogItemInput,
-  userId: string = 'system'
-): CatalogItem {
-  // Validate group exists if being updated
-  if (updates.groupId !== undefined && !menuGroupService.groupExists(updates.groupId)) {
+export async function updateCatalogItem(id: string, updates: UpdateCatalogItemInput, userId = 'system'): Promise<CatalogItem> {
+  if (updates.groupId !== undefined && !await menuGroupService.groupExists(updates.groupId)) {
     throw new Error('ERR_GROUP_NOT_FOUND');
   }
 
-  // Get current item for audit logging
-  const currentItem = catalogItemRepository.getCatalogItemById(id);
+  const currentItem = await catalogItemRepository.getCatalogItemById(id);
+  const updatedItem = await catalogItemRepository.updateCatalogItem(id, updates);
 
-  const updatedItem = catalogItemRepository.updateCatalogItem(id, updates);
-
-  // Log price change for audit trail (Requirements: 17.3)
   if (updates.suggestedPrice !== undefined && currentItem && currentItem.suggestedPrice !== updates.suggestedPrice) {
     auditLogService.logPriceChange(id, userId, currentItem.suggestedPrice, updates.suggestedPrice);
   }
-
   return updatedItem;
 }
 
-/**
- * Soft delete a catalog item
- * Requirements: 3.5
- * Maintains historical references but marks as inactive
- * @param id - Catalog item ID
- * @throws Error if item not found
- */
-export function deleteCatalogItem(id: string): void {
-  catalogItemRepository.deleteCatalogItem(id);
+export async function deleteCatalogItem(id: string): Promise<void> {
+  return catalogItemRepository.deleteCatalogItem(id);
 }
 
-/**
- * Check if a catalog item exists (not soft-deleted)
- * @param id - Catalog item ID
- * @returns true if item exists and is not deleted
- */
-export function catalogItemExists(id: string): boolean {
+export async function catalogItemExists(id: string): Promise<boolean> {
   return catalogItemRepository.catalogItemExists(id);
 }
 
-/**
- * Reset the service (for testing purposes)
- */
 export function resetService(): void {
   catalogItemRepository.resetRepository();
 }

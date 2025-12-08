@@ -1,10 +1,3 @@
-/**
- * Menu Groups API Handler
- * Endpoints:
- * - GET /groups - List groups
- * - POST /groups - Create group
- * - DELETE /groups/{id} - Delete group
- */
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, noContent, handleError, error } from '../response';
 import { validateName, parseBody } from '../validation';
@@ -19,48 +12,38 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   const id = pathParameters?.id;
 
   try {
-    // GET /groups - List groups
     if (httpMethod === 'GET' && !id) {
-      return listGroups();
+      return await listGroups();
     }
-
-    // POST /groups - Create group
     if (httpMethod === 'POST' && !id) {
-      return createGroup(event);
+      return await createGroup(event);
     }
-
-    // DELETE /groups/{id} - Delete group
     if (httpMethod === 'DELETE' && id) {
-      return deleteGroup(id);
+      return await deleteGroup(id);
     }
-
     return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
   } catch (err) {
     return handleError(err);
   }
 }
 
-function listGroups(): APIGatewayResponse {
-  const groups = menuGroupService.getGroups();
+async function listGroups(): Promise<APIGatewayResponse> {
+  const groups = await menuGroupService.getGroups();
   return success(groups);
 }
 
-function createGroup(event: APIGatewayEvent): APIGatewayResponse {
+async function createGroup(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const body = parseBody<CreateGroupBody>(event.body);
-  if (!body) {
-    return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  }
+  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
 
   const nameError = validateName(body.name, 'name');
-  if (nameError) {
-    return error('ERR_VALIDATION', nameError.message, 400);
-  }
+  if (nameError) return error('ERR_VALIDATION', nameError.message, 400);
 
-  const group = menuGroupService.createGroup(body.name.trim());
+  const group = await menuGroupService.createGroup(body.name.trim());
   return created(group);
 }
 
-function deleteGroup(id: string): APIGatewayResponse {
-  menuGroupService.deleteGroup(id);
+async function deleteGroup(id: string): Promise<APIGatewayResponse> {
+  await menuGroupService.deleteGroup(id);
   return noContent();
 }

@@ -1,242 +1,159 @@
 import { Order, OrderItem } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
-/**
- * In-memory storage for orders (simulates DynamoDB)
- * Key: orderId, Value: Order
- */
+const TABLE_NAME = process.env.ORDERS_TABLE;
+const isProduction = !!TABLE_NAME;
+
+let docClient: DynamoDBDocumentClient | null = null;
+if (isProduction) {
+  docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+}
+
 let orders: Map<string, Order> = new Map();
 
-/**
- * Create a new order
- * Requirements: 5.1
- * @param eventId - Event ID
- * @returns Created Order
- */
-export function createOrder(eventId: string): Order {
-  const id = uuidv4();
-  
+export async function createOrder(eventId: string): Promise<Order> {
   const order: Order = {
-    id,
+    id: uuidv4(),
     eventId,
     items: [],
     total: 0,
     status: 'pending',
     createdAt: new Date().toISOString(),
-    version: 1, // Initialize version for optimistic locking
+    version: 1,
   };
-  
-  orders.set(id, order);
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: order }));
+  } else {
+    orders.set(order.id, order);
+  }
   return order;
 }
 
-/**
- * Get an order by ID
- * @param id - Order ID
- * @returns Order or undefined
- */
-export function getOrderById(id: string): Order | undefined {
+export async function getOrderById(id: string): Promise<Order | undefined> {
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
+    return result.Item as Order | undefined;
+  }
   return orders.get(id);
 }
 
-/**
- * Check if an order exists
- * @param id - Order ID
- * @returns true if order exists
- */
-export function orderExists(id: string): boolean {
-  return orders.has(id);
+export async function orderExists(id: string): Promise<boolean> {
+  const order = await getOrderById(id);
+  return !!order;
 }
 
-/**
- * Add an item to an order
- * Requirements: 5.2
- * @param orderId - Order ID
- * @param item - Order item to add
- * @returns Updated Order
- * @throws Error if order not found or not pending
- */
-export function addItem(orderId: string, item: OrderItem): Order {
-  const order = orders.get(orderId);
-  
-  if (!order) {
-    throw new Error('ERR_ORDER_NOT_FOUND');
+function calculateTotal(items: OrderItem[]): number {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+async function saveOrder(order: Order): Promise<void> {
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: order }));
+  } else {
+    orders.set(order.id, order);
   }
-  
-  if (order.status !== 'pending') {
-    throw new Error('ERR_ORDER_NOT_PENDING');
-  }
-  
-  // Check if item already exists in order
+}
+
+export async function addItem(orderId: string, item: OrderItem): Promise<Order> {
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error('ERR_ORDER_NOT_FOUND');
+  if (order.status !== 'pending') throw new Error('ERR_ORDER_NOT_PENDING');
+
   const existingIndex = order.items.findIndex(i => i.menuItemId === item.menuItemId);
-  
   if (existingIndex >= 0) {
-    // Update quantity of existing item
     order.items[existingIndex].quantity += item.quantity;
   } else {
-    // Add new item
     order.items.push({ ...item });
   }
-  
-  // Recalculate total
   order.total = calculateTotal(order.items);
-  
-  orders.set(orderId, order);
+
+  await saveOrder(order);
   return order;
 }
 
-/**
- * Update item quantity in an order
- * Requirements: 5.3
- * @param orderId - Order ID
- * @param menuItemId - Menu item ID
- * @param quantity - New quantity
- * @returns Updated Order
- * @throws Error if order not found, not pending, or item not in order
- */
-export function updateItemQuantity(orderId: string, menuItemId: string, quantity: number): Order {
-  const order = orders.get(orderId);
-  
-  if (!order) {
-    throw new Error('ERR_ORDER_NOT_FOUND');
-  }
-  
-  if (order.status !== 'pending') {
-    throw new Error('ERR_ORDER_NOT_PENDING');
-  }
-  
+export async function updateItemQuantity(orderId: string, menuItemId: string, quantity: number): Promise<Order> {
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error('ERR_ORDER_NOT_FOUND');
+  if (order.status !== 'pending') throw new Error('ERR_ORDER_NOT_PENDING');
+
   const itemIndex = order.items.findIndex(i => i.menuItemId === menuItemId);
-  
-  if (itemIndex < 0) {
-    throw new Error('ERR_ITEM_NOT_IN_ORDER');
-  }
-  
+  if (itemIndex < 0) throw new Error('ERR_ITEM_NOT_IN_ORDER');
+
   if (quantity <= 0) {
-    // Remove item if quantity is 0 or negative
     order.items.splice(itemIndex, 1);
   } else {
     order.items[itemIndex].quantity = quantity;
   }
-  
-  // Recalculate total
   order.total = calculateTotal(order.items);
-  
-  orders.set(orderId, order);
+
+  await saveOrder(order);
   return order;
 }
 
-/**
- * Remove an item from an order
- * Requirements: 5.4
- * @param orderId - Order ID
- * @param menuItemId - Menu item ID
- * @returns Updated Order
- * @throws Error if order not found, not pending, or item not in order
- */
-export function removeItem(orderId: string, menuItemId: string): Order {
-  const order = orders.get(orderId);
-  
-  if (!order) {
-    throw new Error('ERR_ORDER_NOT_FOUND');
-  }
-  
-  if (order.status !== 'pending') {
-    throw new Error('ERR_ORDER_NOT_PENDING');
-  }
-  
+export async function removeItem(orderId: string, menuItemId: string): Promise<Order> {
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error('ERR_ORDER_NOT_FOUND');
+  if (order.status !== 'pending') throw new Error('ERR_ORDER_NOT_PENDING');
+
   const itemIndex = order.items.findIndex(i => i.menuItemId === menuItemId);
-  
-  if (itemIndex < 0) {
-    throw new Error('ERR_ITEM_NOT_IN_ORDER');
-  }
-  
+  if (itemIndex < 0) throw new Error('ERR_ITEM_NOT_IN_ORDER');
+
   order.items.splice(itemIndex, 1);
-  
-  // Recalculate total
   order.total = calculateTotal(order.items);
-  
-  orders.set(orderId, order);
+
+  await saveOrder(order);
   return order;
 }
 
-/**
- * Update order status
- * @param orderId - Order ID
- * @param status - New status
- * @returns Updated Order
- * @throws Error if order not found
- */
-export function updateOrderStatus(orderId: string, status: Order['status']): Order {
-  const order = orders.get(orderId);
-  
-  if (!order) {
-    throw new Error('ERR_ORDER_NOT_FOUND');
-  }
-  
+export async function updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error('ERR_ORDER_NOT_FOUND');
+
   order.status = status;
-  orders.set(orderId, order);
+  await saveOrder(order);
   return order;
 }
 
-/**
- * Calculate total from order items
- * Requirements: 5.2, 5.3, 5.4
- * @param items - Order items
- * @returns Total amount
- */
-export function calculateTotal(items: OrderItem[]): number {
-  return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+export async function getOrdersByEvent(eventId: string): Promise<Order[]> {
+  if (isProduction) {
+    const result = await docClient!.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'eventId-index',
+      KeyConditionExpression: 'eventId = :eid',
+      ExpressionAttributeValues: { ':eid': eventId },
+    }));
+    return (result.Items || []) as Order[];
+  }
+  return Array.from(orders.values()).filter(o => o.eventId === eventId);
 }
 
-/**
- * Get orders by event
- * @param eventId - Event ID
- * @returns Array of Orders
- */
-export function getOrdersByEvent(eventId: string): Order[] {
-  return Array.from(orders.values())
-    .filter(order => order.eventId === eventId);
-}
+export async function clearOrder(orderId: string): Promise<Order> {
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error('ERR_ORDER_NOT_FOUND');
+  if (order.status !== 'pending') throw new Error('ERR_ORDER_NOT_PENDING');
 
-/**
- * Clear all items from an order
- * Requirements: 13.3
- * @param orderId - Order ID
- * @returns Updated Order
- * @throws Error if order not found or not pending
- */
-export function clearOrder(orderId: string): Order {
-  const order = orders.get(orderId);
-  
-  if (!order) {
-    throw new Error('ERR_ORDER_NOT_FOUND');
-  }
-  
-  if (order.status !== 'pending') {
-    throw new Error('ERR_ORDER_NOT_PENDING');
-  }
-  
   order.items = [];
   order.total = 0;
-  
-  orders.set(orderId, order);
+
+  await saveOrder(order);
   return order;
 }
 
-/**
- * Reset the repository (for testing purposes)
- */
 export function resetRepository(): void {
   orders = new Map();
 }
 
-/**
- * Get count of orders (for testing purposes)
- * @param eventId - Optional filter by event
- */
-export function getOrderCount(eventId?: string): number {
+export async function getOrderCount(eventId?: string): Promise<number> {
   if (eventId) {
-    return Array.from(orders.values()).filter(order => order.eventId === eventId).length;
+    const evtOrders = await getOrdersByEvent(eventId);
+    return evtOrders.length;
+  }
+  if (isProduction) {
+    // For production, we'd need a scan - avoid for now
+    return 0;
   }
   return orders.size;
 }

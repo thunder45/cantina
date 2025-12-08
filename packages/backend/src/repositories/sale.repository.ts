@@ -1,31 +1,20 @@
 import { Sale, PaymentPart, OrderItem, Refund } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
-/**
- * In-memory storage for sales (simulates DynamoDB)
- * Key: saleId, Value: Sale
- */
+const TABLE_NAME = process.env.SALES_TABLE;
+const isProduction = !!TABLE_NAME;
+
+let docClient: DynamoDBDocumentClient | null = null;
+if (isProduction) {
+  docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+}
+
 let sales: Map<string, Sale> = new Map();
-
-/**
- * In-memory storage for refunds
- * Key: refundId, Value: Refund
- */
 let refunds: Map<string, Refund> = new Map();
 
-/**
- * Create a new sale
- * Requirements: 7.4
- * @param eventId - Event ID
- * @param orderId - Order ID
- * @param items - Order items
- * @param total - Total amount
- * @param payments - Payment parts
- * @param createdBy - User who created the sale
- * @param customerId - Optional customer ID for credit sales
- * @returns Created Sale
- */
-export function createSale(
+export async function createSale(
   eventId: string,
   orderId: string,
   items: OrderItem[],
@@ -33,14 +22,10 @@ export function createSale(
   payments: PaymentPart[],
   createdBy: string,
   customerId?: string
-): Sale {
-  const id = uuidv4();
-  
-  // Determine if sale is paid (credit sales are not paid)
+): Promise<Sale> {
   const hasCredit = payments.some(p => p.method === 'credit');
-  
   const sale: Sale = {
-    id,
+    id: uuidv4(),
     eventId,
     orderId,
     items: [...items],
@@ -51,158 +36,144 @@ export function createSale(
     isRefunded: false,
     createdBy,
     createdAt: new Date().toISOString(),
-    version: 1, // Initialize version for optimistic locking
+    version: 1,
   };
-  
-  sales.set(id, sale);
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: sale }));
+  } else {
+    sales.set(sale.id, sale);
+  }
   return sale;
 }
 
-/**
- * Get a sale by ID
- * @param id - Sale ID
- * @returns Sale or undefined
- */
-export function getSaleById(id: string): Sale | undefined {
+export async function getSaleById(id: string): Promise<Sale | undefined> {
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
+    return result.Item as Sale | undefined;
+  }
   return sales.get(id);
 }
 
-/**
- * Check if a sale exists
- * @param id - Sale ID
- * @returns true if sale exists
- */
-export function saleExists(id: string): boolean {
-  return sales.has(id);
+export async function saleExists(id: string): Promise<boolean> {
+  const sale = await getSaleById(id);
+  return !!sale;
 }
 
-/**
- * Get sales by event
- * Requirements: 10.1
- * @param eventId - Event ID
- * @returns Array of Sales
- */
-export function getSalesByEvent(eventId: string): Sale[] {
+export async function getSalesByEvent(eventId: string): Promise<Sale[]> {
+  if (isProduction) {
+    const result = await docClient!.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'eventId-index',
+      KeyConditionExpression: 'eventId = :eid',
+      ExpressionAttributeValues: { ':eid': eventId },
+    }));
+    return ((result.Items || []) as Sale[]).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
   return Array.from(sales.values())
-    .filter(sale => sale.eventId === eventId)
+    .filter(s => s.eventId === eventId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-/**
- * Get sales by customer
- * Requirements: 9.2
- * @param customerId - Customer ID
- * @returns Array of Sales
- */
-export function getSalesByCustomer(customerId: string): Sale[] {
+export async function getSalesByCustomer(customerId: string): Promise<Sale[]> {
+  if (isProduction) {
+    // Need scan with filter for customerId (no GSI)
+    const result = await docClient!.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'customerId = :cid',
+      ExpressionAttributeValues: { ':cid': customerId },
+    }));
+    return ((result.Items || []) as Sale[]).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
   return Array.from(sales.values())
-    .filter(sale => sale.customerId === customerId)
+    .filter(s => s.customerId === customerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-/**
- * Get unpaid sales by customer
- * Requirements: 9.3
- * @param customerId - Customer ID
- * @returns Array of unpaid Sales
- */
-export function getUnpaidSalesByCustomer(customerId: string): Sale[] {
-  return Array.from(sales.values())
-    .filter(sale => sale.customerId === customerId && !sale.isPaid && !sale.isRefunded);
+export async function getUnpaidSalesByCustomer(customerId: string): Promise<Sale[]> {
+  const customerSales = await getSalesByCustomer(customerId);
+  return customerSales.filter(s => !s.isPaid && !s.isRefunded);
 }
 
-/**
- * Mark a sale as refunded
- * Requirements: 14.1, 14.2, 14.3
- * @param saleId - Sale ID
- * @param reason - Refund reason
- * @param refundedBy - User who performed the refund
- * @returns Updated Sale and Refund record
- * @throws Error if sale not found or already refunded
- */
-export function refundSale(saleId: string, reason: string, refundedBy: string): { sale: Sale; refund: Refund } {
-  const sale = sales.get(saleId);
-  
-  if (!sale) {
-    throw new Error('ERR_SALE_NOT_FOUND');
-  }
-  
-  if (sale.isRefunded) {
-    throw new Error('ERR_SALE_ALREADY_REFUNDED');
-  }
-  
-  const refundId = uuidv4();
+export async function refundSale(saleId: string, reason: string, refundedBy: string): Promise<{ sale: Sale; refund: Refund }> {
+  const sale = await getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
+  if (sale.isRefunded) throw new Error('ERR_SALE_ALREADY_REFUNDED');
+
   const now = new Date().toISOString();
-  
   const refund: Refund = {
-    id: refundId,
+    id: uuidv4(),
     saleId,
     reason,
     createdBy: refundedBy,
     createdAt: now,
   };
-  
+
   const updatedSale: Sale = {
     ...sale,
     isRefunded: true,
     refundReason: reason,
     refundedAt: now,
-    version: sale.version + 1, // Increment version for optimistic locking
+    version: sale.version + 1,
   };
-  
-  sales.set(saleId, updatedSale);
-  refunds.set(refundId, refund);
-  
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updatedSale }));
+    // Note: refunds stored in sale record, not separate table
+  } else {
+    sales.set(saleId, updatedSale);
+    refunds.set(refund.id, refund);
+  }
+
   return { sale: updatedSale, refund };
 }
 
-/**
- * Mark a sale as paid
- * @param saleId - Sale ID
- * @returns Updated Sale
- * @throws Error if sale not found
- */
-export function markSaleAsPaid(saleId: string): Sale {
-  const sale = sales.get(saleId);
-  
-  if (!sale) {
-    throw new Error('ERR_SALE_NOT_FOUND');
+export async function markSaleAsPaid(saleId: string): Promise<Sale> {
+  const sale = await getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
+
+  const updated: Sale = { ...sale, isPaid: true, version: sale.version + 1 };
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+  } else {
+    sales.set(saleId, updated);
   }
-  
-  const updatedSale: Sale = {
-    ...sale,
-    isPaid: true,
-    version: sale.version + 1, // Increment version for optimistic locking
-  };
-  
-  sales.set(saleId, updatedSale);
-  return updatedSale;
+  return updated;
 }
 
-/**
- * Get a refund by sale ID
- * @param saleId - Sale ID
- * @returns Refund or undefined
- */
-export function getRefundBySaleId(saleId: string): Refund | undefined {
-  return Array.from(refunds.values()).find(r => r.saleId === saleId);
+export async function getRefundBySaleId(saleId: string): Promise<Refund | undefined> {
+  // In production, refund info is in the sale record
+  const sale = await getSaleById(saleId);
+  if (sale?.isRefunded) {
+    return {
+      id: `refund-${saleId}`,
+      saleId,
+      reason: sale.refundReason || '',
+      createdBy: 'system',
+      createdAt: sale.refundedAt || '',
+    };
+  }
+  return refunds.get(saleId) || Array.from(refunds.values()).find(r => r.saleId === saleId);
 }
 
-/**
- * Reset the repository (for testing purposes)
- */
 export function resetRepository(): void {
   sales = new Map();
   refunds = new Map();
 }
 
-/**
- * Get count of sales (for testing purposes)
- * @param eventId - Optional filter by event
- */
-export function getSaleCount(eventId?: string): number {
+export async function getSaleCount(eventId?: string): Promise<number> {
   if (eventId) {
-    return Array.from(sales.values()).filter(sale => sale.eventId === eventId).length;
+    const evtSales = await getSalesByEvent(eventId);
+    return evtSales.length;
+  }
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME, Select: 'COUNT' }));
+    return result.Count || 0;
   }
   return sales.size;
 }
