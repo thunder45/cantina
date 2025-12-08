@@ -86,12 +86,12 @@ async function handleAuthRoute(
       // Create session
       const session = sessionService.createSession(userInfo, tokens);
       
+      // Redirect to frontend with session token in URL (frontend will store it)
       return {
         statusCode: 302,
         headers: {
           ...CORS_HEADERS,
-          'Location': frontendUrl,
-          'Set-Cookie': `session=${session.id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`,
+          'Location': `${frontendUrl}?session=${session.id}`,
         },
         body: '',
       };
@@ -99,7 +99,8 @@ async function handleAuthRoute(
     
     // GET /api/auth/me - Get current user
     if (path === '/api/auth/me' && event.httpMethod === 'GET') {
-      const sessionId = cookies.session;
+      const authHeader = event.headers.Authorization || event.headers.authorization || '';
+      const sessionId = authHeader.replace('Bearer ', '') || cookies.session;
       if (!sessionId) {
         return jsonResponse(401, { error: 'Not authenticated' });
       }

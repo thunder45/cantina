@@ -28,9 +28,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check for auth errors in URL (from OAuth callback)
+  // Check for session token or errors in URL (from OAuth callback)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    // Handle session token from callback
+    const sessionToken = params.get('session');
+    if (sessionToken) {
+      localStorage.setItem('session', sessionToken);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    
+    // Handle errors
     const urlError = params.get('error');
     if (urlError) {
       const errorMessages: Record<string, string> = {
@@ -40,7 +49,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         access_denied: 'Acesso negado pelo usuário.',
       };
       setError(errorMessages[urlError] || 'Erro de autenticação');
-      // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -52,13 +60,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkSession = async () => {
     try {
+      const sessionId = localStorage.getItem('session');
+      if (!sessionId) {
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await fetch(`${API_BASE}/api/auth/me`, {
-        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${sessionId}` },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser({ email: data.email, displayName: data.name });
+      } else {
+        localStorage.removeItem('session');
       }
     } catch (err) {
       // Not authenticated - that's ok
@@ -85,13 +101,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const sessionId = localStorage.getItem('session');
+      if (sessionId) {
+        await fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${sessionId}` },
+        });
+      }
     } catch (err) {
       // Ignore errors
     } finally {
+      localStorage.removeItem('session');
       setUser(null);
     }
   }, []);
