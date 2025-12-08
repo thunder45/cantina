@@ -47,11 +47,22 @@ export class CantinaStack extends cdk.Stack {
     );
 
     // ========== DynamoDB Tables ==========
+    const categoriesTable = new dynamodb.Table(this, 'CategoriesTable', {
+      tableName: 'cantina-categories',
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const eventsTable = new dynamodb.Table(this, 'EventsTable', {
       tableName: 'cantina-events',
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    eventsTable.addGlobalSecondaryIndex({
+      indexName: 'categoryId-index',
+      partitionKey: { name: 'categoryId', type: dynamodb.AttributeType.STRING },
     });
 
     const menuItemsTable = new dynamodb.Table(this, 'MenuItemsTable', {
@@ -149,6 +160,7 @@ export class CantinaStack extends cdk.Stack {
       memorySize: 256,
       timeout: cdk.Duration.seconds(30),
       environment: {
+        CATEGORIES_TABLE: categoriesTable.tableName,
         EVENTS_TABLE: eventsTable.tableName,
         MENU_ITEMS_TABLE: menuItemsTable.tableName,
         ORDERS_TABLE: ordersTable.tableName,
@@ -170,6 +182,7 @@ export class CantinaStack extends cdk.Stack {
     });
 
     // Grant DynamoDB permissions
+    categoriesTable.grantReadWriteData(backendLambda);
     eventsTable.grantReadWriteData(backendLambda);
     menuItemsTable.grantReadWriteData(backendLambda);
     ordersTable.grantReadWriteData(backendLambda);

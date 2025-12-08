@@ -174,7 +174,7 @@ export function generateStockReport(eventId: string): StockReport {
  * @throws Error if category not found
  */
 export function aggregateCategoryReport(categoryId: string): CategoryReport {
-  const category = eventCategoryRepository.getCategoryById(categoryId);
+  const category = eventCategoryRepository.getCategoryByIdSync(categoryId);
   
   if (!category) {
     throw new Error('ERR_CATEGORY_NOT_FOUND');

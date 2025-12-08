@@ -61,7 +61,7 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   }
 }
 
-function createEvent(event: APIGatewayEvent): APIGatewayResponse {
+async function createEvent(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const body = parseBody<CreateEventBody>(event.body);
   if (!body) {
     return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
@@ -86,12 +86,12 @@ function createEvent(event: APIGatewayEvent): APIGatewayResponse {
     categories: body.categories, // Legacy/optional
   };
 
-  const createdEvent = eventService.createEvent(input);
+  const createdEvent = await eventService.createEvent(input);
   return created(createdEvent);
 }
 
-function getEventsByCategory(categoryId: string): APIGatewayResponse {
-  const events = eventService.getEventsByCategory(categoryId);
+async function getEventsByCategory(categoryId: string): Promise<APIGatewayResponse> {
+  const events = await eventService.getEventsByCategory(categoryId);
   return success(events);
 }
 

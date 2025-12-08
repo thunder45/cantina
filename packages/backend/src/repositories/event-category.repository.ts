@@ -1,172 +1,132 @@
-import { 
-  EventCategory, 
-  CreateEventCategoryInput, 
-  UpdateEventCategoryInput,
-  DEFAULT_CATEGORY_NAMES 
-} from '@cantina-pos/shared';
+import { EventCategory, CreateEventCategoryInput, UpdateEventCategoryInput, DEFAULT_CATEGORY_NAMES } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 
-/**
- * In-memory storage for event categories (simulates DynamoDB)
- * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
- */
+const TABLE_NAME = process.env.CATEGORIES_TABLE;
+const isProduction = !!TABLE_NAME;
+
+let docClient: DynamoDBDocumentClient | null = null;
+if (isProduction) {
+  const client = new DynamoDBClient({});
+  docClient = DynamoDBDocumentClient.from(client);
+}
+
+// In-memory storage for local development
 let categories: Map<string, EventCategory> = new Map();
 let initialized = false;
 
-/**
- * Initialize default categories if not already done
- * Requirements: 1.1 - Creates Culto, Kids, Casais on first initialization
- */
+// Sync initialization for local dev
 export function initializeDefaultCategories(): void {
-  if (initialized) {
-    return;
-  }
-
+  if (isProduction || initialized) return;
   const now = new Date().toISOString();
-  
   for (const name of DEFAULT_CATEGORY_NAMES) {
     const id = uuidv4();
-    const category: EventCategory = {
-      id,
-      name,
-      isDefault: true,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-    };
-    categories.set(id, category);
+    categories.set(id, { id, name, isDefault: true, createdAt: now, updatedAt: now, version: 1 });
   }
-  
   initialized = true;
 }
 
-/**
- * Create a new event category
- * Requirements: 1.3
- * @param input - Category data with name
- * @returns Created EventCategory
- * @throws Error if validation fails
- */
-export function createCategory(input: CreateEventCategoryInput): EventCategory {
-  const trimmedName = input.name.trim();
-  
-  // Validate name is not empty (Requirements: 16.2)
-  if (!trimmedName) {
-    throw new Error('ERR_EMPTY_NAME');
+// Async initialization for production
+async function ensureInitialized(): Promise<void> {
+  if (!isProduction) {
+    initializeDefaultCategories();
+    return;
   }
+  if (initialized) return;
+  
+  const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
+  if (!result.Items || result.Items.length === 0) {
+    const now = new Date().toISOString();
+    for (const name of DEFAULT_CATEGORY_NAMES) {
+      const category: EventCategory = { id: uuidv4(), name, isDefault: true, createdAt: now, updatedAt: now, version: 1 };
+      await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: category }));
+    }
+  }
+  initialized = true;
+}
 
+export async function createCategory(input: CreateEventCategoryInput): Promise<EventCategory> {
+  await ensureInitialized();
+  const trimmedName = input.name.trim();
+  if (!trimmedName) throw new Error('ERR_EMPTY_NAME');
+  
   const now = new Date().toISOString();
-  const id = uuidv4();
+  const category: EventCategory = { id: uuidv4(), name: trimmedName, isDefault: false, createdAt: now, updatedAt: now, version: 1 };
   
-  const category: EventCategory = {
-    id,
-    name: trimmedName,
-    isDefault: false,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-  };
-  
-  categories.set(id, category);
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: category }));
+  } else {
+    categories.set(category.id, category);
+  }
   return category;
 }
 
-
-/**
- * Get a category by ID
- * @param id - Category ID
- * @returns EventCategory or undefined
- */
-export function getCategoryById(id: string): EventCategory | undefined {
+export async function getCategoryById(id: string): Promise<EventCategory | undefined> {
+  await ensureInitialized();
+  if (isProduction) {
+    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
+    return result.Item as EventCategory | undefined;
+  }
   return categories.get(id);
 }
 
-/**
- * Get all categories
- * Requirements: 1.2
- * @returns Array of EventCategories sorted by name
- */
-export function getCategories(): EventCategory[] {
-  return Array.from(categories.values())
-    .sort((a, b) => a.name.localeCompare(b.name));
+// Sync version for backward compatibility (local only)
+export function getCategoryByIdSync(id: string): EventCategory | undefined {
+  if (isProduction) throw new Error('Use async getCategoryById in production');
+  initializeDefaultCategories();
+  return categories.get(id);
 }
 
-/**
- * Update a category
- * Requirements: 1.4 - Update name without affecting existing events
- * @param id - Category ID
- * @param input - Update data
- * @returns Updated EventCategory
- * @throws Error if category not found or validation fails
- */
-export function updateCategory(id: string, input: UpdateEventCategoryInput): EventCategory {
-  const category = categories.get(id);
-  
-  if (!category) {
-    throw new Error('ERR_CATEGORY_NOT_FOUND');
+export async function getCategories(): Promise<EventCategory[]> {
+  await ensureInitialized();
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
+    return ((result.Items || []) as EventCategory[]).sort((a, b) => a.name.localeCompare(b.name));
   }
-  
-  const trimmedName = input.name.trim();
-  
-  // Validate name is not empty (Requirements: 16.2)
-  if (!trimmedName) {
-    throw new Error('ERR_EMPTY_NAME');
-  }
-  
-  const updatedCategory: EventCategory = {
-    ...category,
-    name: trimmedName,
-    updatedAt: new Date().toISOString(),
-    version: category.version + 1,
-  };
-  
-  categories.set(id, updatedCategory);
-  return updatedCategory;
+  return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/**
- * Delete a category
- * Requirements: 1.5, 1.6 - Only delete if no events associated
- * @param id - Category ID
- * @throws Error if category not found
- */
-export function deleteCategory(id: string): void {
-  const category = categories.get(id);
-  
-  if (!category) {
-    throw new Error('ERR_CATEGORY_NOT_FOUND');
-  }
-  
-  categories.delete(id);
+export async function categoryExists(id: string): Promise<boolean> {
+  const cat = await getCategoryById(id);
+  return !!cat;
 }
 
-/**
- * Check if a category exists
- * @param id - Category ID
- * @returns true if category exists
- */
-export function categoryExists(id: string): boolean {
+// Sync version for backward compatibility
+export function categoryExistsSync(id: string): boolean {
+  if (isProduction) throw new Error('Use async categoryExists in production');
+  initializeDefaultCategories();
   return categories.has(id);
 }
 
-/**
- * Reset the repository (for testing purposes)
- */
+export async function updateCategory(id: string, input: UpdateEventCategoryInput): Promise<EventCategory> {
+  const category = await getCategoryById(id);
+  if (!category) throw new Error('ERR_CATEGORY_NOT_FOUND');
+  
+  const updated: EventCategory = { ...category, ...input, updatedAt: new Date().toISOString(), version: category.version + 1 };
+  
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+  } else {
+    categories.set(id, updated);
+  }
+  return updated;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  if (isProduction) {
+    await docClient!.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { id } }));
+  } else {
+    categories.delete(id);
+  }
+}
+
 export function resetRepository(): void {
   categories = new Map();
   initialized = false;
 }
 
-/**
- * Get count of categories (for testing purposes)
- */
-export function getCategoryCount(): number {
-  return categories.size;
-}
-
-/**
- * Check if default categories have been initialized
- */
-export function isInitialized(): boolean {
-  return initialized;
+export async function getCategoryCount(): Promise<number> {
+  const cats = await getCategories();
+  return cats.length;
 }

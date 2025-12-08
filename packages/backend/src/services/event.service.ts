@@ -4,32 +4,21 @@ import * as eventCategoryRepository from '../repositories/event-category.reposit
 
 /**
  * Create a new event
- * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
- * @param input - Event data with categoryId, name, and dates
- * @returns Created Event
- * @throws Error if validation fails or category not found
  */
-export function createEvent(input: CreateEventInput): Event {
-  // Validate category exists (Requirements: 2.2)
-  if (!eventCategoryRepository.categoryExists(input.categoryId)) {
+export async function createEvent(input: CreateEventInput): Promise<Event> {
+  if (!await eventCategoryRepository.categoryExists(input.categoryId)) {
     throw new Error('ERR_CATEGORY_NOT_FOUND');
   }
-  
   return eventRepository.createEvent(input);
 }
 
 /**
  * Get events by category ID
- * Requirements: 2.1 - Display all events for a selected category
- * @param categoryId - Category ID to filter by
- * @returns Array of Events belonging to the category
  */
-export function getEventsByCategory(categoryId: string): Event[] {
-  // Validate category exists
-  if (!eventCategoryRepository.categoryExists(categoryId)) {
+export async function getEventsByCategory(categoryId: string): Promise<Event[]> {
+  if (!await eventCategoryRepository.categoryExists(categoryId)) {
     throw new Error('ERR_CATEGORY_NOT_FOUND');
   }
-  
   return eventRepository.getEventsByCategory(categoryId);
 }
 
