@@ -184,22 +184,15 @@ export class CantinaStack extends cdk.Stack {
       defaultCorsPreflightOptions: {
         allowOrigins: [`https://${fullDomain}`, 'http://localhost:3000'],
         allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: ['Content-Type', 'Authorization'],
+        allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+        allowCredentials: true,
       },
     });
 
-    const cognitoAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
-      cognitoUserPools: [userPool],
-    });
-
-    // Proxy all requests to Lambda
+    // Proxy all requests to Lambda (auth handled by Lambda/Zoho OAuth)
     const lambdaIntegration = new apigateway.LambdaIntegration(backendLambda);
     api.root.addProxy({
       defaultIntegration: lambdaIntegration,
-      defaultMethodOptions: {
-        authorizer: cognitoAuthorizer,
-        authorizationType: apigateway.AuthorizationType.COGNITO,
-      },
     });
 
     // ========== S3 + CloudFront (Frontend) ==========
