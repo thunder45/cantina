@@ -76,7 +76,7 @@ app.all('/api/*', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`
-🚀 Cantina POS Backend Server
+🚀 Cantina ADVM Backend Server
 📡 Running at: http://localhost:${PORT}
 🏥 Health check: http://localhost:${PORT}/health
 🔐 Auth endpoints: http://localhost:${PORT}/api/auth/*

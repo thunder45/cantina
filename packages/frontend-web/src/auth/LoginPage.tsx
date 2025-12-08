@@ -39,7 +39,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           style={styles.logo}
         />
         
-        <h1 style={styles.title}>Cantina POS</h1>
+        <h1 style={styles.title}>Cantina ADVM</h1>
         <p style={styles.subtitle}>Sistema de Ponto de Venda</p>
 
         {error && (

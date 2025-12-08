@@ -1,4 +1,4 @@
-// Domain Types for Cantina POS
+// Domain Types for Cantina ADVM
 export * from './event';
 export * from './event-category';
 export * from './menu';

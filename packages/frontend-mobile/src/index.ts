@@ -1,2 +1,2 @@
-// Frontend Mobile entry point for Cantina POS
+// Frontend Mobile entry point for Cantina ADVM
 export {};

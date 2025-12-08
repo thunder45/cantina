@@ -1,4 +1,4 @@
-// Shared types and utilities for Cantina POS
+// Shared types and utilities for Cantina ADVM
 export * from './types';
 export * from './components';
 export * from './api';

@@ -1,4 +1,4 @@
-// Frontend Web entry point for Cantina POS
+// Frontend Web entry point for Cantina ADVM
 export { App } from './App';
 export { EventsPage, MenuPage } from './pages';
 export { EventList, EventForm } from './components/events';

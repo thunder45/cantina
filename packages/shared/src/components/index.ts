@@ -1,4 +1,4 @@
-// Shared UI Components for Cantina POS
+// Shared UI Components for Cantina ADVM
 // These components provide a consistent interface across web and mobile platforms
 
 export * from './Button';

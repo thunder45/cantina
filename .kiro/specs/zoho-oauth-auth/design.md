@@ -2,7 +2,7 @@
 
 ## Overview
 
-Este documento descreve a arquitetura e implementação de autenticação OAuth 2.0 com Zoho para o sistema Cantina POS. A solução utiliza o padrão Backend for Frontend (BFF) para manter o client_secret seguro, com sessões gerenciadas por cookies httpOnly.
+Este documento descreve a arquitetura e implementação de autenticação OAuth 2.0 com Zoho para o sistema Cantina ADVM. A solução utiliza o padrão Backend for Frontend (BFF) para manter o client_secret seguro, com sessões gerenciadas por cookies httpOnly.
 
 ### Key Design Decisions
 
@@ -19,7 +19,7 @@ Antes de implementar, você precisa criar uma aplicação no Zoho API Console:
 2. Clique em "ADD CLIENT"
 3. Selecione "Server-based Applications"
 4. Preencha:
-   - Client Name: `Cantina POS`
+   - Client Name: `Cantina ADVM`
    - Homepage URL: `https://cantina.advm.lu`
    - Authorized Redirect URIs: `https://cantina.advm.lu/api/auth/callback`
    - (Para dev local adicione também: `http://localhost:3000/api/auth/callback`)

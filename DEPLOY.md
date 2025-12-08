@@ -1,4 +1,4 @@
-# Deploy Cantina POS na AWS
+# Deploy Cantina ADVM na AWS
 
 ## Pré-requisitos
 

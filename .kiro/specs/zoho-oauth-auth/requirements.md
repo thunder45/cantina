@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Este documento especifica os requisitos para implementação de autenticação OAuth 2.0 usando Zoho como provedor de identidade para o sistema Cantina POS. A autenticação permitirá que usuários do domínio @advm.lu façam login de forma segura usando suas credenciais Zoho existentes, protegendo tanto o frontend web quanto a API backend.
+Este documento especifica os requisitos para implementação de autenticação OAuth 2.0 usando Zoho como provedor de identidade para o sistema Cantina ADVM. A autenticação permitirá que usuários do domínio @advm.lu façam login de forma segura usando suas credenciais Zoho existentes, protegendo tanto o frontend web quanto a API backend.
 
 ## Technical Context
 
@@ -54,7 +54,7 @@ Como o frontend é uma SPA (Single Page Application), o client_secret não pode 
 
 ### Requirement 1: Login com Zoho
 
-**User Story:** As a user, I want to log in using my Zoho account, so that I can access the Cantina POS system securely.
+**User Story:** As a user, I want to log in using my Zoho account, so that I can access the Cantina ADVM system securely.
 
 #### Acceptance Criteria
 

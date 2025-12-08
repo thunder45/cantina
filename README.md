@@ -93,7 +93,7 @@ npm test -- --coverage
 ## 📊 Estrutura do Projeto
 
 ```
-cantina-pos/
+cantina-advm/
 ├── packages/
 │   ├── shared/          # Tipos, API client, design system
 │   ├── backend/         # Services, repositories, API
@@ -114,19 +114,19 @@ cantina-pos/
 
 ## 📦 Packages
 
-### @cantina-pos/shared (1,582 linhas)
+### @cantina-advm/shared (1,582 linhas)
 - Tipos TypeScript compartilhados
 - API Client com offline queue
 - Design system e componentes
 - State management
 
-### @cantina-pos/backend (8,194 linhas)
+### @cantina-advm/backend (8,194 linhas)
 - 8 services (Event, Menu, Order, Sales, Customer, Report)
 - 8 repositories (in-memory para dev)
 - 26 REST API endpoints
 - 250+ testes unitários
 
-### @cantina-pos/frontend-web (7,041 linhas)
+### @cantina-advm/frontend-web (7,041 linhas)
 - 24 componentes React
 - 5 páginas principais
 - Responsive design (tablet/desktop/mobile)

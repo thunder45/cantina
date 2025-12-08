@@ -1,4 +1,4 @@
-// Backend entry point for Cantina POS
+// Backend entry point for Cantina ADVM
 
 // Export API
 export * from './api';
