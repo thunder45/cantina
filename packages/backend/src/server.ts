@@ -1,22 +1,32 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { router } from './api/router';
 import { APIGatewayEvent } from './api/types';
+import { authRouter } from './auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: FRONTEND_URL,
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Convert Express request to APIGatewayEvent and route through our router
-app.all('*', async (req, res) => {
+// Auth routes (handled by Express directly)
+app.use('/api/auth', authRouter);
+
+// API routes (handled by our custom router)
+app.all('/api/*', async (req, res) => {
   const event: APIGatewayEvent = {
     httpMethod: req.method,
     path: req.path,
@@ -37,7 +47,6 @@ app.all('*', async (req, res) => {
   try {
     const response = await router(event);
     
-    // Set headers from response
     if (response.headers) {
       Object.entries(response.headers).forEach(([key, value]) => {
         res.setHeader(key, value);
@@ -47,7 +56,6 @@ app.all('*', async (req, res) => {
     res.status(response.statusCode);
     
     if (response.body) {
-      // If body is JSON string, parse and send as JSON
       try {
         const parsed = JSON.parse(response.body);
         res.json(parsed);
@@ -71,7 +79,8 @@ app.listen(PORT, () => {
 🚀 Cantina POS Backend Server
 📡 Running at: http://localhost:${PORT}
 🏥 Health check: http://localhost:${PORT}/health
-📝 API endpoints: http://localhost:${PORT}/*
+🔐 Auth endpoints: http://localhost:${PORT}/api/auth/*
+📝 API endpoints: http://localhost:${PORT}/api/*
 
 Ready to receive requests!
   `);

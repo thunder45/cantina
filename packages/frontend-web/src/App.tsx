@@ -5,23 +5,21 @@ import { appReducer, initialState } from '@cantina-pos/shared';
 import { EventsPage, MenuPage, SalesPage, CustomersPage, ReportsPage } from './pages';
 import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from './hooks';
 import { getResponsiveNavStyles, getTouchButtonStyles } from './styles';
+import { AuthProvider, ProtectedRoute, useAuth } from './auth';
 
 // Create API client instance
 const apiClient = new ApiClient({
   baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
-  getAuthToken: async () => {
-    // TODO: Integrate with Cognito authentication
-    return localStorage.getItem('authToken');
-  },
+  getAuthToken: async () => null, // Using cookies now
   onUnauthorized: () => {
-    // TODO: Redirect to login
-    console.log('Unauthorized - redirect to login');
+    window.location.reload(); // Will show login page
   },
 });
 
 type AppView = 'events' | 'menu' | 'sales' | 'customers' | 'reports';
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, logout } = useAuth();
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [currentView, setCurrentView] = useState<AppView>('events');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -173,21 +171,35 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Event name on right */}
-        <div style={{ minWidth: platform === 'mobile' ? 60 : 120 }}>
+        {/* Event name and user on right */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.md }}>
           {selectedEvent && (
             <span style={{ 
-              padding: `${Spacing.sm}px 0`,
               fontSize: platform === 'mobile' ? FontSizes.xs : FontSizes.sm,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               maxWidth: platform === 'mobile' ? 60 : 120,
-              display: 'block',
-              textAlign: 'right',
             }}>
               {selectedEvent.name}
             </span>
+          )}
+          {user && (
+            <button
+              onClick={logout}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'white',
+                padding: `${Spacing.xs}px ${Spacing.sm}px`,
+                borderRadius: BorderRadius.sm,
+                fontSize: FontSizes.xs,
+                cursor: 'pointer',
+              }}
+              title={user.email}
+            >
+              Sair
+            </button>
           )}
         </div>
       </nav>
@@ -200,6 +212,16 @@ export const App: React.FC = () => {
         {renderCurrentView()}
       </div>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <AppContent />
+      </ProtectedRoute>
+    </AuthProvider>
   );
 };
 
