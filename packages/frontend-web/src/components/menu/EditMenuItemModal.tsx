@@ -36,6 +36,8 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
     
     if (priceValue <= 0) {
       newErrors.price = 'O preço deve ser maior que zero';
+    } else if (!/^\d+([.,]\d{0,2})?$/.test(price.trim())) {
+      newErrors.price = 'O preço deve ter no máximo duas casas decimais';
     }
     
     const stockValue = parseInt(stock, 10);
@@ -108,7 +110,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
             <label style={labelStyle}>Preço de Venda (€) *</label>
             <input
               type="number"
-              step="0.50"
+              step="any"
               min="0.01"
               value={price}
               onChange={(e) => {

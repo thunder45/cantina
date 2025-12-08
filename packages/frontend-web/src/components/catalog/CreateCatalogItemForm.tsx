@@ -30,6 +30,8 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
     const priceValue = parseCurrencyInput(suggestedPrice);
     if (priceValue <= 0) {
       newErrors.suggestedPrice = 'O preço deve ser maior que zero';
+    } else if (!/^\d+([.,]\d{0,2})?$/.test(suggestedPrice.trim())) {
+      newErrors.suggestedPrice = 'O preço deve ter no máximo duas casas decimais';
     }
     
     if (!groupId) {
@@ -104,7 +106,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
         <label style={labelStyle}>Preço Sugerido (€) *</label>
         <input
           type="number"
-          step="0.50"
+          step="any"
           min="0.01"
           value={suggestedPrice}
           onChange={(e) => {
