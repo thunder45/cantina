@@ -72,6 +72,13 @@ export class ApiClient {
         return { data: null as T, status: response.status };
       }
 
+      // Handle text responses (CSV, etc.)
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/') && !contentType.includes('text/json')) {
+        const text = await response.text();
+        return { data: text as T, status: response.status };
+      }
+
       const data = await response.json() as T;
       return { data, status: response.status };
     } catch (error) {

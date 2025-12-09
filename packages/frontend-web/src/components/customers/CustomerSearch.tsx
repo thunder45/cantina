@@ -88,20 +88,20 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
   // Filter and sort customers
   const filteredCustomers = customers
     .filter(c => {
-      if (filter === 'withBalance') return (c.balance || 0) > 0;
-      if (filter === 'noBalance') return (c.balance || 0) === 0;
+      if (filter === 'withBalance') return (c.balance || 0) < 0; // em dívida
+      if (filter === 'noBalance') return (c.balance || 0) >= 0;
       return true;
     })
     .sort((a, b) => {
       switch (sort) {
         case 'name-desc': return b.name.localeCompare(a.name);
-        case 'balance-desc': return (b.balance || 0) - (a.balance || 0);
+        case 'balance-desc': return (a.balance || 0) - (b.balance || 0); // mais negativo primeiro
         case 'recent': return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default: return a.name.localeCompare(b.name);
       }
     });
 
-  const customersWithBalance = customers.filter(c => (c.balance || 0) > 0).length;
+  const customersWithDebt = customers.filter(c => (c.balance || 0) < 0).length;
 
   const handleCreateCustomer = async () => {
     if (!newCustomerName.trim()) return;
@@ -177,16 +177,16 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
         <div style={{ display: 'flex', gap: Spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={filter} onChange={(e) => setFilter(e.target.value as FilterType)} style={selectStyle}>
             <option value="all">Todos ({customers.length})</option>
-            <option value="withBalance">Com saldo ({customersWithBalance})</option>
-            <option value="noBalance">Sem saldo ({customers.length - customersWithBalance})</option>
+            <option value="withBalance">Em dívida ({customersWithDebt})</option>
+            <option value="noBalance">Sem dívida ({customers.length - customersWithDebt})</option>
           </select>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortType)} style={selectStyle}>
             <option value="name-asc">Nome A-Z</option>
             <option value="name-desc">Nome Z-A</option>
-            <option value="balance-desc">Maior saldo</option>
+            <option value="balance-desc">Maior dívida</option>
             <option value="recent">Mais recente</option>
           </select>
-          {customersWithBalance > 0 && (
+          {customersWithDebt > 0 && (
             <span style={{ 
               padding: `${Spacing.xs}px ${Spacing.sm}px`, 
               backgroundColor: Colors.warning, 
@@ -195,7 +195,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
               fontSize: FontSizes.xs,
               fontWeight: 600,
             }}>
-              ⚠️ {customersWithBalance} com saldo pendente
+              ⚠️ {customersWithDebt} em dívida
             </span>
           )}
         </div>
@@ -266,7 +266,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  backgroundColor: (customer.balance || 0) > 0 ? Colors.warning : Colors.success,
+                  backgroundColor: (customer.balance || 0) < 0 ? Colors.warning : Colors.success,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -293,12 +293,12 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                   <div style={{
                     fontWeight: 700,
                     fontSize: FontSizes.lg,
-                    color: (customer.balance || 0) > 0 ? Colors.danger : Colors.success,
+                    color: (customer.balance || 0) < 0 ? Colors.danger : Colors.success,
                   }}>
-                    {formatCurrency(customer.balance || 0)}
+                    {formatCurrency(Math.abs(customer.balance || 0))}
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                    {(customer.balance || 0) > 0 ? 'em dívida' : 'sem saldo'}
+                    {(customer.balance || 0) < 0 ? 'em dívida' : (customer.balance || 0) > 0 ? 'crédito' : 'sem saldo'}
                   </div>
                 </div>
 

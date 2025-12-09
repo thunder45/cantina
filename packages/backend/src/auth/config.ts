@@ -61,7 +61,8 @@ export async function loadAuthConfig(): Promise<AuthConfig> {
       const response = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
       if (response.SecretString) {
         const secret = JSON.parse(response.SecretString);
-        cachedConfig.zoho.clientSecret = secret.client_secret;
+        if (secret.client_id) cachedConfig.zoho.clientId = secret.client_id;
+        if (secret.client_secret) cachedConfig.zoho.clientSecret = secret.client_secret;
       }
       secretLoaded = true;
     } catch (error) {

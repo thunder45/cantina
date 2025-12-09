@@ -178,7 +178,7 @@ async function handleApiRoute(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const response = await router(internalEvent);
     return {
       statusCode: response.statusCode,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...response.headers },
       body: response.body || '',
     };
   } catch (error) {

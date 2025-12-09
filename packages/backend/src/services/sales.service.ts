@@ -31,10 +31,9 @@ export async function confirmSale(
     throw new Error('ERR_CUSTOMER_REQUIRED');
   }
 
-  // Validate customer can make purchase if using balance/credit
-  if (customerId && (balancePayment || creditPayment)) {
-    const totalFromCustomer = (balancePayment?.amount || 0) + (creditPayment?.amount || 0);
-    const { allowed } = await customerService.canPurchase(customerId, totalFromCustomer);
+  // Validate customer can make purchase if using balance (credit/fiado always allowed)
+  if (customerId && balancePayment) {
+    const { allowed } = await customerService.canPurchase(customerId, balancePayment.amount);
     if (!allowed) throw new Error('ERR_CREDIT_LIMIT_EXCEEDED');
   }
 
