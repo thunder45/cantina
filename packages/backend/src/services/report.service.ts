@@ -65,7 +65,7 @@ function escapeCSV(value: string): string {
 }
 
 function translatePaymentMethod(method: PaymentMethod): string {
-  const translations: Record<PaymentMethod, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', credit: 'Fiado' };
+  const translations: Record<PaymentMethod, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Saldo', credit: 'Fiado' };
   return translations[method] || method;
 }
 

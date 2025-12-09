@@ -10,7 +10,7 @@ import {
 import {
   CustomerSearch,
   CustomerHistory,
-  PaymentRegistrationModal,
+  TransactionModal,
 } from '../components/customers';
 
 interface CustomersPageProps {
@@ -19,8 +19,9 @@ interface CustomersPageProps {
 
 export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customerBalance, setCustomerBalance] = useState<number>(0);
+  const [modalType, setModalType] = useState<'deposit' | 'withdraw' | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const customerService = new CustomerApiService(apiClient);
 
@@ -36,17 +37,12 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
   }, []);
 
   const handleCreateCustomer = useCallback(async (name: string): Promise<Customer> => {
-    const customer = await customerService.createCustomer(name);
-    return customer;
+    return customerService.createCustomer(name);
   }, []);
 
-  const handleRegisterPayment = useCallback(() => {
-    setShowPaymentModal(true);
-  }, []);
-
-  const handlePaymentConfirmed = useCallback(async () => {
-    setShowPaymentModal(false);
-    // Refresh customer data
+  const handleTransactionConfirmed = useCallback(async () => {
+    setModalType(null);
+    setRefreshKey(k => k + 1);
     if (selectedCustomer) {
       try {
         const balance = await customerService.getCustomerBalance(selectedCustomer.id);
@@ -69,41 +65,27 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
       height: 'calc(100vh - 52px)',
       backgroundColor: Colors.backgroundSecondary,
     }}>
-      {/* Header */}
       <div style={{
         padding: Spacing.md,
         backgroundColor: Colors.background,
         borderBottom: `1px solid ${Colors.border}`,
       }}>
-        <h2 style={{
-          margin: 0,
-          fontSize: FontSizes.lg,
-          fontWeight: 600,
-          color: Colors.text,
-        }}>
+        <h2 style={{ margin: 0, fontSize: FontSizes.lg, fontWeight: 600, color: Colors.text }}>
           Gestão de Clientes
         </h2>
-        <p style={{
-          margin: 0,
-          marginTop: Spacing.xs,
-          fontSize: FontSizes.sm,
-          color: Colors.textSecondary,
-        }}>
-          Pesquise clientes, visualize histórico e registe pagamentos
+        <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.sm, color: Colors.textSecondary }}>
+          Pesquise clientes, visualize histórico e faça depósitos
         </p>
       </div>
 
-      {/* Main Content */}
-      <div style={{
-        flex: 1,
-        overflow: 'hidden',
-        backgroundColor: Colors.background,
-      }}>
+      <div style={{ flex: 1, overflow: 'hidden', backgroundColor: Colors.background }}>
         {selectedCustomer ? (
           <CustomerHistory
+            key={refreshKey}
             apiClient={apiClient}
             customer={selectedCustomer}
-            onRegisterPayment={handleRegisterPayment}
+            onDeposit={() => setModalType('deposit')}
+            onWithdraw={() => setModalType('withdraw')}
             onBack={handleBack}
           />
         ) : (
@@ -115,14 +97,14 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
         )}
       </div>
 
-      {/* Payment Registration Modal */}
-      {showPaymentModal && selectedCustomer && (
-        <PaymentRegistrationModal
+      {modalType && selectedCustomer && (
+        <TransactionModal
           apiClient={apiClient}
           customer={selectedCustomer}
-          balance={customerBalance}
-          onConfirm={handlePaymentConfirmed}
-          onCancel={() => setShowPaymentModal(false)}
+          type={modalType}
+          maxAmount={modalType === 'withdraw' ? customerBalance : undefined}
+          onConfirm={handleTransactionConfirmed}
+          onCancel={() => setModalType(null)}
         />
       )}
     </div>

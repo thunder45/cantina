@@ -2,8 +2,10 @@ import { OrderItem } from './order';
 
 /**
  * PaymentMethod - Formas de pagamento disponíveis
+ * balance = usar saldo do cliente
+ * credit = fiado (cria dívida)
  */
-export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit';
+export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'balance' | 'credit';
 
 /**
  * PaymentPart - Parte de um pagamento (para pagamentos mistos)

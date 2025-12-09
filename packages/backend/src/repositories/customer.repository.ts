@@ -1,4 +1,4 @@
-import { Customer, CustomerPayment, PaymentPart } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CreateTransactionInput, DEFAULT_CREDIT_LIMIT } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -12,17 +12,17 @@ if (isProduction) {
 }
 
 let customers: Map<string, Customer> = new Map();
-let customerPayments: Map<string, CustomerPayment> = new Map();
+let transactions: Map<string, CustomerTransaction> = new Map();
 
-// Helper to check if item is a customer (not a payment record)
 function isCustomerRecord(item: any): item is Customer {
-  return item && typeof item.name === 'string' && !item.id?.startsWith('payment#');
+  return item && typeof item.name === 'string' && !item.id?.startsWith('tx#');
 }
 
-export async function createCustomer(name: string): Promise<Customer> {
+export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT): Promise<Customer> {
   const customer: Customer = {
     id: uuidv4(),
     name,
+    creditLimit,
     createdAt: new Date().toISOString(),
     version: 1,
   };
@@ -48,20 +48,33 @@ export async function getCustomerById(id: string): Promise<Customer | undefined>
 }
 
 export async function customerExists(id: string): Promise<boolean> {
+  return !!(await getCustomerById(id));
+}
+
+export async function updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer> {
   const customer = await getCustomerById(id);
-  return !!customer;
+  if (!customer) throw new Error('ERR_CUSTOMER_NOT_FOUND');
+
+  const updated: Customer = { ...customer, ...updates, version: customer.version + 1 };
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+  } else {
+    customers.set(id, updated);
+  }
+  return updated;
 }
 
 export async function searchCustomers(query: string): Promise<Customer[]> {
-  const normalizedQuery = query.toLowerCase().trim();
+  const q = query.toLowerCase().trim();
   if (isProduction) {
     const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
     return ((result.Items || []) as any[])
-      .filter(c => isCustomerRecord(c) && !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
+      .filter(c => isCustomerRecord(c) && !c.deletedAt && c.name.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
   return Array.from(customers.values())
-    .filter(c => !c.deletedAt && c.name.toLowerCase().includes(normalizedQuery))
+    .filter(c => !c.deletedAt && c.name.toLowerCase().includes(q))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -78,21 +91,10 @@ export async function getAllCustomers(): Promise<Customer[]> {
 }
 
 export async function deleteCustomer(id: string): Promise<Customer> {
-  let customer: Customer | undefined;
-  if (isProduction) {
-    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
-    customer = result.Item as Customer | undefined;
-  } else {
-    customer = customers.get(id);
-  }
+  const customer = await getCustomerById(id);
+  if (!customer) throw new Error('ERR_CUSTOMER_NOT_FOUND');
 
-  if (!customer || customer.deletedAt) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-
-  const updated: Customer = {
-    ...customer,
-    deletedAt: new Date().toISOString(),
-    version: customer.version + 1,
-  };
+  const updated: Customer = { ...customer, deletedAt: new Date().toISOString(), version: customer.version + 1 };
 
   if (isProduction) {
     await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
@@ -102,68 +104,91 @@ export async function deleteCustomer(id: string): Promise<Customer> {
   return updated;
 }
 
-export async function registerPayment(customerId: string, payments: PaymentPart[]): Promise<CustomerPayment> {
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  const payment: CustomerPayment = {
+// === Transactions ===
+
+export async function createTransaction(customerId: string, input: CreateTransactionInput): Promise<CustomerTransaction> {
+  const tx: CustomerTransaction = {
     id: uuidv4(),
     customerId,
-    payments: [...payments],
-    totalAmount,
+    type: input.type,
+    amount: input.amount,
+    description: input.description,
+    saleId: input.saleId,
+    paymentMethod: input.paymentMethod,
     createdAt: new Date().toISOString(),
-    version: 1,
+    createdBy: input.createdBy,
   };
 
   if (isProduction) {
-    await docClient!.send(new PutCommand({ 
-      TableName: TABLE_NAME, 
-      Item: { ...payment, id: `payment#${payment.id}`, pk: customerId } 
+    await docClient!.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: { ...tx, id: `tx#${tx.id}`, pk: customerId },
     }));
   } else {
-    customerPayments.set(payment.id, payment);
+    transactions.set(tx.id, tx);
   }
-  return payment;
+  return tx;
 }
 
-export async function getPaymentsByCustomer(customerId: string): Promise<CustomerPayment[]> {
+export async function getTransactionsByCustomer(customerId: string): Promise<CustomerTransaction[]> {
   if (isProduction) {
     const result = await docClient!.send(new ScanCommand({
       TableName: TABLE_NAME,
       FilterExpression: 'pk = :cid AND begins_with(id, :prefix)',
-      ExpressionAttributeValues: { ':cid': customerId, ':prefix': 'payment#' },
+      ExpressionAttributeValues: { ':cid': customerId, ':prefix': 'tx#' },
     }));
     return ((result.Items || []) as any[])
-      .map(p => ({ ...p, id: p.id.replace('payment#', '') }))
+      .map(t => ({ ...t, id: t.id.replace('tx#', '') }))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
-  return Array.from(customerPayments.values())
-    .filter(p => p.customerId === customerId)
+  return Array.from(transactions.values())
+    .filter(t => t.customerId === customerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function getTotalPaymentsByCustomer(customerId: string): Promise<number> {
-  const payments = await getPaymentsByCustomer(customerId);
-  return payments.reduce((sum, p) => sum + p.totalAmount, 0);
+export async function getTransactionBySaleId(saleId: string): Promise<CustomerTransaction | undefined> {
+  if (isProduction) {
+    const result = await docClient!.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'saleId = :sid',
+      ExpressionAttributeValues: { ':sid': saleId },
+    }));
+    const items = (result.Items || []) as any[];
+    if (items.length === 0) return undefined;
+    return { ...items[0], id: items[0].id.replace('tx#', '') };
+  }
+  return Array.from(transactions.values()).find(t => t.saleId === saleId);
+}
+
+export async function calculateBalance(customerId: string): Promise<number> {
+  const txs = await getTransactionsByCustomer(customerId);
+  return txs.reduce((balance, tx) => {
+    if (tx.type === 'deposit' || tx.type === 'refund') {
+      return balance + tx.amount;
+    } else {
+      return balance - tx.amount;
+    }
+  }, 0);
 }
 
 export function resetRepository(): void {
   customers = new Map();
-  customerPayments = new Map();
+  transactions = new Map();
 }
 
 export async function getCustomerCount(): Promise<number> {
-  const all = await getAllCustomers();
-  return all.length;
+  return (await getAllCustomers()).length;
 }
 
-export async function getPaymentCount(): Promise<number> {
+export async function getTransactionCount(): Promise<number> {
   if (isProduction) {
     const result = await docClient!.send(new ScanCommand({
       TableName: TABLE_NAME,
       FilterExpression: 'begins_with(id, :prefix)',
-      ExpressionAttributeValues: { ':prefix': 'payment#' },
+      ExpressionAttributeValues: { ':prefix': 'tx#' },
       Select: 'COUNT',
     }));
     return result.Count || 0;
   }
-  return customerPayments.size;
+  return transactions.size;
 }

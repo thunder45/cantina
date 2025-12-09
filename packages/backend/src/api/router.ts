@@ -92,7 +92,9 @@ function matchRoute(path: string): { handler: string; params: Record<string, str
     { pattern: '/customers/{id}', handler: 'customers' },
     { pattern: '/customers/{id}/balance', handler: 'customers' },
     { pattern: '/customers/{id}/history', handler: 'customers' },
-    { pattern: '/customers/{id}/payments', handler: 'customers' },
+    { pattern: '/customers/{id}/deposit', handler: 'customers' },
+    { pattern: '/customers/{id}/withdraw', handler: 'customers' },
+    { pattern: '/customers/{id}/credit-limit', handler: 'customers' },
   ];
 
   // Sort routes by specificity (more specific patterns first)

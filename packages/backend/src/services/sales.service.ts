@@ -3,6 +3,7 @@ import * as saleRepository from '../repositories/sale.repository';
 import * as orderService from './order.service';
 import * as menuItemService from './menu-item.service';
 import * as eventService from './event.service';
+import * as customerService from './customer.service';
 import * as auditLogService from './audit-log.service';
 
 export async function confirmSale(
@@ -22,9 +23,22 @@ export async function confirmSale(
     if (payment.amount <= 0) throw new Error('ERR_INVALID_PAYMENT_AMOUNT');
   }
 
-  const hasCredit = payments.some(p => p.method === 'credit');
-  if (hasCredit && !customerId) throw new Error('ERR_CUSTOMER_REQUIRED_FOR_CREDIT');
+  // Check if using customer balance or credit
+  const balancePayment = payments.find(p => p.method === 'balance');
+  const creditPayment = payments.find(p => p.method === 'credit');
+  
+  if ((balancePayment || creditPayment) && !customerId) {
+    throw new Error('ERR_CUSTOMER_REQUIRED');
+  }
 
+  // Validate customer can make purchase if using balance/credit
+  if (customerId && (balancePayment || creditPayment)) {
+    const totalFromCustomer = (balancePayment?.amount || 0) + (creditPayment?.amount || 0);
+    const { allowed } = await customerService.canPurchase(customerId, totalFromCustomer);
+    if (!allowed) throw new Error('ERR_CREDIT_LIMIT_EXCEEDED');
+  }
+
+  // Update menu item sold counts
   for (const item of order.items) {
     await menuItemService.incrementSoldCount(item.menuItemId, item.quantity);
   }
@@ -34,6 +48,12 @@ export async function confirmSale(
   const sale = await saleRepository.createSale(
     order.eventId, orderId, order.items, order.total, payments, createdBy, customerId
   );
+
+  // Record purchase transaction for customer
+  if (customerId && (balancePayment || creditPayment)) {
+    const totalFromCustomer = (balancePayment?.amount || 0) + (creditPayment?.amount || 0);
+    await customerService.recordPurchase(customerId, totalFromCustomer, sale.id, createdBy);
+  }
 
   await auditLogService.logSaleCreation(sale.id, createdBy, 
     JSON.stringify({ eventId: sale.eventId, total: sale.total, items: sale.items.length }));
@@ -71,6 +91,16 @@ export async function refundSale(saleId: string, reason: string, refundedBy: str
 
   for (const item of sale.items) {
     await menuItemService.decrementSoldCount(item.menuItemId, item.quantity);
+  }
+
+  // Refund customer balance if sale used balance/credit
+  if (sale.customerId) {
+    const balancePayment = sale.payments.find(p => p.method === 'balance');
+    const creditPayment = sale.payments.find(p => p.method === 'credit');
+    const totalFromCustomer = (balancePayment?.amount || 0) + (creditPayment?.amount || 0);
+    if (totalFromCustomer > 0) {
+      await customerService.recordRefund(sale.customerId, totalFromCustomer, saleId, refundedBy);
+    }
   }
 
   const { refund } = await saleRepository.refundSale(saleId, reason.trim(), refundedBy);

@@ -11,6 +11,7 @@ interface EventListProps {
   loading: boolean;
   onEventSelect: (event: Event) => void;
   onCreateEvent: () => void;
+  onCloseEvent?: (event: Event) => void;
 }
 
 export const EventList: React.FC<EventListProps> = ({
@@ -20,6 +21,7 @@ export const EventList: React.FC<EventListProps> = ({
   loading,
   onEventSelect,
   onCreateEvent,
+  onCloseEvent,
 }) => {
   const { platform, orientation, isTouch } = usePlatform();
   const styleOptions = { platform, orientation, isTouch };
@@ -82,28 +84,12 @@ export const EventList: React.FC<EventListProps> = ({
   const renderEventCard = (event: Event, showCategory: boolean = false) => {
     const cardStyles = getCardStyles({ onPress: () => onEventSelect(event) });
     return (
-      <button
+      <div
         key={event.id}
-        onClick={() => onEventSelect(event)}
         style={{
           ...cardStyles.container,
-          cursor: isTouch ? 'default' : 'pointer',
-          transition: 'all 0.2s ease',
           padding: platform === 'tablet' ? Spacing.lg : Spacing.md,
           minHeight: touchTarget.recommended,
-          textAlign: 'left',
-          width: '100%',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-        onMouseEnter={(e) => {
-          if (!isTouch) {
-            e.currentTarget.style.borderColor = Colors.primary;
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = Colors.border;
-          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
         }}
       >
         <div style={{ 
@@ -112,7 +98,18 @@ export const EventList: React.FC<EventListProps> = ({
           alignItems: 'flex-start',
           gap: Spacing.sm,
         }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <button
+            onClick={() => onEventSelect(event)}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              textAlign: 'left',
+              cursor: isTouch ? 'default' : 'pointer',
+            }}
+          >
             <h3 style={{ 
               ...cardStyles.title, 
               fontSize: getResponsiveFontSize(styleOptions, 'md'),
@@ -141,10 +138,28 @@ export const EventList: React.FC<EventListProps> = ({
                 {getCategoryName(event.categoryId)}
               </span>
             )}
+          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: Spacing.xs }}>
+            {getStatusBadge(event.status)}
+            {event.status === 'active' && onCloseEvent && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onCloseEvent(event); }}
+                style={{
+                  padding: `${Spacing.xs}px ${Spacing.sm}px`,
+                  backgroundColor: Colors.warning,
+                  color: Colors.text,
+                  border: 'none',
+                  borderRadius: BorderRadius.sm,
+                  fontSize: getResponsiveFontSize(styleOptions, 'xs'),
+                  cursor: isTouch ? 'default' : 'pointer',
+                }}
+              >
+                Encerrar
+              </button>
+            )}
           </div>
-          {getStatusBadge(event.status)}
         </div>
-      </button>
+      </div>
     );
   };
 

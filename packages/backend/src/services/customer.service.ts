@@ -1,16 +1,10 @@
-import { Customer, CustomerPayment, CustomerHistory, PaymentPart } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, PaymentMethod, DEFAULT_CREDIT_LIMIT } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
-import * as salesService from './sales.service';
 import * as auditLogService from './audit-log.service';
 
-export async function createCustomer(name: string): Promise<Customer> {
+export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT): Promise<Customer> {
   if (!name?.trim()) throw new Error('ERR_EMPTY_NAME');
-  return customerRepository.createCustomer(name.trim());
-}
-
-export async function searchCustomers(query: string): Promise<Customer[]> {
-  if (!query?.trim()) return customerRepository.getAllCustomers();
-  return customerRepository.searchCustomers(query);
+  return customerRepository.createCustomer(name.trim(), creditLimit);
 }
 
 export async function getCustomer(id: string): Promise<Customer> {
@@ -27,66 +21,148 @@ export async function customerExists(id: string): Promise<boolean> {
   return customerRepository.customerExists(id);
 }
 
+export async function searchCustomers(query: string): Promise<Customer[]> {
+  if (!query?.trim()) return customerRepository.getAllCustomers();
+  return customerRepository.searchCustomers(query);
+}
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  return customerRepository.getAllCustomers();
+}
+
 export async function getCustomerBalance(customerId: string): Promise<number> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
+  return customerRepository.calculateBalance(customerId);
+}
 
-  const unpaidSales = await salesService.getUnpaidSalesByCustomer(customerId);
-  const totalUnpaid = unpaidSales.reduce((sum, sale) => {
-    const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
-    return sum + creditAmount;
-  }, 0);
+export async function getCustomerWithBalance(customerId: string): Promise<CustomerWithBalance> {
+  const customer = await getCustomer(customerId);
+  const balance = await customerRepository.calculateBalance(customerId);
+  return { ...customer, balance };
+}
 
-  const totalPayments = await customerRepository.getTotalPaymentsByCustomer(customerId);
-  return Math.max(0, totalUnpaid - totalPayments);
+export async function getCustomersWithBalances(): Promise<CustomerWithBalance[]> {
+  const customers = await customerRepository.getAllCustomers();
+  return Promise.all(customers.map(async c => ({
+    ...c,
+    balance: await customerRepository.calculateBalance(c.id),
+  })));
 }
 
 export async function getCustomerHistory(customerId: string): Promise<CustomerHistory> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-  const sales = await salesService.getSalesByCustomer(customerId);
-  const payments = await customerRepository.getPaymentsByCustomer(customerId);
-  return { sales, payments };
+  const transactions = await customerRepository.getTransactionsByCustomer(customerId);
+  const balance = await customerRepository.calculateBalance(customerId);
+  return { transactions, balance };
 }
 
-export async function registerPayment(customerId: string, payments: PaymentPart[]): Promise<CustomerPayment> {
+// Depositar crédito na conta do cliente
+export async function deposit(
+  customerId: string,
+  amount: number,
+  paymentMethod: PaymentMethod,
+  createdBy: string,
+  description?: string
+): Promise<CustomerTransaction> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-  if (!payments?.length) throw new Error('ERR_NO_PAYMENT');
+  if (amount <= 0) throw new Error('ERR_INVALID_AMOUNT');
 
-  for (const payment of payments) {
-    if (payment.amount <= 0) throw new Error('ERR_INVALID_PAYMENT_AMOUNT');
-    if (payment.method === 'credit') throw new Error('ERR_INVALID_PAYMENT_METHOD');
-  }
+  const tx = await customerRepository.createTransaction(customerId, {
+    type: 'deposit',
+    amount,
+    paymentMethod,
+    createdBy,
+    description: description || 'Depósito',
+  });
 
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  const currentBalance = await getCustomerBalance(customerId);
-  if (totalAmount > currentBalance + 0.01) throw new Error('ERR_PAYMENT_EXCEEDS_BALANCE');
+  await auditLogService.logPaymentReceived(tx.id, customerId, createdBy,
+    JSON.stringify({ type: 'deposit', amount, method: paymentMethod }));
 
-  const customerPayment = await customerRepository.registerPayment(customerId, payments);
-
-  await auditLogService.logPaymentReceived(customerPayment.id, customerId, 'system',
-    JSON.stringify({ totalAmount: customerPayment.totalAmount, methods: payments.map(p => p.method) }));
-
-  await updateSalesPaidStatus(customerId);
-  return customerPayment;
+  return tx;
 }
 
-async function updateSalesPaidStatus(customerId: string): Promise<void> {
-  const unpaidSales = await salesService.getUnpaidSalesByCustomer(customerId);
-  const totalPayments = await customerRepository.getTotalPaymentsByCustomer(customerId);
+// Devolver dinheiro ao cliente (saque)
+export async function withdraw(
+  customerId: string,
+  amount: number,
+  paymentMethod: PaymentMethod,
+  createdBy: string,
+  description?: string
+): Promise<CustomerTransaction> {
+  if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
+  if (amount <= 0) throw new Error('ERR_INVALID_AMOUNT');
 
-  let remainingPayments = totalPayments;
-  const sortedSales = [...unpaidSales].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const balance = await customerRepository.calculateBalance(customerId);
+  if (amount > balance) throw new Error('ERR_INSUFFICIENT_BALANCE');
 
-  for (const sale of sortedSales) {
-    const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
-    if (remainingPayments >= creditAmount - 0.01) {
-      await salesService.markSaleAsPaid(sale.id);
-      remainingPayments -= creditAmount;
-    } else {
-      break;
-    }
+  const tx = await customerRepository.createTransaction(customerId, {
+    type: 'withdrawal',
+    amount,
+    paymentMethod,
+    createdBy,
+    description: description || 'Devolução',
+  });
+
+  return tx;
+}
+
+// Registar compra (débito) - chamado pelo sales service
+export async function recordPurchase(
+  customerId: string,
+  amount: number,
+  saleId: string,
+  createdBy: string
+): Promise<CustomerTransaction> {
+  const customer = await getCustomer(customerId);
+  const balance = await customerRepository.calculateBalance(customerId);
+
+  // Verificar limite de crédito
+  const newBalance = balance - amount;
+  if (newBalance < -customer.creditLimit) {
+    throw new Error('ERR_CREDIT_LIMIT_EXCEEDED');
   }
+
+  return customerRepository.createTransaction(customerId, {
+    type: 'purchase',
+    amount,
+    saleId,
+    createdBy,
+    description: 'Compra',
+  });
+}
+
+// Registar estorno de compra (crédito de volta)
+export async function recordRefund(
+  customerId: string,
+  amount: number,
+  saleId: string,
+  createdBy: string
+): Promise<CustomerTransaction> {
+  if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
+
+  return customerRepository.createTransaction(customerId, {
+    type: 'refund',
+    amount,
+    saleId,
+    createdBy,
+    description: 'Estorno',
+  });
+}
+
+// Verificar se cliente pode fazer compra com valor X
+export async function canPurchase(customerId: string, amount: number): Promise<{ allowed: boolean; availableCredit: number }> {
+  const customer = await getCustomer(customerId);
+  const balance = await customerRepository.calculateBalance(customerId);
+  const availableCredit = balance + customer.creditLimit;
+  return {
+    allowed: amount <= availableCredit,
+    availableCredit,
+  };
+}
+
+export async function updateCreditLimit(customerId: string, creditLimit: number): Promise<Customer> {
+  if (creditLimit < 0) throw new Error('ERR_INVALID_CREDIT_LIMIT');
+  return customerRepository.updateCustomer(customerId, { creditLimit });
 }
 
 export async function deleteCustomer(id: string): Promise<Customer> {

@@ -190,6 +190,18 @@ export const EventsPage: React.FC<EventsPageProps> = ({
     }
   };
 
+  const handleCloseEvent = async (event: Event) => {
+    if (!window.confirm(`Tem certeza que deseja encerrar o evento "${event.name}"?`)) return;
+    try {
+      setError(null);
+      const updated = await eventService.updateEventStatus(event.id, 'closed');
+      setEvents(events.map(e => e.id === updated.id ? updated : e));
+    } catch (err) {
+      setError('Erro ao encerrar evento.');
+      console.error('Failed to close event:', err);
+    }
+  };
+
   const handleBackToCategories = () => {
     setSelectedCategory(null);
     setViewMode('categories');
@@ -332,6 +344,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
             loading={loading}
             onEventSelect={onEventSelect}
             onCreateEvent={() => setShowEventForm(true)}
+            onCloseEvent={handleCloseEvent}
           />
         )}
       </div>

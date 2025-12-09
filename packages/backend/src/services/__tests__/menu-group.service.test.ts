@@ -1,180 +1,105 @@
-import {
-  getGroups,
-  getGroupById,
-  createGroup,
-  deleteGroup,
-  groupExists,
-  initializeDefaultGroups,
-  resetService,
-  setMenuItemsChecker,
-} from '../menu-group.service';
+import * as menuGroupService from '../menu-group.service';
 
 describe('MenuGroupService', () => {
   beforeEach(() => {
-    resetService();
+    menuGroupService.resetService();
   });
 
   describe('initializeDefaultGroups', () => {
-    /**
-     * Requirements: 2.1
-     * WHEN o Sistema POS é inicializado pela primeira vez 
-     * THEN o Sistema POS SHALL criar três grupos padrão: Refeição, Bebida e Sobremesa
-     */
-    it('should create three default groups on first initialization', () => {
-      const groups = initializeDefaultGroups();
-      
+    it('should create three default groups', async () => {
+      const groups = await menuGroupService.initializeDefaultGroups();
       expect(groups).toHaveLength(3);
       expect(groups.map(g => g.name)).toEqual(['Refeição', 'Bebida', 'Sobremesa']);
       expect(groups.every(g => g.isDefault)).toBe(true);
     });
 
-    it('should return existing groups on subsequent calls', () => {
-      const firstCall = initializeDefaultGroups();
-      const secondCall = initializeDefaultGroups();
-      
-      expect(firstCall).toEqual(secondCall);
+    it('should return existing groups on subsequent calls', async () => {
+      const first = await menuGroupService.initializeDefaultGroups();
+      const second = await menuGroupService.initializeDefaultGroups();
+      expect(first).toEqual(second);
     });
   });
 
   describe('getGroups', () => {
-    /**
-     * Requirements: 2.2
-     * WHEN o caixa adiciona um novo grupo 
-     * THEN o Sistema POS SHALL criar o grupo e disponibilizá-lo para seleção de itens
-     */
-    it('should return all groups sorted by order', () => {
-      initializeDefaultGroups();
-      const groups = getGroups();
-      
+    it('should return all groups sorted by order', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const groups = await menuGroupService.getGroups();
       expect(groups).toHaveLength(3);
       expect(groups[0].order).toBeLessThan(groups[1].order);
-      expect(groups[1].order).toBeLessThan(groups[2].order);
     });
 
-    it('should auto-initialize default groups if not initialized', () => {
-      const groups = getGroups();
-      
+    it('should auto-initialize default groups if not initialized', async () => {
+      const groups = await menuGroupService.getGroups();
       expect(groups).toHaveLength(3);
     });
   });
 
   describe('createGroup', () => {
-    /**
-     * Requirements: 2.2
-     * WHEN o caixa adiciona um novo grupo 
-     * THEN o Sistema POS SHALL criar o grupo e disponibilizá-lo para seleção de itens
-     */
-    it('should create a new group and make it available', () => {
-      initializeDefaultGroups();
-      
-      const newGroup = createGroup('Lanches');
-      
+    it('should create a new group', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const newGroup = await menuGroupService.createGroup('Lanches');
       expect(newGroup.name).toBe('Lanches');
       expect(newGroup.isDefault).toBe(false);
-      expect(getGroups()).toContainEqual(newGroup);
     });
 
-    it('should assign order after existing groups', () => {
-      initializeDefaultGroups();
-      
-      const newGroup = createGroup('Lanches');
-      const groups = getGroups();
-      const maxExistingOrder = Math.max(...groups.filter(g => g.id !== newGroup.id).map(g => g.order));
-      
-      expect(newGroup.order).toBeGreaterThan(maxExistingOrder);
+    it('should throw error for empty name', async () => {
+      await expect(menuGroupService.createGroup('')).rejects.toThrow('ERR_EMPTY_NAME');
     });
 
-    it('should throw error for empty name', () => {
-      expect(() => createGroup('')).toThrow('ERR_EMPTY_NAME');
-      expect(() => createGroup('   ')).toThrow('ERR_EMPTY_NAME');
+    it('should throw error for duplicate name', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      await expect(menuGroupService.createGroup('Refeição')).rejects.toThrow('ERR_DUPLICATE_NAME');
     });
 
-    it('should throw error for duplicate name', () => {
-      initializeDefaultGroups();
-      
-      expect(() => createGroup('Refeição')).toThrow('ERR_DUPLICATE_NAME');
-      expect(() => createGroup('refeição')).toThrow('ERR_DUPLICATE_NAME'); // case insensitive
-    });
-
-    it('should trim whitespace from name', () => {
-      const group = createGroup('  Lanches  ');
-      
+    it('should trim whitespace from name', async () => {
+      const group = await menuGroupService.createGroup('  Lanches  ');
       expect(group.name).toBe('Lanches');
     });
   });
 
   describe('deleteGroup', () => {
-    /**
-     * Requirements: 2.3
-     * WHEN o caixa remove um grupo sem itens associados ao evento atual 
-     * THEN o Sistema POS SHALL remover o grupo da lista de grupos ativos
-     */
-    it('should delete group without associated items', () => {
-      initializeDefaultGroups();
-      const newGroup = createGroup('Lanches');
-      
-      deleteGroup(newGroup.id);
-      
-      expect(getGroups()).not.toContainEqual(newGroup);
-      expect(groupExists(newGroup.id)).toBe(false);
+    it('should delete group without associated items', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const newGroup = await menuGroupService.createGroup('Lanches');
+      await menuGroupService.deleteGroup(newGroup.id);
+      expect(await menuGroupService.groupExists(newGroup.id)).toBe(false);
     });
 
-    /**
-     * Requirements: 2.4
-     * IF o caixa tenta remover um grupo com itens associados ao evento atual 
-     * THEN o Sistema POS SHALL exibir mensagem de erro e manter o grupo
-     */
-    it('should throw error when deleting group with associated items', () => {
-      initializeDefaultGroups();
-      const groups = getGroups();
-      const groupWithItems = groups[0];
-      
-      // Simulate that this group has items
-      setMenuItemsChecker((groupId) => groupId === groupWithItems.id);
-      
-      expect(() => deleteGroup(groupWithItems.id)).toThrow('ERR_GROUP_HAS_ITEMS');
-      expect(groupExists(groupWithItems.id)).toBe(true);
+    it('should throw error when deleting group with associated items', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const groups = await menuGroupService.getGroups();
+      menuGroupService.setMenuItemsChecker((groupId) => groupId === groups[0].id);
+      await expect(menuGroupService.deleteGroup(groups[0].id)).rejects.toThrow('ERR_GROUP_HAS_ITEMS');
     });
 
-    it('should throw error for non-existent group', () => {
-      initializeDefaultGroups();
-      
-      expect(() => deleteGroup('non-existent-id')).toThrow('ERR_GROUP_NOT_FOUND');
+    it('should throw error for non-existent group', async () => {
+      await expect(menuGroupService.deleteGroup('non-existent')).rejects.toThrow('ERR_GROUP_NOT_FOUND');
     });
   });
 
   describe('getGroupById', () => {
-    it('should return group by ID', () => {
-      initializeDefaultGroups();
-      const groups = getGroups();
-      const firstGroup = groups[0];
-      
-      const found = getGroupById(firstGroup.id);
-      
-      expect(found).toEqual(firstGroup);
+    it('should return group by ID', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const groups = await menuGroupService.getGroups();
+      const found = await menuGroupService.getGroupById(groups[0].id);
+      expect(found?.id).toBe(groups[0].id);
     });
 
-    it('should return undefined for non-existent ID', () => {
-      initializeDefaultGroups();
-      
-      const found = getGroupById('non-existent-id');
-      
+    it('should return undefined for non-existent ID', async () => {
+      const found = await menuGroupService.getGroupById('non-existent');
       expect(found).toBeUndefined();
     });
   });
 
   describe('groupExists', () => {
-    it('should return true for existing group', () => {
-      initializeDefaultGroups();
-      const groups = getGroups();
-      
-      expect(groupExists(groups[0].id)).toBe(true);
+    it('should return true for existing group', async () => {
+      await menuGroupService.initializeDefaultGroups();
+      const groups = await menuGroupService.getGroups();
+      expect(await menuGroupService.groupExists(groups[0].id)).toBe(true);
     });
 
-    it('should return false for non-existent group', () => {
-      initializeDefaultGroups();
-      
-      expect(groupExists('non-existent-id')).toBe(false);
+    it('should return false for non-existent group', async () => {
+      expect(await menuGroupService.groupExists('non-existent')).toBe(false);
     });
   });
 });

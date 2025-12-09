@@ -11,7 +11,11 @@ import {
   Sale,
   Customer,
   CustomerPayment,
+  CustomerTransaction,
+  CustomerHistory,
+  CustomerWithBalance,
   PaymentPart,
+  PaymentMethod,
   Receipt,
   EventReport,
   StockReport,
@@ -197,15 +201,19 @@ export class SalesApiService {
 export class CustomerApiService {
   constructor(private client: ApiClient) {}
 
-  async searchCustomers(query: string): Promise<Customer[]> {
+  async searchCustomers(query: string): Promise<CustomerWithBalance[]> {
     return this.client.get(`/customers/search?q=${encodeURIComponent(query)}`);
   }
 
-  async createCustomer(name: string): Promise<Customer> {
-    return this.client.post('/customers', { name });
+  async getAllCustomers(): Promise<CustomerWithBalance[]> {
+    return this.client.get('/customers');
   }
 
-  async getCustomer(id: string): Promise<Customer> {
+  async createCustomer(name: string, creditLimit?: number): Promise<Customer> {
+    return this.client.post('/customers', { name, creditLimit });
+  }
+
+  async getCustomer(id: string): Promise<CustomerWithBalance> {
     return this.client.get(`/customers/${id}`);
   }
 
@@ -214,10 +222,23 @@ export class CustomerApiService {
     return result.balance;
   }
 
-  async getCustomerHistory(customerId: string): Promise<{ sales: Sale[]; payments: CustomerPayment[] }> {
+  async getCustomerHistory(customerId: string): Promise<CustomerHistory> {
     return this.client.get(`/customers/${customerId}/history`);
   }
 
+  async deposit(customerId: string, amount: number, paymentMethod: PaymentMethod): Promise<CustomerTransaction> {
+    return this.client.post(`/customers/${customerId}/deposit`, { amount, paymentMethod });
+  }
+
+  async withdraw(customerId: string, amount: number, paymentMethod: PaymentMethod): Promise<CustomerTransaction> {
+    return this.client.post(`/customers/${customerId}/withdraw`, { amount, paymentMethod });
+  }
+
+  async updateCreditLimit(customerId: string, creditLimit: number): Promise<Customer> {
+    return this.client.patch(`/customers/${customerId}/credit-limit`, { creditLimit });
+  }
+
+  // Legacy - keep for compatibility
   async registerPayment(customerId: string, payments: PaymentPart[]): Promise<CustomerPayment> {
     return this.client.post(`/customers/${customerId}/payments`, { payments });
   }
