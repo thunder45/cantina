@@ -14,6 +14,7 @@ export async function getReportByPeriod(startDate: string, endDate: string): Pro
   let totalSales = 0, totalPaid = 0, totalPending = 0, totalRefunded = 0;
   const itemsMap = new Map<string, { description: string; quantity: number; total: number }>();
   const paymentMap = new Map<PaymentMethod, number>();
+  const allSales: EventReport['sales'] = [];
 
   for (const event of events) {
     const report = await reportRepository.aggregateEventReport(event.id, { startDate, endDate });
@@ -21,6 +22,7 @@ export async function getReportByPeriod(startDate: string, endDate: string): Pro
     totalPaid += report.totalPaid;
     totalPending += report.totalPending;
     totalRefunded += report.totalRefunded;
+    allSales.push(...report.sales);
 
     for (const item of report.itemsSold) {
       const existing = itemsMap.get(item.description);
@@ -45,6 +47,7 @@ export async function getReportByPeriod(startDate: string, endDate: string): Pro
     totalRefunded,
     itemsSold: Array.from(itemsMap.values()).sort((a, b) => b.quantity - a.quantity),
     paymentBreakdown: Array.from(paymentMap.entries()).map(([method, total]) => ({ method, total })).sort((a, b) => b.total - a.total),
+    sales: allSales.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
   };
 }
 

@@ -347,6 +347,67 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Sales Detail */}
+      <div style={{
+        backgroundColor: Colors.background,
+        borderRadius: BorderRadius.lg,
+        border: `1px solid ${Colors.border}`,
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          padding: Spacing.md,
+          borderBottom: `1px solid ${Colors.border}`,
+          backgroundColor: Colors.backgroundSecondary,
+        }}>
+          <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>
+            Vendas Detalhadas ({report.sales?.length || 0})
+          </h3>
+        </div>
+        <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
+          {!report.sales || report.sales.length === 0 ? (
+            <div style={{ textAlign: 'center', color: Colors.textSecondary }}>
+              Nenhuma venda registada
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
+              {report.sales.map((sale) => (
+                <div
+                  key={sale.id}
+                  style={{
+                    padding: Spacing.sm,
+                    backgroundColor: sale.refunded ? '#fff5f5' : Colors.backgroundSecondary,
+                    borderRadius: BorderRadius.md,
+                    border: sale.refunded ? `1px solid ${Colors.danger}` : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                      {new Date(sale.createdAt).toLocaleString('pt-PT')}
+                      {sale.customerName && ` • ${sale.customerName}`}
+                    </span>
+                    <span style={{ 
+                      fontSize: FontSizes.sm, 
+                      fontWeight: 600, 
+                      color: sale.refunded ? Colors.danger : Colors.success,
+                      textDecoration: sale.refunded ? 'line-through' : 'none',
+                    }}>
+                      {formatPrice(sale.total)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.text }}>
+                    {sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
+                  </div>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
+                    {sale.payments.map(p => `${getPaymentMethodLabel(p.method)}: ${formatPrice(p.amount)}`).join(' + ')}
+                    {sale.refunded && <span style={{ color: Colors.danger, marginLeft: 8 }}>ESTORNADO</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

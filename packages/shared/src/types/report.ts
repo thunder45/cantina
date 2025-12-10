@@ -11,6 +11,18 @@ export interface EventReport {
   totalRefunded: number;
   itemsSold: ItemSoldSummary[];
   paymentBreakdown: PaymentBreakdown[];
+  sales: SaleDetail[];
+}
+
+export interface SaleDetail {
+  id: string;
+  createdAt: string;
+  total: number;
+  payments: { method: PaymentMethod; amount: number }[];
+  items: { description: string; quantity: number; price: number }[];
+  customerName?: string;
+  createdBy: string;
+  refunded: boolean;
 }
 
 export interface ItemSoldSummary {

@@ -1,9 +1,10 @@
 import { Sale, PaymentMethod } from '@cantina-pos/shared';
-import { EventReport, StockReport, ItemSoldSummary, PaymentBreakdown, StockReportItem, ReportFilter, CategoryReport, EventBreakdownItem } from '@cantina-pos/shared';
+import { EventReport, StockReport, ItemSoldSummary, PaymentBreakdown, StockReportItem, ReportFilter, CategoryReport, EventBreakdownItem, SaleDetail } from '@cantina-pos/shared';
 import * as saleRepository from './sale.repository';
 import * as menuItemRepository from './menu-item.repository';
 import * as eventRepository from './event.repository';
 import * as eventCategoryRepository from './event-category.repository';
+import * as customerRepository from './customer.repository';
 
 export async function aggregateEventReport(eventId: string, filter?: ReportFilter): Promise<EventReport> {
   let sales = await saleRepository.getSalesByEvent(eventId);
@@ -22,8 +23,28 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
   let totalSales = 0, totalPaid = 0, totalPending = 0, totalRefunded = 0;
   const itemsMap = new Map<string, ItemSoldSummary>();
   const paymentMap = new Map<PaymentMethod, number>();
+  const saleDetails: SaleDetail[] = [];
 
   for (const sale of sales) {
+    // Build sale detail
+    let customerName: string | undefined;
+    if (sale.customerId) {
+      try {
+        const customer = await customerRepository.getCustomerById(sale.customerId);
+        customerName = customer?.name;
+      } catch { /* ignore */ }
+    }
+    saleDetails.push({
+      id: sale.id,
+      createdAt: sale.createdAt,
+      total: sale.total,
+      payments: sale.payments.map(p => ({ method: p.method, amount: p.amount })),
+      items: sale.items.map(i => ({ description: i.description, quantity: i.quantity, price: i.price })),
+      customerName,
+      createdBy: sale.createdBy,
+      refunded: sale.isRefunded,
+    });
+
     if (sale.isRefunded) {
       totalRefunded += sale.total;
       continue;
@@ -55,6 +76,7 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
     totalRefunded,
     itemsSold: Array.from(itemsMap.values()).sort((a, b) => b.quantity - a.quantity),
     paymentBreakdown: Array.from(paymentMap.entries()).map(([method, total]) => ({ method, total })).sort((a, b) => b.total - a.total),
+    sales: saleDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
   };
 }
 
