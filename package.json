@@ -16,7 +16,11 @@
     "test:coverage": "npm test -- --coverage",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json",
-    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist"
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:backend": "./scripts/deploy.sh backend",
+    "deploy:frontend": "./scripts/deploy.sh frontend",
+    "deploy:all": "./scripts/deploy.sh all"
   },
   "engines": {
     "node": ">=18.0.0"
