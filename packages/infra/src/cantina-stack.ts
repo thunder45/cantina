@@ -149,6 +149,8 @@ export class CantinaStack extends cdk.Stack {
       memorySize: 256,
       timeout: cdk.Duration.seconds(30),
       environment: {
+        NODE_ENV: 'production',
+        NODE_OPTIONS: '--enable-source-maps',
         CATEGORIES_TABLE: categoriesTable.tableName,
         EVENTS_TABLE: eventsTable.tableName,
         MENU_ITEMS_TABLE: menuItemsTable.tableName,
@@ -160,13 +162,10 @@ export class CantinaStack extends cdk.Stack {
         SESSIONS_TABLE: sessionsTable.tableName,
         AUDIT_LOGS_TABLE: auditLogsTable.tableName,
         CORS_ORIGIN: `https://${fullDomain}`,
-        ZOHO_CLIENT_ID: '1000.GSSH23YGG1TFLSXYQG8EMLC54340GW',
-        ZOHO_REDIRECT_URI: `https://${fullDomain}/api/auth/callback`,
         ZOHO_SECRET_ARN: zohoSecret.secretArn,
-        SESSION_SECRET: process.env.SESSION_SECRET || 'cantina-session-secret-change-in-prod',
-        ALLOWED_EMAIL_DOMAIN: 'advm.lu',
+        ZOHO_REDIRECT_URI: `https://${fullDomain}/api/auth/callback`,
         FRONTEND_URL: `https://${fullDomain}`,
-        NODE_ENV: 'production',
+        ALLOWED_EMAIL_DOMAIN: 'advm.lu',
       },
     });
 
