@@ -389,7 +389,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                     <span style={{ 
                       fontSize: FontSizes.sm, 
                       fontWeight: 600, 
-                      color: sale.refunded ? Colors.danger : Colors.success,
+                      color: sale.refunded ? Colors.danger : sale.payments.some(p => p.method === 'credit') ? Colors.warning : Colors.success,
                       textDecoration: sale.refunded ? 'line-through' : 'none',
                     }}>
                       {formatPrice(sale.total)}
