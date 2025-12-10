@@ -59,7 +59,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
       cash: 'Dinheiro',
       card: 'Cartão',
       transfer: 'Transferência',
-      credit: 'Crédito',
+      credit: 'Anotado',
     };
     return labels[method] || method;
   };

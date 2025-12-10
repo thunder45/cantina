@@ -52,7 +52,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
       cash: 'Dinheiro',
       card: 'Cartão',
       transfer: 'Transferência',
-      credit: 'Crédito',
+      credit: 'Anotado',
     };
     return labels[method] || method;
   };

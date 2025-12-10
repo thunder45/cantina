@@ -14,6 +14,8 @@ export interface APIGatewayEvent {
       claims?: {
         sub?: string;
         'cognito:username'?: string;
+        email?: string;
+        name?: string;
       };
     };
   };

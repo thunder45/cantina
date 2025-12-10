@@ -23,7 +23,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: 'Dinheiro',
   card: 'Cartão',
   transfer: 'Transferência',
-  credit: 'Crédito (Fiado)',
+  credit: 'Anotado (Fiado)',
 };
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -142,7 +142,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 borderBottom: `1px dashed ${Colors.border}`,
               }}>
                 <div style={{ fontWeight: 700, fontSize: FontSizes.md }}>
-                  CANTINA POS
+                  CANTINA ADVM
                 </div>
                 <div style={{ color: Colors.textSecondary }}>
                   {receipt.eventName}

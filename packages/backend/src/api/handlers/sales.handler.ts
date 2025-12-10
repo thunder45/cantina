@@ -16,7 +16,7 @@ interface RefundSaleBody {
 
 function getUserId(event: APIGatewayEvent): string {
   const claims = event.requestContext?.authorizer?.claims;
-  return claims?.sub || claims?.['cognito:username'] || 'anonymous';
+  return claims?.name || claims?.email || 'anonymous';
 }
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {

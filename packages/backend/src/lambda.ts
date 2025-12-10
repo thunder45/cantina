@@ -157,6 +157,20 @@ async function handleApiRoute(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     });
   }
 
+  // Get user from session
+  const cookies = parseCookies(event.headers.Cookie || event.headers.cookie || '');
+  const authHeader = event.headers.Authorization || event.headers.authorization || '';
+  const sessionId = authHeader.replace('Bearer ', '') || cookies.cantina_session;
+  let userEmail = 'anonymous';
+  let userName = 'anonymous';
+  if (sessionId) {
+    const session = await sessionService.getSession(sessionId);
+    if (session) {
+      userEmail = session.email;
+      userName = session.displayName || session.email;
+    }
+  }
+
   // Remove /api prefix for router
   const routerPath = event.path.replace(/^\/prod/, '').replace(/^\/api/, '');
 
@@ -169,7 +183,7 @@ async function handleApiRoute(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     headers: event.headers as Record<string, string>,
     requestContext: {
       authorizer: {
-        claims: event.requestContext.authorizer?.claims || {},
+        claims: { email: userEmail, name: userName },
       },
     },
   };
