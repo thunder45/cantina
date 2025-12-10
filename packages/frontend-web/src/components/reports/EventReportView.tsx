@@ -225,7 +225,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           color={Colors.success}
         />
         <SummaryCard
-          title="Pendente"
+          title="Anotado"
           value={formatPrice(report.totalPending)}
           color={Colors.warning}
         />
