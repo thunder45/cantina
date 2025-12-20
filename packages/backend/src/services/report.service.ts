@@ -21,9 +21,11 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
   const categoryStatsMap = new Map<string, CategoryBreakdownItem>();
   const allSales: GlobalSaleDetail[] = [];
 
-  // Filter events by category if specified
+  // Filter events by category or eventId
   let filteredEvents = events;
-  if (filter?.categoryId) {
+  if (filter?.eventId) {
+    filteredEvents = events.filter(e => e.id === filter.eventId);
+  } else if (filter?.categoryId) {
     filteredEvents = events.filter(e => e.categoryId === filter.categoryId);
   }
 

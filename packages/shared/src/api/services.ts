@@ -258,6 +258,7 @@ export class ReportApiService {
   async getGlobalReport(filter?: GlobalReportFilter): Promise<GlobalReport> {
     const params = new URLSearchParams();
     if (filter?.categoryId) params.append('categoryId', filter.categoryId);
+    if (filter?.eventId) params.append('eventId', filter.eventId);
     if (filter?.startDate) params.append('startDate', filter.startDate);
     if (filter?.endDate) params.append('endDate', filter.endDate);
     if (filter?.paymentMethod) params.append('paymentMethod', filter.paymentMethod);

@@ -63,6 +63,7 @@ export interface ReportFilter {
  */
 export interface GlobalReportFilter {
   categoryId?: string;
+  eventId?: string;
   startDate?: string;
   endDate?: string;
   paymentMethod?: PaymentMethod;

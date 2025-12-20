@@ -64,6 +64,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       setLoading(true);
       setError(null);
       const data = await reportService.getGlobalReport({
+        eventId: eventId || undefined,
         categoryId: categoryFilter || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -77,7 +78,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, startDate, endDate, paymentMethodFilter, customerFilter]);
+  }, [eventId, categoryFilter, startDate, endDate, paymentMethodFilter, customerFilter]);
 
   useEffect(() => {
     loadFilters();

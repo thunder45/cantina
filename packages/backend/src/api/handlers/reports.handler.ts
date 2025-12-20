@@ -12,6 +12,7 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
     if (httpMethod === 'GET' && path === '/reports/global') {
       const filter: GlobalReportFilter = {};
       if (queryStringParameters?.categoryId) filter.categoryId = queryStringParameters.categoryId;
+      if (queryStringParameters?.eventId) filter.eventId = queryStringParameters.eventId;
       if (queryStringParameters?.startDate) filter.startDate = queryStringParameters.startDate;
       if (queryStringParameters?.endDate) filter.endDate = queryStringParameters.endDate;
       if (queryStringParameters?.paymentMethod) filter.paymentMethod = queryStringParameters.paymentMethod as PaymentMethod;
