@@ -18,14 +18,15 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const SKIP_AUTH = import.meta.env.VITE_SKIP_AUTH === 'true';
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(SKIP_AUTH ? { email: 'beta@advm.lu', displayName: 'Beta User' } : null);
+  const [isLoading, setIsLoading] = useState(!SKIP_AUTH);
   const [error, setError] = useState<string | null>(null);
 
   // Check for session token or errors in URL (from OAuth callback)

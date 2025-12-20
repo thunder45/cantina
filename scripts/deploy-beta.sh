@@ -34,7 +34,7 @@ npm run build:lambda --workspace=@cantina-pos/backend
 # Build frontend with beta API URL
 log "Building frontend for beta..."
 cd packages/frontend-web
-VITE_API_URL="https://${SUBDOMAIN}.advm.lu/api" npm run build
+VITE_API_URL="https://${SUBDOMAIN}.advm.lu" VITE_SKIP_AUTH=true npm run build
 cd ../..
 
 # Deploy CDK stack with beta subdomain
