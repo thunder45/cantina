@@ -23,6 +23,9 @@ export class CantinaStack extends cdk.Stack {
 
     const fullDomain = `${props.subDomain}.${props.domainName}`;
     const apiDomain = `api.${props.subDomain}.${props.domainName}`;
+    
+    // Use prefix for resource names to allow multiple environments
+    const envPrefix = props.subDomain === 'cantina' ? '' : 'beta-';
 
     // ========== DNS ==========
     // Import existing hosted zone (create manually first)
@@ -46,14 +49,14 @@ export class CantinaStack extends cdk.Stack {
 
     // ========== DynamoDB Tables ==========
     const categoriesTable = new dynamodb.Table(this, 'CategoriesTable', {
-      tableName: 'cantina-categories',
+      tableName: `${envPrefix}cantina-categories`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const eventsTable = new dynamodb.Table(this, 'EventsTable', {
-      tableName: 'cantina-events',
+      tableName: `${envPrefix}cantina-events`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -64,7 +67,7 @@ export class CantinaStack extends cdk.Stack {
     });
 
     const menuItemsTable = new dynamodb.Table(this, 'MenuItemsTable', {
-      tableName: 'cantina-menu-items',
+      tableName: `${envPrefix}cantina-menu-items`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -75,7 +78,7 @@ export class CantinaStack extends cdk.Stack {
     });
 
     const ordersTable = new dynamodb.Table(this, 'OrdersTable', {
-      tableName: 'cantina-orders',
+      tableName: `${envPrefix}cantina-orders`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -86,7 +89,7 @@ export class CantinaStack extends cdk.Stack {
     });
 
     const salesTable = new dynamodb.Table(this, 'SalesTable', {
-      tableName: 'cantina-sales',
+      tableName: `${envPrefix}cantina-sales`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -97,28 +100,28 @@ export class CantinaStack extends cdk.Stack {
     });
 
     const customersTable = new dynamodb.Table(this, 'CustomersTable', {
-      tableName: 'cantina-customers',
+      tableName: `${envPrefix}cantina-customers`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const menuGroupsTable = new dynamodb.Table(this, 'MenuGroupsTable', {
-      tableName: 'cantina-menu-groups',
+      tableName: `${envPrefix}cantina-menu-groups`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const catalogItemsTable = new dynamodb.Table(this, 'CatalogItemsTable', {
-      tableName: 'cantina-catalog-items',
+      tableName: `${envPrefix}cantina-catalog-items`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const sessionsTable = new dynamodb.Table(this, 'SessionsTable', {
-      tableName: 'cantina-sessions',
+      tableName: `${envPrefix}cantina-sessions`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: 'ttl',
@@ -126,7 +129,7 @@ export class CantinaStack extends cdk.Stack {
     });
 
     const auditLogsTable = new dynamodb.Table(this, 'AuditLogsTable', {
-      tableName: 'cantina-audit-logs',
+      tableName: `${envPrefix}cantina-audit-logs`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -142,7 +145,7 @@ export class CantinaStack extends cdk.Stack {
 
     // ========== Lambda Backend ==========
     const backendLambda = new lambda.Function(this, 'BackendLambda', {
-      functionName: 'cantina-api',
+      functionName: `${envPrefix}cantina-api`,
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/dist/lambda')),
@@ -184,7 +187,7 @@ export class CantinaStack extends cdk.Stack {
 
     // ========== API Gateway ==========
     const api = new apigateway.RestApi(this, 'CantinaApi', {
-      restApiName: 'cantina-api',
+      restApiName: `${envPrefix}cantina-api`,
       defaultCorsPreflightOptions: {
         allowOrigins: [`https://${fullDomain}`, 'http://localhost:3000'],
         allowMethods: apigateway.Cors.ALL_METHODS,
@@ -201,7 +204,7 @@ export class CantinaStack extends cdk.Stack {
 
     // ========== S3 + CloudFront (Frontend) ==========
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
-      bucketName: `cantina-frontend-${this.account}`,
+      bucketName: `${envPrefix}cantina-frontend-${this.account}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,

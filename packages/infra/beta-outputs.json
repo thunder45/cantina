@@ -1,0 +1,9 @@
+{
+  "CantinaBetaStack": {
+    "ApiURL": "https://s4w2qr7ydg.execute-api.eu-west-1.amazonaws.com/prod/",
+    "BucketName": "beta-cantina-frontend-625272706584",
+    "WebsiteURL": "https://cantina-beta.advm.lu",
+    "DistributionId": "E3RFATVK47GGJ7",
+    "CantinaApiEndpoint3E4D0692": "https://s4w2qr7ydg.execute-api.eu-west-1.amazonaws.com/prod/"
+  }
+}

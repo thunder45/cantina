@@ -8,7 +8,10 @@ const app = new cdk.App();
 const domainName = app.node.tryGetContext('domainName') || 'advm.lu';
 const subDomain = app.node.tryGetContext('subDomain') || 'cantina';
 
-new CantinaStack(app, 'CantinaStack', {
+// Determine stack name based on subdomain
+const stackName = subDomain === 'cantina' ? 'CantinaStack' : 'CantinaBetaStack';
+
+new CantinaStack(app, stackName, {
   env: {
     account: '625272706584',
     region: 'eu-west-1',
