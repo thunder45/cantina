@@ -20,6 +20,8 @@ import {
   EventReport,
   StockReport,
   CategoryReport,
+  GlobalReport,
+  GlobalReportFilter,
 } from '../types';
 
 // Event Category API Service
@@ -252,6 +254,17 @@ export class CustomerApiService {
 // Report API Service
 export class ReportApiService {
   constructor(private client: ApiClient) {}
+
+  async getGlobalReport(filter?: GlobalReportFilter): Promise<GlobalReport> {
+    const params = new URLSearchParams();
+    if (filter?.categoryId) params.append('categoryId', filter.categoryId);
+    if (filter?.startDate) params.append('startDate', filter.startDate);
+    if (filter?.endDate) params.append('endDate', filter.endDate);
+    if (filter?.paymentMethod) params.append('paymentMethod', filter.paymentMethod);
+    if (filter?.customerId) params.append('customerId', filter.customerId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.client.get(`/reports/global${query}`);
+  }
 
   async getEventReport(
     eventId: string,

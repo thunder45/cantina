@@ -44,6 +44,9 @@ function parsePathParams(path: string, pattern: string): Record<string, string> 
  */
 function matchRoute(path: string): { handler: string; params: Record<string, string> } | null {
   const routes = [
+    // Global Reports (must be before other report routes)
+    { pattern: '/reports/global', handler: 'reports' },
+    
     // Categories - CRUD
     { pattern: '/categories', handler: 'categories' },
     { pattern: '/categories/{id}', handler: 'categories' },

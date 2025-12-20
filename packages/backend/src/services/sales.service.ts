@@ -51,7 +51,8 @@ export async function confirmSale(
   // Record purchase transaction for customer
   if (customerId && (balancePayment || creditPayment)) {
     const totalFromCustomer = (balancePayment?.amount || 0) + (creditPayment?.amount || 0);
-    await customerService.recordPurchase(customerId, totalFromCustomer, sale.id, createdBy);
+    const paidAmount = balancePayment?.amount || 0; // Only balance is "paid", credit is unpaid
+    await customerService.recordPurchase(customerId, totalFromCustomer, sale.id, createdBy, paidAmount);
   }
 
   await auditLogService.logSaleCreation(sale.id, createdBy, 

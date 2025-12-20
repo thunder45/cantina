@@ -107,12 +107,18 @@ export async function deleteCustomer(id: string): Promise<Customer> {
 // === Transactions ===
 
 export async function createTransaction(customerId: string, input: CreateTransactionInput): Promise<CustomerTransaction> {
+  // For purchases: use paidAmount if provided, otherwise 0 (unpaid/credit)
+  // For other types: amountPaid equals amount (fully settled)
+  const amountPaid = input.type === 'purchase' 
+    ? (input.paidAmount ?? 0) 
+    : input.amount;
+    
   const tx: CustomerTransaction = {
     id: uuidv4(),
     customerId,
     type: input.type,
     amount: input.amount,
-    amountPaid: input.type === 'purchase' ? 0 : input.amount, // Purchases start unpaid
+    amountPaid,
     description: input.description,
     saleId: input.saleId,
     paymentMethod: input.paymentMethod,

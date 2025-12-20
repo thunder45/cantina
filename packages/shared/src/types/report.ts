@@ -59,6 +59,46 @@ export interface ReportFilter {
 }
 
 /**
+ * GlobalReportFilter - Filtros para relatório global
+ */
+export interface GlobalReportFilter {
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+  paymentMethod?: PaymentMethod;
+  customerId?: string;
+}
+
+/**
+ * GlobalReport - Relatório global independente de evento
+ */
+export interface GlobalReport {
+  totalSales: number;
+  totalPaid: number;
+  totalPending: number;
+  totalRefunded: number;
+  itemsSold: ItemSoldSummary[];
+  paymentBreakdown: PaymentBreakdown[];
+  categoryBreakdown: CategoryBreakdownItem[];
+  sales: GlobalSaleDetail[];
+}
+
+export interface CategoryBreakdownItem {
+  categoryId: string;
+  categoryName: string;
+  total: number;
+  paid: number;
+  pending: number;
+}
+
+export interface GlobalSaleDetail extends SaleDetail {
+  eventId: string;
+  eventName: string;
+  categoryId: string;
+  categoryName: string;
+}
+
+/**
  * CategoryReport - Relatório agregado de uma categoria
  * Requirements: 11.2
  */

@@ -178,7 +178,8 @@ export async function recordPurchase(
   customerId: string,
   amount: number,
   saleId: string,
-  createdBy: string
+  createdBy: string,
+  paidAmount: number = 0 // Amount paid immediately (from balance), rest is credit
 ): Promise<CustomerTransaction> {
   const customer = await getCustomer(customerId);
   const balance = await customerRepository.calculateBalance(customerId);
@@ -195,6 +196,7 @@ export async function recordPurchase(
     saleId,
     createdBy,
     description: 'Compra',
+    paidAmount, // Pass to repository
   });
 }
 

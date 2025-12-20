@@ -8,32 +8,32 @@ import {
   FontSizes,
   BorderRadius,
 } from '@cantina-pos/shared';
-import { EventReportView, StockReportView } from '../components/reports';
+import { GlobalReportView, StockReportView } from '../components/reports';
 
 interface ReportsPageProps {
   apiClient: ApiClient;
-  event: Event;
+  event: Event | null;
 }
 
-type ReportTab = 'sales' | 'stock';
+type ReportTab = 'global' | 'event' | 'stock';
 
 export const ReportsPage: React.FC<ReportsPageProps> = ({
   apiClient,
   event,
 }) => {
-  const [activeTab, setActiveTab] = useState<ReportTab>('sales');
+  const [activeTab, setActiveTab] = useState<ReportTab>('global');
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const reportService = new ReportApiService(apiClient);
 
   const handleExportCSV = useCallback(async () => {
+    if (!event) return;
     try {
       setExporting(true);
       setExportError(null);
       const csvContent = await reportService.exportReportCSV(event.id);
       
-      // Create and download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -50,7 +50,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     } finally {
       setExporting(false);
     }
-  }, [event.id, event.name]);
+  }, [event]);
 
   return (
     <div style={{
@@ -79,7 +79,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           fontSize: FontSizes.sm,
           color: Colors.textSecondary,
         }}>
-          {event.name}
+          {activeTab === 'global' ? 'Visão geral de todas as vendas' : event?.name || 'Selecione um evento'}
         </p>
       </div>
 
@@ -131,35 +131,54 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         borderBottom: `1px solid ${Colors.border}`,
       }}>
         <button
-          onClick={() => setActiveTab('sales')}
+          onClick={() => setActiveTab('global')}
           style={{
             padding: `${Spacing.sm}px ${Spacing.lg}px`,
-            backgroundColor: activeTab === 'sales' ? Colors.primary : 'transparent',
-            color: activeTab === 'sales' ? Colors.textLight : Colors.text,
-            border: activeTab === 'sales' ? 'none' : `1px solid ${Colors.border}`,
+            backgroundColor: activeTab === 'global' ? Colors.primary : 'transparent',
+            color: activeTab === 'global' ? Colors.textLight : Colors.text,
+            border: activeTab === 'global' ? 'none' : `1px solid ${Colors.border}`,
             borderRadius: BorderRadius.md,
             fontSize: FontSizes.sm,
             fontWeight: 500,
             cursor: 'pointer',
           }}
         >
-          📊 Vendas
+          📊 Geral
         </button>
-        <button
-          onClick={() => setActiveTab('stock')}
-          style={{
-            padding: `${Spacing.sm}px ${Spacing.lg}px`,
-            backgroundColor: activeTab === 'stock' ? Colors.primary : 'transparent',
-            color: activeTab === 'stock' ? Colors.textLight : Colors.text,
-            border: activeTab === 'stock' ? 'none' : `1px solid ${Colors.border}`,
-            borderRadius: BorderRadius.md,
-            fontSize: FontSizes.sm,
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          📦 Estoque
-        </button>
+        {event && (
+          <>
+            <button
+              onClick={() => setActiveTab('event')}
+              style={{
+                padding: `${Spacing.sm}px ${Spacing.lg}px`,
+                backgroundColor: activeTab === 'event' ? Colors.primary : 'transparent',
+                color: activeTab === 'event' ? Colors.textLight : Colors.text,
+                border: activeTab === 'event' ? 'none' : `1px solid ${Colors.border}`,
+                borderRadius: BorderRadius.md,
+                fontSize: FontSizes.sm,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              📅 Evento
+            </button>
+            <button
+              onClick={() => setActiveTab('stock')}
+              style={{
+                padding: `${Spacing.sm}px ${Spacing.lg}px`,
+                backgroundColor: activeTab === 'stock' ? Colors.primary : 'transparent',
+                color: activeTab === 'stock' ? Colors.textLight : Colors.text,
+                border: activeTab === 'stock' ? 'none' : `1px solid ${Colors.border}`,
+                borderRadius: BorderRadius.md,
+                fontSize: FontSizes.sm,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              📦 Estoque
+            </button>
+          </>
+        )}
       </div>
 
       {/* Report Content */}
@@ -168,17 +187,14 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         overflow: 'auto',
         backgroundColor: Colors.background,
       }}>
-        {activeTab === 'sales' ? (
-          <EventReportView
-            apiClient={apiClient}
-            event={event}
-            onExportCSV={handleExportCSV}
-          />
-        ) : (
-          <StockReportView
-            apiClient={apiClient}
-            event={event}
-          />
+        {activeTab === 'global' && (
+          <GlobalReportView apiClient={apiClient} />
+        )}
+        {activeTab === 'event' && event && (
+          <GlobalReportView apiClient={apiClient} eventId={event.id} onExportCSV={handleExportCSV} />
+        )}
+        {activeTab === 'stock' && event && (
+          <StockReportView apiClient={apiClient} event={event} />
         )}
       </div>
     </div>

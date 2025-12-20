@@ -106,9 +106,7 @@ const AppContent: React.FC = () => {
       case 'customers':
         return <CustomersPage apiClient={apiClient} />;
       case 'reports':
-        return selectedEvent ? (
-          <ReportsPage apiClient={apiClient} event={selectedEvent} />
-        ) : null;
+        return <ReportsPage apiClient={apiClient} event={selectedEvent} />;
       default:
         return null;
     }
@@ -163,17 +161,19 @@ const AppContent: React.FC = () => {
               <button
                 onClick={() => setCurrentView('menu')}
                 style={getNavButtonStyle(currentView === 'menu')}
-            title={platform === 'desktop' ? 'Press M' : undefined}
-          >
-            Menu
-          </button>
-          <button
-            onClick={() => setCurrentView('sales')}
-            style={getNavButtonStyle(currentView === 'sales')}
-            title={platform === 'desktop' ? 'Press S' : undefined}
-          >
-            Vendas
-          </button>
+                title={platform === 'desktop' ? 'Press M' : undefined}
+              >
+                Menu
+              </button>
+              <button
+                onClick={() => setCurrentView('sales')}
+                style={getNavButtonStyle(currentView === 'sales')}
+                title={platform === 'desktop' ? 'Press S' : undefined}
+              >
+                Vendas
+              </button>
+            </>
+          )}
           <button
             onClick={() => setCurrentView('customers')}
             style={getNavButtonStyle(currentView === 'customers')}
@@ -188,8 +188,6 @@ const AppContent: React.FC = () => {
           >
             Relatórios
           </button>
-          </>
-        )}
         </div>
 
         {/* ADVM Logo - Centered */}

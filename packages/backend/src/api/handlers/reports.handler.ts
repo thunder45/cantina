@@ -1,13 +1,24 @@
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, handleError, error } from '../response';
 import * as reportService from '../../services/report.service';
-import { ReportFilter } from '@cantina-pos/shared';
+import { ReportFilter, GlobalReportFilter, PaymentMethod } from '@cantina-pos/shared';
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, queryStringParameters, path } = event;
   const id = pathParameters?.id;
 
   try {
+    // Global report (no event required)
+    if (httpMethod === 'GET' && path === '/reports/global') {
+      const filter: GlobalReportFilter = {};
+      if (queryStringParameters?.categoryId) filter.categoryId = queryStringParameters.categoryId;
+      if (queryStringParameters?.startDate) filter.startDate = queryStringParameters.startDate;
+      if (queryStringParameters?.endDate) filter.endDate = queryStringParameters.endDate;
+      if (queryStringParameters?.paymentMethod) filter.paymentMethod = queryStringParameters.paymentMethod as PaymentMethod;
+      if (queryStringParameters?.customerId) filter.customerId = queryStringParameters.customerId;
+      return await getGlobalReport(filter);
+    }
+
     if (path.includes('/categories/')) {
       if (httpMethod === 'GET' && id && path.includes('/report/export')) {
         return await exportCategoryReportCSV(id);
@@ -35,6 +46,11 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   } catch (err) {
     return handleError(err);
   }
+}
+
+async function getGlobalReport(filter?: GlobalReportFilter): Promise<APIGatewayResponse> {
+  const report = await reportService.getGlobalReport(filter);
+  return success(report);
 }
 
 async function getEventReport(eventId: string, filter?: ReportFilter): Promise<APIGatewayResponse> {

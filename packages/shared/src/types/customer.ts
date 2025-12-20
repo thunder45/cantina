@@ -45,6 +45,7 @@ export interface CreateTransactionInput {
   saleId?: string;
   paymentMethod?: PaymentMethod;
   createdBy: string;
+  paidAmount?: number; // For purchases: amount paid immediately
 }
 
 export interface CustomerWithBalance extends Customer {
