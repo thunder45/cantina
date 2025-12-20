@@ -131,25 +131,31 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
 
   if (!report) return null;
 
+  const showAllFilters = !eventId; // Hide category/date filters when viewing single event
+
   return (
     <div style={{ padding: Spacing.md }}>
       {/* Filters */}
       <div style={{ display: 'flex', gap: Spacing.sm, marginBottom: Spacing.lg, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Categoria</label>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
-            <option value="">Todas</option>
-            {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Início</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Fim</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
-        </div>
+        {showAllFilters && (
+          <>
+            <div>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Categoria</label>
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
+                <option value="">Todas</option>
+                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Início</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Fim</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
+            </div>
+          </>
+        )}
         <div>
           <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Pagamento</label>
           <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
