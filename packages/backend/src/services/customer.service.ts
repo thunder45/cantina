@@ -1,5 +1,8 @@
-import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, PaymentMethod, DEFAULT_CREDIT_LIMIT } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, DEFAULT_CREDIT_LIMIT, ReceiptItem } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
+import * as saleRepository from '../repositories/sale.repository';
+import * as eventRepository from '../repositories/event.repository';
+import * as eventCategoryRepository from '../repositories/event-category.repository';
 import * as auditLogService from './audit-log.service';
 
 export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT): Promise<Customer> {
@@ -49,11 +52,56 @@ export async function getCustomersWithBalances(): Promise<CustomerWithBalance[]>
   })));
 }
 
-export async function getCustomerHistory(customerId: string): Promise<CustomerHistory> {
+export async function getCustomerHistory(customerId: string, filter?: CustomerHistoryFilter): Promise<CustomerHistory> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-  const transactions = await customerRepository.getTransactionsByCustomer(customerId);
+  let transactions = await customerRepository.getTransactionsByCustomer(customerId);
+  
+  // Enrich purchase transactions with event/category data
+  const enrichedTransactions = await Promise.all(transactions.map(async (tx) => {
+    if (tx.type !== 'purchase' || !tx.saleId) return tx;
+    
+    const sale = await saleRepository.getSaleById(tx.saleId);
+    if (!sale) return tx;
+    
+    const event = await eventRepository.getEventById(sale.eventId);
+    if (!event) return tx;
+    
+    const category = await eventCategoryRepository.getCategoryById(event.categoryId);
+    
+    const items: ReceiptItem[] = sale.items.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      total: item.price * item.quantity,
+    }));
+    
+    return {
+      ...tx,
+      eventId: event.id,
+      eventName: event.name,
+      categoryId: event.categoryId,
+      categoryName: category?.name,
+      items,
+    };
+  }));
+  
+  // Apply filters
+  let filtered = enrichedTransactions;
+  if (filter?.categoryId) {
+    filtered = filtered.filter(tx => tx.categoryId === filter.categoryId);
+  }
+  if (filter?.startDate) {
+    const start = new Date(filter.startDate);
+    filtered = filtered.filter(tx => new Date(tx.createdAt) >= start);
+  }
+  if (filter?.endDate) {
+    const end = new Date(filter.endDate);
+    end.setHours(23, 59, 59, 999);
+    filtered = filtered.filter(tx => new Date(tx.createdAt) <= end);
+  }
+  
   const balance = await customerRepository.calculateBalance(customerId);
-  return { transactions, balance };
+  return { transactions: filtered, balance };
 }
 
 // Depositar crédito na conta do cliente
@@ -75,10 +123,29 @@ export async function deposit(
     description: description || 'Depósito',
   });
 
+  // Apply deposit to unpaid purchases in FIFO order
+  await applyPaymentFIFO(customerId, amount);
+
   await auditLogService.logPaymentReceived(tx.id, customerId, createdBy,
     JSON.stringify({ type: 'deposit', amount, method: paymentMethod }));
 
   return tx;
+}
+
+// Apply payment to unpaid purchases in FIFO order (oldest first)
+async function applyPaymentFIFO(customerId: string, amount: number): Promise<void> {
+  const unpaidPurchases = await customerRepository.getUnpaidPurchases(customerId);
+  let remaining = amount;
+  
+  for (const purchase of unpaidPurchases) {
+    if (remaining <= 0) break;
+    
+    const unpaidAmount = purchase.amount - purchase.amountPaid;
+    const toApply = Math.min(remaining, unpaidAmount);
+    
+    await customerRepository.updateTransactionAmountPaid(purchase.id, purchase.amountPaid + toApply);
+    remaining -= toApply;
+  }
 }
 
 // Devolver dinheiro ao cliente (saque)

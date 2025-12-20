@@ -1,0 +1,87 @@
+{
+    "Items": [
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "createdAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "74a2fa82-1514-4b69-b0f5-6b82226ccfbf"
+            },
+            "name": {
+                "S": "Casais"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            }
+        },
+        {
+            "isDefault": {
+                "BOOL": false
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:14:06.258Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "10559b6e-3f53-4c11-8904-1b8313101016"
+            },
+            "name": {
+                "S": "Teste"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T13:14:06.258Z"
+            }
+        },
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "createdAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "8720e786-7b27-422e-9e75-cd00e0a72038"
+            },
+            "name": {
+                "S": "Kids"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            }
+        },
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "createdAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "6f96b3d6-9978-46b1-9d86-fbefe623fc66"
+            },
+            "name": {
+                "S": "Culto"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T12:55:33.352Z"
+            }
+        }
+    ],
+    "Count": 4,
+    "ScannedCount": 4,
+    "ConsumedCapacity": null
+}

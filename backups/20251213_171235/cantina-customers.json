@@ -1,0 +1,448 @@
+{
+    "Items": [
+        {
+            "createdAt": {
+                "S": "2025-12-11T20:12:56.668Z"
+            },
+            "amount": {
+                "N": "11.5"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#efc74720-c1d6-4ad8-af79-b317e15589f0"
+            },
+            "pk": {
+                "S": "69041b81-880c-4ebe-9226-be2704d2f59c"
+            },
+            "createdBy": {
+                "S": "Cantina ADVM"
+            },
+            "saleId": {
+                "S": "1d27ae51-03a2-472f-bc8d-9277b75d5675"
+            },
+            "customerId": {
+                "S": "69041b81-880c-4ebe-9226-be2704d2f59c"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-09T14:27:45.176Z"
+            },
+            "amount": {
+                "N": "100"
+            },
+            "paymentMethod": {
+                "S": "cash"
+            },
+            "description": {
+                "S": "Depósito"
+            },
+            "id": {
+                "S": "tx#2243e35d-f1ad-4f49-9c44-0a97f0781e68"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "system"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "deposit"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-10T19:17:35.096Z"
+            },
+            "amount": {
+                "N": "9"
+            },
+            "description": {
+                "S": "Estorno"
+            },
+            "id": {
+                "S": "tx#4525a475-d1e8-4e39-adda-a3c32f9ec225"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "Cantina ADVM"
+            },
+            "saleId": {
+                "S": "914cc448-4940-42fd-9eff-3fe9c4282638"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "refund"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-09T14:48:45.097Z"
+            },
+            "amount": {
+                "N": "14"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#a3d3b00b-f4b9-4215-b513-e5b7f0861355"
+            },
+            "pk": {
+                "S": "02069d44-62af-4c96-9b26-f287d04e92af"
+            },
+            "createdBy": {
+                "S": "anonymous"
+            },
+            "saleId": {
+                "S": "1de282e2-6675-43b2-9e70-5fbce92b2f30"
+            },
+            "customerId": {
+                "S": "02069d44-62af-4c96-9b26-f287d04e92af"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-11T20:13:51.970Z"
+            },
+            "amount": {
+                "N": "15"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#06f0d3a5-284e-4caf-a819-e8fea38a12ab"
+            },
+            "pk": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "createdBy": {
+                "S": "Cantina ADVM"
+            },
+            "saleId": {
+                "S": "849d80a3-0987-481c-9afb-b752be863aab"
+            },
+            "customerId": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-09T14:51:05.530Z"
+            },
+            "amount": {
+                "N": "22.5"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#199f19d8-bb88-48ac-8b5f-d0e90733b66f"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "anonymous"
+            },
+            "saleId": {
+                "S": "47d96c30-a9d2-4c9a-87e3-b6935eb680e8"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-08T13:38:11.243Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "name": {
+                "S": "Fabricio"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-10T19:16:58.476Z"
+            },
+            "amount": {
+                "N": "9"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#79fb599e-b911-432a-9e13-0e77e48ea42d"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "Cantina ADVM"
+            },
+            "saleId": {
+                "S": "914cc448-4940-42fd-9eff-3fe9c4282638"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-10T19:13:17.543Z"
+            },
+            "amount": {
+                "N": "9.5"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#b6436214-38b3-4736-ab29-c84f39b8cf8f"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "anonymous"
+            },
+            "saleId": {
+                "S": "694d130e-421a-4e2c-bd48-1cc033c1d5b8"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-11T20:12:53.329Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "creditLimit": {
+                "N": "100"
+            },
+            "id": {
+                "S": "69041b81-880c-4ebe-9226-be2704d2f59c"
+            },
+            "name": {
+                "S": "Ysco"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-09T15:03:20.698Z"
+            },
+            "amount": {
+                "N": "50"
+            },
+            "paymentMethod": {
+                "S": "card"
+            },
+            "description": {
+                "S": "Depósito"
+            },
+            "id": {
+                "S": "tx#19af73a8-2981-49f5-9dd2-4ae36bcc4fb7"
+            },
+            "pk": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "createdBy": {
+                "S": "system"
+            },
+            "customerId": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "type": {
+                "S": "deposit"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-11T20:15:23.604Z"
+            },
+            "amount": {
+                "N": "11.5"
+            },
+            "description": {
+                "S": "Estorno"
+            },
+            "id": {
+                "S": "tx#02c79dcb-7b77-4661-8165-89663e66e7b9"
+            },
+            "pk": {
+                "S": "69041b81-880c-4ebe-9226-be2704d2f59c"
+            },
+            "createdBy": {
+                "S": "Cantina ADVM"
+            },
+            "saleId": {
+                "S": "1d27ae51-03a2-472f-bc8d-9277b75d5675"
+            },
+            "customerId": {
+                "S": "69041b81-880c-4ebe-9226-be2704d2f59c"
+            },
+            "type": {
+                "S": "refund"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-08T17:15:05.709Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "name": {
+                "S": "Bia"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-08T21:14:45.749Z"
+            },
+            "version": {
+                "N": "1"
+            },
+            "id": {
+                "S": "02069d44-62af-4c96-9b26-f287d04e92af"
+            },
+            "name": {
+                "S": "Eduardo"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-10T19:14:01.272Z"
+            },
+            "amount": {
+                "N": "13"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#b81118f5-0c7b-4247-86e4-932f082edcf3"
+            },
+            "pk": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "createdBy": {
+                "S": "anonymous"
+            },
+            "saleId": {
+                "S": "bdec712d-dcb5-40db-87b6-8d15f15efe03"
+            },
+            "customerId": {
+                "S": "44f28905-834f-44d2-8d8c-9ca7b72374e3"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "createdAt": {
+                "S": "2025-12-09T15:03:03.393Z"
+            },
+            "amount": {
+                "N": "14.5"
+            },
+            "description": {
+                "S": "Compra"
+            },
+            "id": {
+                "S": "tx#aac322cc-d256-44ed-a997-0adf8ac5ee0d"
+            },
+            "pk": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "createdBy": {
+                "S": "anonymous"
+            },
+            "saleId": {
+                "S": "046c9aa7-d800-4d2a-8aec-59c3eefbc0c2"
+            },
+            "customerId": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "type": {
+                "S": "purchase"
+            }
+        },
+        {
+            "payments": {
+                "L": [
+                    {
+                        "M": {
+                            "method": {
+                                "S": "card"
+                            },
+                            "amount": {
+                                "N": "25.5"
+                            }
+                        }
+                    }
+                ]
+            },
+            "version": {
+                "N": "1"
+            },
+            "totalAmount": {
+                "N": "25.5"
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:41:49.949Z"
+            },
+            "id": {
+                "S": "payment#d769293d-fa35-46e9-98ca-dea3ec381415"
+            },
+            "pk": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            },
+            "customerId": {
+                "S": "295f4c04-cb1d-42a3-8d37-515e41fc55a0"
+            }
+        }
+    ],
+    "Count": 17,
+    "ScannedCount": 17,
+    "ConsumedCapacity": null
+}

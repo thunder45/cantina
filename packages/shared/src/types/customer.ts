@@ -1,4 +1,4 @@
-import { PaymentMethod } from './sale';
+import { PaymentMethod, ReceiptItem } from './sale';
 
 // Limite de crédito padrão (dívida máxima permitida)
 export const DEFAULT_CREDIT_LIMIT = 100;
@@ -24,11 +24,18 @@ export interface CustomerTransaction {
   customerId: string;
   type: TransactionType;
   amount: number; // Sempre positivo
+  amountPaid: number; // Quanto já foi pago desta transação (para FIFO)
   description?: string;
   saleId?: string;
   paymentMethod?: PaymentMethod;
   createdAt: string;
   createdBy: string;
+  // Dados enriquecidos do evento (para compras)
+  eventId?: string;
+  eventName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  items?: ReceiptItem[];
 }
 
 export interface CreateTransactionInput {
@@ -47,6 +54,12 @@ export interface CustomerWithBalance extends Customer {
 export interface CustomerHistory {
   transactions: CustomerTransaction[];
   balance: number;
+}
+
+export interface CustomerHistoryFilter {
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 // Legacy - manter para compatibilidade durante migração

@@ -1,0 +1,99 @@
+{
+    "Items": [
+        {
+            "version": {
+                "N": "4"
+            },
+            "suggestedPrice": {
+                "N": "2"
+            },
+            "updatedAt": {
+                "S": "2025-12-12T18:18:45.240Z"
+            },
+            "groupId": {
+                "S": "1510d268-3398-4f6d-a0cd-b8570ad525f8"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:14:23.554Z"
+            },
+            "description": {
+                "S": "Refri"
+            },
+            "id": {
+                "S": "300b6482-8f36-4df4-92f4-a043df6adad0"
+            }
+        },
+        {
+            "version": {
+                "N": "5"
+            },
+            "suggestedPrice": {
+                "N": "1.5"
+            },
+            "updatedAt": {
+                "S": "2025-12-12T18:18:54.640Z"
+            },
+            "groupId": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:34:42.966Z"
+            },
+            "description": {
+                "S": "Chup-chup"
+            },
+            "id": {
+                "S": "3fcdf5f2-b26b-4961-ab63-e25b8134ad29"
+            }
+        },
+        {
+            "version": {
+                "N": "2"
+            },
+            "suggestedPrice": {
+                "N": "4"
+            },
+            "updatedAt": {
+                "S": "2025-12-11T20:12:19.608Z"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "createdAt": {
+                "S": "2025-12-11T20:12:10.449Z"
+            },
+            "description": {
+                "S": "HotDog"
+            },
+            "id": {
+                "S": "4a327fe4-6f6a-49ff-9a6a-56b489171284"
+            }
+        },
+        {
+            "version": {
+                "N": "5"
+            },
+            "suggestedPrice": {
+                "N": "5.5"
+            },
+            "updatedAt": {
+                "S": "2025-12-12T18:18:26.340Z"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:25:22.375Z"
+            },
+            "description": {
+                "S": "Hamburguer"
+            },
+            "id": {
+                "S": "cae3d41e-cb3b-4473-8ded-8cb784781fb0"
+            }
+        }
+    ],
+    "Count": 4,
+    "ScannedCount": 4,
+    "ConsumedCapacity": null
+}

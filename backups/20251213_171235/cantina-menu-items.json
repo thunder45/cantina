@@ -1,0 +1,355 @@
+{
+    "Items": [
+        {
+            "eventId": {
+                "S": "a4b04066-d3bb-4cc8-b112-bf4cf564355c"
+            },
+            "version": {
+                "N": "5"
+            },
+            "catalogItemId": {
+                "S": "300b6482-8f36-4df4-92f4-a043df6adad0"
+            },
+            "groupId": {
+                "S": "1510d268-3398-4f6d-a0cd-b8570ad525f8"
+            },
+            "soldCount": {
+                "N": "5"
+            },
+            "stock": {
+                "N": "0"
+            },
+            "price": {
+                "N": "2"
+            },
+            "description": {
+                "S": "Refri"
+            },
+            "id": {
+                "S": "534ea8a3-e472-4fed-abab-65fc4b41976a"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a1cb205f-7f7b-484c-a25f-37ff9366f67b"
+            },
+            "version": {
+                "N": "3"
+            },
+            "catalogItemId": {
+                "S": "4a327fe4-6f6a-49ff-9a6a-56b489171284"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "soldCount": {
+                "N": "0"
+            },
+            "stock": {
+                "N": "30"
+            },
+            "price": {
+                "N": "4"
+            },
+            "description": {
+                "S": "HotDog"
+            },
+            "id": {
+                "S": "75891244-16b4-404c-943a-bf461f8d8a61"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a1cb205f-7f7b-484c-a25f-37ff9366f67b"
+            },
+            "version": {
+                "N": "10"
+            },
+            "catalogItemId": {
+                "S": "3fcdf5f2-b26b-4961-ab63-e25b8134ad29"
+            },
+            "groupId": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "soldCount": {
+                "N": "18"
+            },
+            "stock": {
+                "N": "30"
+            },
+            "price": {
+                "N": "1.5"
+            },
+            "description": {
+                "S": "Chup-chup"
+            },
+            "id": {
+                "S": "e33a9061-6500-4b56-9408-f29e0e987fd5"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a1cb205f-7f7b-484c-a25f-37ff9366f67b"
+            },
+            "version": {
+                "N": "9"
+            },
+            "catalogItemId": {
+                "S": "cae3d41e-cb3b-4473-8ded-8cb784781fb0"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "soldCount": {
+                "N": "12"
+            },
+            "stock": {
+                "N": "20"
+            },
+            "price": {
+                "N": "5.5"
+            },
+            "description": {
+                "S": "Hamburguer"
+            },
+            "id": {
+                "S": "028a7961-d8ff-4b03-b265-db4b1b3057ba"
+            }
+        },
+        {
+            "eventId": {
+                "S": "e2872bab-2860-4fcc-869f-f1330d6c581e"
+            },
+            "version": {
+                "N": "4"
+            },
+            "catalogItemId": {
+                "S": "3fcdf5f2-b26b-4961-ab63-e25b8134ad29"
+            },
+            "groupId": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "soldCount": {
+                "N": "1"
+            },
+            "stock": {
+                "N": "15"
+            },
+            "price": {
+                "N": "1.5"
+            },
+            "description": {
+                "S": "Chup-chup"
+            },
+            "id": {
+                "S": "f6d40285-d355-46ef-9425-efa31922bc1d"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a1cb205f-7f7b-484c-a25f-37ff9366f67b"
+            },
+            "version": {
+                "N": "10"
+            },
+            "catalogItemId": {
+                "S": "300b6482-8f36-4df4-92f4-a043df6adad0"
+            },
+            "groupId": {
+                "S": "1510d268-3398-4f6d-a0cd-b8570ad525f8"
+            },
+            "soldCount": {
+                "N": "4"
+            },
+            "stock": {
+                "N": "15"
+            },
+            "price": {
+                "N": "2"
+            },
+            "description": {
+                "S": "Refri"
+            },
+            "id": {
+                "S": "c8031b1f-8f5f-4cb4-985b-6ceccbade9d2"
+            }
+        },
+        {
+            "eventId": {
+                "S": "e2872bab-2860-4fcc-869f-f1330d6c581e"
+            },
+            "version": {
+                "N": "4"
+            },
+            "catalogItemId": {
+                "S": "300b6482-8f36-4df4-92f4-a043df6adad0"
+            },
+            "groupId": {
+                "S": "1510d268-3398-4f6d-a0cd-b8570ad525f8"
+            },
+            "soldCount": {
+                "N": "1"
+            },
+            "stock": {
+                "N": "1000"
+            },
+            "price": {
+                "N": "2"
+            },
+            "description": {
+                "S": "Refri"
+            },
+            "id": {
+                "S": "4364993e-4e4f-4ebf-8831-0b4f47212538"
+            }
+        },
+        {
+            "eventId": {
+                "S": "b6d7effb-b8b9-45c5-bb40-9f1f0c995360"
+            },
+            "version": {
+                "N": "3"
+            },
+            "catalogItemId": {
+                "S": "cae3d41e-cb3b-4473-8ded-8cb784781fb0"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "soldCount": {
+                "N": "4"
+            },
+            "stock": {
+                "N": "10"
+            },
+            "price": {
+                "N": "6.5"
+            },
+            "description": {
+                "S": "Hamburguer"
+            },
+            "id": {
+                "S": "37dfbc6c-afe4-4a3a-bbdc-18d000dee5d1"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a4b04066-d3bb-4cc8-b112-bf4cf564355c"
+            },
+            "version": {
+                "N": "9"
+            },
+            "catalogItemId": {
+                "S": "3fcdf5f2-b26b-4961-ab63-e25b8134ad29"
+            },
+            "groupId": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "soldCount": {
+                "N": "4"
+            },
+            "stock": {
+                "N": "20"
+            },
+            "price": {
+                "N": "1.5"
+            },
+            "description": {
+                "S": "Chup-chup"
+            },
+            "id": {
+                "S": "8f72e4c6-057f-4cf4-ace2-b7a52c7d6fb2"
+            }
+        },
+        {
+            "eventId": {
+                "S": "e2872bab-2860-4fcc-869f-f1330d6c581e"
+            },
+            "version": {
+                "N": "5"
+            },
+            "catalogItemId": {
+                "S": "cae3d41e-cb3b-4473-8ded-8cb784781fb0"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "soldCount": {
+                "N": "1"
+            },
+            "stock": {
+                "N": "87"
+            },
+            "price": {
+                "N": "5.5"
+            },
+            "description": {
+                "S": "Hamburguer"
+            },
+            "id": {
+                "S": "3ce1cd31-2fd7-4859-8d3d-14b57034e734"
+            }
+        },
+        {
+            "eventId": {
+                "S": "a4b04066-d3bb-4cc8-b112-bf4cf564355c"
+            },
+            "version": {
+                "N": "9"
+            },
+            "catalogItemId": {
+                "S": "cae3d41e-cb3b-4473-8ded-8cb784781fb0"
+            },
+            "groupId": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "soldCount": {
+                "N": "8"
+            },
+            "stock": {
+                "N": "50"
+            },
+            "price": {
+                "N": "6"
+            },
+            "description": {
+                "S": "Hamburguer"
+            },
+            "id": {
+                "S": "346cf353-2146-43a5-984e-d31a84ac9983"
+            }
+        },
+        {
+            "eventId": {
+                "S": "b6d7effb-b8b9-45c5-bb40-9f1f0c995360"
+            },
+            "version": {
+                "N": "3"
+            },
+            "catalogItemId": {
+                "S": "3fcdf5f2-b26b-4961-ab63-e25b8134ad29"
+            },
+            "groupId": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "soldCount": {
+                "N": "6"
+            },
+            "stock": {
+                "N": "50"
+            },
+            "price": {
+                "N": "1.5"
+            },
+            "description": {
+                "S": "Chup-chup"
+            },
+            "id": {
+                "S": "74277d57-317b-445b-bcaf-c8ac31931ac3"
+            }
+        }
+    ],
+    "Count": 12,
+    "ScannedCount": 12,
+    "ConsumedCapacity": null
+}

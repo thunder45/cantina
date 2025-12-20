@@ -1,0 +1,58 @@
+{
+    "Items": [
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "version": {
+                "N": "1"
+            },
+            "order": {
+                "N": "3"
+            },
+            "id": {
+                "S": "d8abcbe0-5603-4b7e-be91-21fec1f614df"
+            },
+            "name": {
+                "S": "Sobremesa"
+            }
+        },
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "version": {
+                "N": "1"
+            },
+            "order": {
+                "N": "2"
+            },
+            "id": {
+                "S": "1510d268-3398-4f6d-a0cd-b8570ad525f8"
+            },
+            "name": {
+                "S": "Bebida"
+            }
+        },
+        {
+            "isDefault": {
+                "BOOL": true
+            },
+            "version": {
+                "N": "1"
+            },
+            "order": {
+                "N": "1"
+            },
+            "id": {
+                "S": "70bf8bb5-4550-4fe7-86ec-970e8b75addf"
+            },
+            "name": {
+                "S": "Refeição"
+            }
+        }
+    ],
+    "Count": 3,
+    "ScannedCount": 3,
+    "ConsumedCapacity": null
+}

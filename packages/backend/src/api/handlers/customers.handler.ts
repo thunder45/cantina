@@ -35,7 +35,7 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
       return await getCustomerBalance(customerId);
     }
     if (httpMethod === 'GET' && customerId && path.includes('/history')) {
-      return await getCustomerHistory(customerId);
+      return await getCustomerHistory(customerId, queryStringParameters || undefined);
     }
     if (httpMethod === 'POST' && customerId && path.includes('/deposit')) {
       return await deposit(customerId, event, createdBy);
@@ -91,8 +91,13 @@ async function getCustomerBalance(customerId: string): Promise<APIGatewayRespons
   return success({ customerId, balance });
 }
 
-async function getCustomerHistory(customerId: string): Promise<APIGatewayResponse> {
-  const history = await customerService.getCustomerHistory(customerId);
+async function getCustomerHistory(customerId: string, queryParams?: Record<string, string>): Promise<APIGatewayResponse> {
+  const filter = queryParams ? {
+    categoryId: queryParams.categoryId,
+    startDate: queryParams.startDate,
+    endDate: queryParams.endDate,
+  } : undefined;
+  const history = await customerService.getCustomerHistory(customerId, filter);
   return success(history);
 }
 

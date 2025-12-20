@@ -112,6 +112,7 @@ export async function createTransaction(customerId: string, input: CreateTransac
     customerId,
     type: input.type,
     amount: input.amount,
+    amountPaid: input.type === 'purchase' ? 0 : input.amount, // Purchases start unpaid
     description: input.description,
     saleId: input.saleId,
     paymentMethod: input.paymentMethod,
@@ -169,6 +170,37 @@ export async function calculateBalance(customerId: string): Promise<number> {
       return balance - tx.amount;
     }
   }, 0);
+}
+
+export async function getUnpaidPurchases(customerId: string): Promise<CustomerTransaction[]> {
+  const txs = await getTransactionsByCustomer(customerId);
+  return txs
+    .filter(tx => tx.type === 'purchase' && tx.amountPaid < tx.amount)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // FIFO: oldest first
+}
+
+export async function updateTransactionAmountPaid(txId: string, amountPaid: number): Promise<CustomerTransaction> {
+  if (isProduction) {
+    // For DynamoDB, we need to scan to find the transaction first
+    const result = await docClient!.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'id = :tid',
+      ExpressionAttributeValues: { ':tid': `tx#${txId}` },
+    }));
+    const items = (result.Items || []) as any[];
+    if (items.length === 0) throw new Error('ERR_TRANSACTION_NOT_FOUND');
+    const tx = { ...items[0], id: items[0].id.replace('tx#', ''), amountPaid };
+    await docClient!.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: { ...tx, id: `tx#${tx.id}` },
+    }));
+    return tx;
+  }
+  const tx = transactions.get(txId);
+  if (!tx) throw new Error('ERR_TRANSACTION_NOT_FOUND');
+  const updated = { ...tx, amountPaid };
+  transactions.set(txId, updated);
+  return updated;
 }
 
 export function resetRepository(): void {

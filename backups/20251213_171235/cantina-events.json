@@ -1,0 +1,142 @@
+{
+    "Items": [
+        {
+            "version": {
+                "N": "1"
+            },
+            "categories": {
+                "L": []
+            },
+            "categoryId": {
+                "S": "8720e786-7b27-422e-9e75-cd00e0a72038"
+            },
+            "updatedAt": {
+                "S": "2025-12-09T14:39:32.822Z"
+            },
+            "dates": {
+                "L": [
+                    {
+                        "S": "2025-12-15"
+                    }
+                ]
+            },
+            "status": {
+                "S": "active"
+            },
+            "createdAt": {
+                "S": "2025-12-09T14:39:32.822Z"
+            },
+            "id": {
+                "S": "a1cb205f-7f7b-484c-a25f-37ff9366f67b"
+            },
+            "name": {
+                "S": "Dia das Crianças"
+            }
+        },
+        {
+            "version": {
+                "N": "2"
+            },
+            "categories": {
+                "L": []
+            },
+            "categoryId": {
+                "S": "74a2fa82-1514-4b69-b0f5-6b82226ccfbf"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T21:13:24.318Z"
+            },
+            "dates": {
+                "L": [
+                    {
+                        "S": "2025-12-15"
+                    }
+                ]
+            },
+            "status": {
+                "S": "closed"
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:25:16.016Z"
+            },
+            "id": {
+                "S": "a4b04066-d3bb-4cc8-b112-bf4cf564355c"
+            },
+            "name": {
+                "S": "Evento Teste DynamoDB"
+            }
+        },
+        {
+            "version": {
+                "N": "1"
+            },
+            "categories": {
+                "L": []
+            },
+            "categoryId": {
+                "S": "6f96b3d6-9978-46b1-9d86-fbefe623fc66"
+            },
+            "updatedAt": {
+                "S": "2025-12-12T16:36:44.755Z"
+            },
+            "dates": {
+                "L": [
+                    {
+                        "S": "2025-12-12"
+                    },
+                    {
+                        "S": "2025-12-13"
+                    }
+                ]
+            },
+            "status": {
+                "S": "active"
+            },
+            "createdAt": {
+                "S": "2025-12-12T16:36:44.755Z"
+            },
+            "id": {
+                "S": "e2872bab-2860-4fcc-869f-f1330d6c581e"
+            },
+            "name": {
+                "S": "Culto da familia 13/12/25"
+            }
+        },
+        {
+            "version": {
+                "N": "2"
+            },
+            "categories": {
+                "L": []
+            },
+            "categoryId": {
+                "S": "10559b6e-3f53-4c11-8904-1b8313101016"
+            },
+            "updatedAt": {
+                "S": "2025-12-08T20:06:13.608Z"
+            },
+            "dates": {
+                "L": [
+                    {
+                        "S": "2025-12-09"
+                    }
+                ]
+            },
+            "status": {
+                "S": "closed"
+            },
+            "createdAt": {
+                "S": "2025-12-08T13:34:09.246Z"
+            },
+            "id": {
+                "S": "b6d7effb-b8b9-45c5-bb40-9f1f0c995360"
+            },
+            "name": {
+                "S": "Teste Evento"
+            }
+        }
+    ],
+    "Count": 4,
+    "ScannedCount": 4,
+    "ConsumedCapacity": null
+}

@@ -222,8 +222,13 @@ export class CustomerApiService {
     return result.balance;
   }
 
-  async getCustomerHistory(customerId: string): Promise<CustomerHistory> {
-    return this.client.get(`/customers/${customerId}/history`);
+  async getCustomerHistory(customerId: string, filter?: { categoryId?: string; startDate?: string; endDate?: string }): Promise<CustomerHistory> {
+    const params = new URLSearchParams();
+    if (filter?.categoryId) params.append('categoryId', filter.categoryId);
+    if (filter?.startDate) params.append('startDate', filter.startDate);
+    if (filter?.endDate) params.append('endDate', filter.endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.client.get(`/customers/${customerId}/history${query}`);
   }
 
   async deposit(customerId: string, amount: number, paymentMethod: PaymentMethod): Promise<CustomerTransaction> {

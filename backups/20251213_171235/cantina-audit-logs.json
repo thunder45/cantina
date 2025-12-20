@@ -1,0 +1,559 @@
+{
+    "Items": [
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":8,\"items\":2}"
+            },
+            "entityId": {
+                "S": "eb6f4ed5-d22f-442b-ae25-f4186e949668"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:44:30.520Z"
+            },
+            "id": {
+                "S": "6bb36634-b431-40f6-91f1-05609bf355f7"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "refund"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "tut"
+            },
+            "entityId": {
+                "S": "1d27ae51-03a2-472f-bc8d-9277b75d5675"
+            },
+            "createdAt": {
+                "S": "2025-12-11T20:15:23.664Z"
+            },
+            "id": {
+                "S": "737af320-6e73-4b84-aac8-4ecc7a33dbd4"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"e2872bab-2860-4fcc-869f-f1330d6c581e\",\"total\":14.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "afa03bba-5eca-4b51-8f5c-acca934043a5"
+            },
+            "createdAt": {
+                "S": "2025-12-12T18:19:25.793Z"
+            },
+            "id": {
+                "S": "5fe829c6-0f29-4ce9-9e70-85fc5af02da3"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":9,\"items\":3}"
+            },
+            "entityId": {
+                "S": "914cc448-4940-42fd-9eff-3fe9c4282638"
+            },
+            "createdAt": {
+                "S": "2025-12-10T19:16:58.516Z"
+            },
+            "id": {
+                "S": "b12f618c-6f53-43da-896b-6182e2f47a5d"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "refund"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "-"
+            },
+            "entityId": {
+                "S": "91f31a42-a74e-4b3c-9f0d-354a08d4d86f"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:16:12.368Z"
+            },
+            "id": {
+                "S": "d9c766a5-f8fd-482a-87bd-6433fe4a29ad"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":9.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "6a1a71aa-e06d-4882-816d-db879bb0efa4"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:15:16.012Z"
+            },
+            "id": {
+                "S": "084e0df6-c675-4551-87df-b73a4cca1890"
+            }
+        },
+        {
+            "entityType": {
+                "S": "payment"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "system"
+            },
+            "newValue": {
+                "S": "{\"customerId\":\"44f28905-834f-44d2-8d8c-9ca7b72374e3\",\"payment\":\"{\\\"type\\\":\\\"deposit\\\",\\\"amount\\\":100,\\\"method\\\":\\\"cash\\\"}\"}"
+            },
+            "entityId": {
+                "S": "2243e35d-f1ad-4f49-9c44-0a97f0781e68"
+            },
+            "createdAt": {
+                "S": "2025-12-09T14:27:45.201Z"
+            },
+            "id": {
+                "S": "3f887ad1-146e-44ee-9bb9-bf8e9da747a4"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":13.5,\"items\":2}"
+            },
+            "entityId": {
+                "S": "d0827f3d-6061-4284-9d91-a896f929b8f9"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:15:47.107Z"
+            },
+            "id": {
+                "S": "95609913-ecb3-4de7-af66-89f94d0dd653"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":11.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "1d27ae51-03a2-472f-bc8d-9277b75d5675"
+            },
+            "createdAt": {
+                "S": "2025-12-11T20:12:56.708Z"
+            },
+            "id": {
+                "S": "f0da34fb-e42e-4007-a509-043d1499a1e8"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":15,\"items\":1}"
+            },
+            "entityId": {
+                "S": "849d80a3-0987-481c-9afb-b752be863aab"
+            },
+            "createdAt": {
+                "S": "2025-12-11T20:13:51.989Z"
+            },
+            "id": {
+                "S": "4353ad91-cb20-4827-aac3-6c66841d0456"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":14,\"items\":2}"
+            },
+            "entityId": {
+                "S": "1de282e2-6675-43b2-9e70-5fbce92b2f30"
+            },
+            "createdAt": {
+                "S": "2025-12-09T14:48:45.129Z"
+            },
+            "id": {
+                "S": "9f0ca717-5392-4c77-9b0e-71f228e455f6"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":9.5,\"items\":2}"
+            },
+            "entityId": {
+                "S": "694d130e-421a-4e2c-bd48-1cc033c1d5b8"
+            },
+            "createdAt": {
+                "S": "2025-12-10T19:13:17.563Z"
+            },
+            "id": {
+                "S": "e1f11c68-abef-493b-94ec-81b3e42da9cf"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":13,\"items\":2}"
+            },
+            "entityId": {
+                "S": "bdec712d-dcb5-40db-87b6-8d15f15efe03"
+            },
+            "createdAt": {
+                "S": "2025-12-10T19:14:01.283Z"
+            },
+            "id": {
+                "S": "abf1de41-0cb7-4f7d-82d2-446976304064"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "refund"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "Desistiu"
+            },
+            "entityId": {
+                "S": "914cc448-4940-42fd-9eff-3fe9c4282638"
+            },
+            "createdAt": {
+                "S": "2025-12-10T19:17:35.213Z"
+            },
+            "id": {
+                "S": "135f284f-6f04-4d5f-97fa-abf9a94e799c"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":12.5,\"items\":2}"
+            },
+            "entityId": {
+                "S": "49e9d6a1-4a11-4658-9ff8-ea2851712450"
+            },
+            "createdAt": {
+                "S": "2025-12-10T18:57:14.284Z"
+            },
+            "id": {
+                "S": "2c974a32-4619-4686-ac8d-ef76e0cca2f9"
+            }
+        },
+        {
+            "entityType": {
+                "S": "payment"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "system"
+            },
+            "newValue": {
+                "S": "{\"customerId\":\"295f4c04-cb1d-42a3-8d37-515e41fc55a0\",\"payment\":\"{\\\"type\\\":\\\"deposit\\\",\\\"amount\\\":50,\\\"method\\\":\\\"card\\\"}\"}"
+            },
+            "entityId": {
+                "S": "19af73a8-2981-49f5-9dd2-4ae36bcc4fb7"
+            },
+            "createdAt": {
+                "S": "2025-12-09T15:03:20.738Z"
+            },
+            "id": {
+                "S": "b930ba25-cb39-4852-a2ff-746c0add3a6d"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"e2872bab-2860-4fcc-869f-f1330d6c581e\",\"total\":9,\"items\":3}"
+            },
+            "entityId": {
+                "S": "25f50be8-9f36-4548-95ae-80df5e48fe35"
+            },
+            "createdAt": {
+                "S": "2025-12-12T22:15:25.674Z"
+            },
+            "id": {
+                "S": "99188109-a609-4330-b972-7763765ca5ae"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "refund"
+            },
+            "userId": {
+                "S": "Cantina ADVM"
+            },
+            "newValue": {
+                "S": "Nao comeu"
+            },
+            "entityId": {
+                "S": "afa03bba-5eca-4b51-8f5c-acca934043a5"
+            },
+            "createdAt": {
+                "S": "2025-12-12T18:19:51.580Z"
+            },
+            "id": {
+                "S": "33fde72a-6c40-4479-9da4-c9300b2c3339"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":22.5,\"items\":2}"
+            },
+            "entityId": {
+                "S": "47d96c30-a9d2-4c9a-87e3-b6935eb680e8"
+            },
+            "createdAt": {
+                "S": "2025-12-09T14:51:05.550Z"
+            },
+            "id": {
+                "S": "17b595a1-ae34-406c-9d1d-c5b721f3d0bc"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":7.5,\"items\":2}"
+            },
+            "entityId": {
+                "S": "9bcf5ed6-b5f0-4312-a496-d11742c62083"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:16:51.339Z"
+            },
+            "id": {
+                "S": "97eebd5f-3862-4fce-94e9-b8a2359706c8"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "refund"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "-"
+            },
+            "entityId": {
+                "S": "9bcf5ed6-b5f0-4312-a496-d11742c62083"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:17:22.738Z"
+            },
+            "id": {
+                "S": "ddce0470-97b3-47dc-ac8b-d4a827fa30b4"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":11.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "391ba947-e3b6-451c-8c54-27da317fc5a7"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:29:34.301Z"
+            },
+            "id": {
+                "S": "89511356-0ea1-49ca-b1f5-ca72c34afccc"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a1cb205f-7f7b-484c-a25f-37ff9366f67b\",\"total\":14.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "046c9aa7-d800-4d2a-8aec-59c3eefbc0c2"
+            },
+            "createdAt": {
+                "S": "2025-12-09T15:03:03.413Z"
+            },
+            "id": {
+                "S": "8d0ebbba-0c65-4e7b-a062-a181787d14dd"
+            }
+        },
+        {
+            "entityType": {
+                "S": "sale"
+            },
+            "action": {
+                "S": "create"
+            },
+            "userId": {
+                "S": "anonymous"
+            },
+            "newValue": {
+                "S": "{\"eventId\":\"a4b04066-d3bb-4cc8-b112-bf4cf564355c\",\"total\":9.5,\"items\":3}"
+            },
+            "entityId": {
+                "S": "caf10d24-f00b-4543-a62e-37ad269183fd"
+            },
+            "createdAt": {
+                "S": "2025-12-08T17:44:13.024Z"
+            },
+            "id": {
+                "S": "143d5027-d8db-4713-a482-41a8ee65e81b"
+            }
+        }
+    ],
+    "Count": 24,
+    "ScannedCount": 24,
+    "ConsumedCapacity": null
+}

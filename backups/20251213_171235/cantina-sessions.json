@@ -1,0 +1,326 @@
+{
+    "Items": [
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765560945515"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765557345515"
+            },
+            "ttl": {
+                "N": "1766162145"
+            },
+            "refreshToken": {
+                "S": "1000.2470e182bd8cc0c66fe9b20a47991cfb.45fe8744c39776a9785b05c7176ed2b7"
+            },
+            "id": {
+                "S": "91424ad7-9b0e-44ae-b396-286a0f5a5bde"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.810170ca23ecf63156768502c96462f8.84661001a689b641a0cd58201cf9139f"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765396470244"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765392870244"
+            },
+            "ttl": {
+                "N": "1765997670"
+            },
+            "refreshToken": {
+                "S": "1000.3904383d3a42c9ef71443360b6f34030.9b350fe7d73d1ddf986c53a755e3de98"
+            },
+            "id": {
+                "S": "30fa2049-0d54-4698-b323-2a82b3850054"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.7437c6d7ad341df12b44b3265da55a79.0f9698541f6f5e28c42e86e7e3133ea6"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765391393803"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765387793803"
+            },
+            "ttl": {
+                "N": "1765992593"
+            },
+            "refreshToken": {
+                "S": "1000.ecd41568c54547d88dd9fdde86844a73.d011e99f9351c7ea3dca45540f0a5522"
+            },
+            "id": {
+                "S": "d2aef1b9-654f-4f04-8018-69560a6913b8"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.9f6f2e0acbc8b036f6c4a407af0eb785.6af13733b838b8c5d5df2d7249805db7"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Oracao Pray"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765217422008"
+            },
+            "userId": {
+                "N": "20111062525"
+            },
+            "createdAt": {
+                "N": "1765213822008"
+            },
+            "ttl": {
+                "N": "1765818622"
+            },
+            "refreshToken": {
+                "S": "1000.dd3f3b5b20a5ac092f7649aa1bd5d6e4.2daaf63f22f4c7f1843f3c8ac9c91668"
+            },
+            "id": {
+                "S": "a4a39c34-686e-4557-8156-85b4e063c622"
+            },
+            "email": {
+                "S": "pray@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.33f0960a1dff1eb1c1e448a091a59800.eea441a63bc35de9d1a32b87ba1e304c"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765397621649"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765394021649"
+            },
+            "ttl": {
+                "N": "1765998821"
+            },
+            "refreshToken": {
+                "S": "1000.a4c1da390608412b3b67e13850c6ba33.1d4b9fd03bcd81a35e6002c6471017c6"
+            },
+            "id": {
+                "S": "b3fab36e-6177-4eac-9aa3-8023ec22e4a3"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.5f3846ebfe020aa43b17e40e52c648a2.361a5f16b5a6c802728e61cdc519af12"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765487482989"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765483882989"
+            },
+            "ttl": {
+                "N": "1766088682"
+            },
+            "refreshToken": {
+                "S": "1000.ef80ab0469679e7c110f7462f7a32dea.ea218a3f03ae204cbc7bf5b20e98501d"
+            },
+            "id": {
+                "S": "abfd7184-43e1-471c-810f-f821688ff332"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.c99ad08b5092111c710aa65c7da51d96.dbf9b6af9aeddaca70259995a6de2523"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765397797511"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765394197511"
+            },
+            "ttl": {
+                "N": "1765998997"
+            },
+            "refreshToken": {
+                "S": "1000.69db35ac1e3d0564b87a972a7e8d17e8.dc44d15e3c618743ca1bff234a91e685"
+            },
+            "id": {
+                "S": "0c4b0c01-374e-4dee-9e55-d3977bc8db72"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.4a42449ba90d22ca280b3fe844a67d7c.584c2512992f501c4f1ab8b21d0efe78"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765487416490"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765483816490"
+            },
+            "ttl": {
+                "N": "1766088616"
+            },
+            "refreshToken": {
+                "S": "1000.8afed64316401551fda8256c6405abc6.6035d62d46bccfe82e6f7ffff4435523"
+            },
+            "id": {
+                "S": "510e8975-e16b-4cea-911e-5af7f3b883fe"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.93c461292ba710453cd2047961a0e859.f963ea92eca88ed2818f11ce496f61c9"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765581295540"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765577695540"
+            },
+            "ttl": {
+                "N": "1766182495"
+            },
+            "refreshToken": {
+                "S": "1000.6c71ce055eafc453eb2c548a3ba3349a.4fac57a0594b93dde494b0f72c5e8633"
+            },
+            "id": {
+                "S": "d1d86c3a-7ea4-4ee2-889b-8e1ca217186a"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.3caae73ca3a6656c81e6cb3f52b75586.314e839b916cb3ed66b4d350bec9b971"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765218086657"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765214486657"
+            },
+            "ttl": {
+                "N": "1765819286"
+            },
+            "refreshToken": {
+                "S": "1000.19d432c3fb418d9059df25a8fda17885.ee9e5039efd14d0811aaeaf6b1674d0c"
+            },
+            "id": {
+                "S": "7edf54a5-c0ed-4a1d-964c-94206d2cca10"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.79a3fae390de627973141943898a57fc.8663fb6b740299ff006fff1d3285bc87"
+            }
+        },
+        {
+            "displayName": {
+                "S": "Cantina ADVM"
+            },
+            "accessTokenExpiresAt": {
+                "N": "1765231984115"
+            },
+            "userId": {
+                "N": "20111071839"
+            },
+            "createdAt": {
+                "N": "1765228384115"
+            },
+            "ttl": {
+                "N": "1765833184"
+            },
+            "refreshToken": {
+                "S": "1000.809618f3df4790c37ab4bba43965a928.36f142a6d44b8852b32679d82ef82ae7"
+            },
+            "id": {
+                "S": "883f5904-2951-4b00-8c38-45e1a30e47b5"
+            },
+            "email": {
+                "S": "cantina@advm.lu"
+            },
+            "accessToken": {
+                "S": "1000.2d83a979ce4598c75b008d25c4af9fa6.6a67424e269b15d9963a03f052864f52"
+            }
+        }
+    ],
+    "Count": 11,
+    "ScannedCount": 11,
+    "ConsumedCapacity": null
+}
