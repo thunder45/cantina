@@ -1,4 +1,4 @@
-import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, DEFAULT_CREDIT_LIMIT, ReceiptItem } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, PaymentPart, DEFAULT_CREDIT_LIMIT, ReceiptItem } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
 import * as saleRepository from '../repositories/sale.repository';
 import * as eventRepository from '../repositories/event.repository';
@@ -133,6 +133,7 @@ export async function deposit(
 }
 
 // Apply payment to unpaid purchases in FIFO order (oldest first)
+// Also syncs Sale.payments: reduces credit, adds balance, marks isPaid when credit=0
 async function applyPaymentFIFO(customerId: string, amount: number): Promise<void> {
   const unpaidPurchases = await customerRepository.getUnpaidPurchases(customerId);
   let remaining = amount;
@@ -143,9 +144,49 @@ async function applyPaymentFIFO(customerId: string, amount: number): Promise<voi
     const unpaidAmount = purchase.amount - purchase.amountPaid;
     const toApply = Math.min(remaining, unpaidAmount);
     
+    // Update CustomerTransaction.amountPaid
     await customerRepository.updateTransactionAmountPaid(purchase.id, purchase.amountPaid + toApply);
+    
+    // Sync with Sale if exists
+    if (purchase.saleId) {
+      await syncSalePayments(purchase.saleId, toApply);
+    }
+    
     remaining -= toApply;
   }
+}
+
+// Sync Sale payments: reduce credit by amount, add balance payment
+async function syncSalePayments(saleId: string, amountPaid: number): Promise<void> {
+  const sale = await saleRepository.getSaleById(saleId);
+  if (!sale) return;
+  
+  const payments = [...sale.payments];
+  const creditIdx = payments.findIndex(p => p.method === 'credit');
+  if (creditIdx === -1) return;
+  
+  const creditPayment = payments[creditIdx];
+  const toDeduct = Math.min(amountPaid, creditPayment.amount);
+  
+  // Reduce credit
+  creditPayment.amount -= toDeduct;
+  
+  // Add or update balance payment
+  const balanceIdx = payments.findIndex(p => p.method === 'balance');
+  if (balanceIdx >= 0) {
+    payments[balanceIdx].amount += toDeduct;
+  } else {
+    payments.push({ method: 'balance', amount: toDeduct });
+  }
+  
+  // Remove credit if zeroed
+  if (creditPayment.amount <= 0) {
+    payments.splice(creditIdx, 1);
+  }
+  
+  // isPaid = no more credit
+  const hasCredit = payments.some(p => p.method === 'credit' && p.amount > 0);
+  await saleRepository.updateSalePayments(saleId, payments, !hasCredit);
 }
 
 // Devolver dinheiro ao cliente (saque)
@@ -209,13 +250,18 @@ export async function recordRefund(
 ): Promise<CustomerTransaction> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
 
-  return customerRepository.createTransaction(customerId, {
+  const tx = await customerRepository.createTransaction(customerId, {
     type: 'refund',
     amount,
     saleId,
     createdBy,
     description: 'Estorno',
   });
+
+  // Apply refund to unpaid purchases in FIFO order (money coming in)
+  await applyPaymentFIFO(customerId, amount);
+
+  return tx;
 }
 
 // Verificar se cliente pode fazer compra com valor X

@@ -146,6 +146,20 @@ export async function markSaleAsPaid(saleId: string): Promise<Sale> {
   return updated;
 }
 
+export async function updateSalePayments(saleId: string, payments: PaymentPart[], isPaid: boolean): Promise<Sale> {
+  const sale = await getSaleById(saleId);
+  if (!sale) throw new Error('ERR_SALE_NOT_FOUND');
+
+  const updated: Sale = { ...sale, payments, isPaid, version: sale.version + 1 };
+
+  if (isProduction) {
+    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: updated }));
+  } else {
+    sales.set(saleId, updated);
+  }
+  return updated;
+}
+
 export async function getRefundBySaleId(saleId: string): Promise<Refund | undefined> {
   // In production, refund info is in the sale record
   const sale = await getSaleById(saleId);
