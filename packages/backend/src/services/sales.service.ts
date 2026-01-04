@@ -33,8 +33,7 @@ export async function confirmSale(
 
   // Validate customer can make purchase if using balance (credit/fiado always allowed)
   if (customerId && balancePayment) {
-    const { allowed } = await customerService.canPurchase(customerId, balancePayment.amount);
-    if (!allowed) throw new Error('ERR_CREDIT_LIMIT_EXCEEDED');
+    // No credit limit enforcement - customers can always buy on credit
   }
 
   // Update menu item sold counts

@@ -7,6 +7,7 @@ import { PaymentMethod } from '@cantina-pos/shared';
 interface CreateCustomerBody {
   name: string;
   creditLimit?: number;
+  initialBalance?: number;
 }
 
 interface TransactionBody {
@@ -17,6 +18,11 @@ interface TransactionBody {
 
 interface UpdateCreditLimitBody {
   creditLimit: number;
+}
+
+interface UpdateCustomerBody {
+  name?: string;
+  initialBalance?: number;
 }
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
@@ -45,6 +51,12 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
     }
     if (httpMethod === 'PATCH' && customerId && path.includes('/credit-limit')) {
       return await updateCreditLimit(customerId, event);
+    }
+    if (httpMethod === 'PATCH' && customerId && !path.includes('/credit-limit')) {
+      return await updateCustomer(customerId, event);
+    }
+    if (httpMethod === 'DELETE' && customerId) {
+      return await deleteCustomer(customerId);
     }
     if (httpMethod === 'GET' && customerId) {
       return await getCustomer(customerId);
@@ -77,7 +89,7 @@ async function createCustomer(event: APIGatewayEvent): Promise<APIGatewayRespons
   const nameError = validateName(body.name, 'name');
   if (nameError) return error('ERR_VALIDATION', nameError.message, 400);
 
-  const customer = await customerService.createCustomer(body.name.trim(), body.creditLimit);
+  const customer = await customerService.createCustomer(body.name.trim(), body.creditLimit, body.initialBalance);
   return created(customer);
 }
 
@@ -130,4 +142,18 @@ async function updateCreditLimit(customerId: string, event: APIGatewayEvent): Pr
 
   const customer = await customerService.updateCreditLimit(customerId, body.creditLimit);
   return success(customer);
+}
+
+async function updateCustomer(customerId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
+  const body = parseBody<UpdateCustomerBody>(event.body);
+  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
+  if (body.name !== undefined && !body.name.trim()) return error('ERR_INVALID_NAME', 'Nome inválido', 400);
+
+  const customer = await customerService.updateCustomer(customerId, body);
+  return success(customer);
+}
+
+async function deleteCustomer(customerId: string): Promise<APIGatewayResponse> {
+  await customerService.deleteCustomer(customerId);
+  return success({ deleted: true });
 }

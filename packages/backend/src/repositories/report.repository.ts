@@ -43,6 +43,7 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
       customerName,
       createdBy: sale.createdBy,
       refunded: sale.isRefunded,
+      isPaid: sale.isPaid,
     });
 
     if (sale.isRefunded) {

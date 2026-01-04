@@ -7,6 +7,7 @@ export interface Customer {
   id: string;
   name: string;
   creditLimit: number; // Limite de crédito (dívida máxima)
+  initialBalance: number; // Saldo inicial (pode ser negativo)
   createdAt: string;
   deletedAt?: string;
   version: number;
@@ -15,6 +16,7 @@ export interface Customer {
 export interface CreateCustomerInput {
   name: string;
   creditLimit?: number;
+  initialBalance?: number;
 }
 
 export type TransactionType = 'deposit' | 'withdrawal' | 'purchase' | 'refund';

@@ -211,8 +211,8 @@ export class CustomerApiService {
     return this.client.get('/customers');
   }
 
-  async createCustomer(name: string, creditLimit?: number): Promise<Customer> {
-    return this.client.post('/customers', { name, creditLimit });
+  async createCustomer(name: string, creditLimit?: number, initialBalance?: number): Promise<Customer> {
+    return this.client.post('/customers', { name, creditLimit, initialBalance });
   }
 
   async getCustomer(id: string): Promise<CustomerWithBalance> {
@@ -243,6 +243,14 @@ export class CustomerApiService {
 
   async updateCreditLimit(customerId: string, creditLimit: number): Promise<Customer> {
     return this.client.patch(`/customers/${customerId}/credit-limit`, { creditLimit });
+  }
+
+  async updateCustomer(customerId: string, updates: { name?: string; initialBalance?: number }): Promise<Customer> {
+    return this.client.patch(`/customers/${customerId}`, updates);
+  }
+
+  async deleteCustomer(customerId: string): Promise<void> {
+    await this.client.delete(`/customers/${customerId}`);
   }
 
   // Legacy - keep for compatibility

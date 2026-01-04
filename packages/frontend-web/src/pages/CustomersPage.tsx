@@ -36,8 +36,8 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
     }
   }, []);
 
-  const handleCreateCustomer = useCallback(async (name: string): Promise<Customer> => {
-    return customerService.createCustomer(name);
+  const handleCreateCustomer = useCallback(async (name: string, initialBalance?: number): Promise<Customer> => {
+    return customerService.createCustomer(name, undefined, initialBalance);
   }, []);
 
   const handleTransactionConfirmed = useCallback(async () => {
@@ -87,6 +87,7 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
             onDeposit={() => setModalType('deposit')}
             onWithdraw={() => setModalType('withdraw')}
             onBack={handleBack}
+            onCustomerUpdated={setSelectedCustomer}
           />
         ) : (
           <CustomerSearch

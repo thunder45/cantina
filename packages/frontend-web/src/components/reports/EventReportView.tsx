@@ -371,7 +371,13 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-              {report.sales.map((sale) => (
+              {report.sales.map((sale) => {
+                const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
+                const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
+                const hadCredit = creditAmount > 0 || balanceAmount > 0;
+                const partiallyPaid = hadCredit && creditAmount > 0 && balanceAmount > 0;
+                const fullyPaid = hadCredit && sale.isPaid;
+                return (
                 <div
                   key={sale.id}
                   style={{
@@ -385,15 +391,26 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                     <span style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
                       {new Date(sale.createdAt).toLocaleString('pt-PT')}
                       {sale.customerName && ` • ${sale.customerName}`}
+                      {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: 8 }}>Fiado</span>}
+                      {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 8 }}>Fiado Pago</span>}
                     </span>
-                    <span style={{ 
-                      fontSize: FontSizes.sm, 
-                      fontWeight: 600, 
-                      color: sale.refunded ? Colors.danger : sale.payments.some(p => p.method === 'credit') ? Colors.warning : Colors.success,
-                      textDecoration: sale.refunded ? 'line-through' : 'none',
-                    }}>
-                      {formatPrice(sale.total)}
-                    </span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ 
+                        fontSize: FontSizes.sm, 
+                        fontWeight: 600, 
+                        color: sale.refunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success,
+                        textDecoration: sale.refunded || fullyPaid ? 'line-through' : 'none',
+                      }}>
+                        {formatPrice(sale.total)}
+                      </span>
+                      {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
+                      {partiallyPaid && (
+                        <>
+                          <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(balanceAmount)}</div>
+                          <div style={{ fontSize: FontSizes.xs, color: Colors.warning }}>Saldo: -{formatPrice(creditAmount)}</div>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.text }}>
                     {sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
@@ -403,7 +420,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                     {sale.refunded && <span style={{ color: Colors.danger, marginLeft: 8 }}>ESTORNADO</span>}
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           )}
         </div>

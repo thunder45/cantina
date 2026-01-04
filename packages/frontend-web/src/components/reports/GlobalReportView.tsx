@@ -15,6 +15,7 @@ import {
   PaymentMethod,
   Receipt,
 } from '@cantina-pos/shared';
+import { ReceiptView } from '../common/ReceiptView';
 
 interface GlobalReportViewProps {
   apiClient: ApiClient;
@@ -241,7 +242,13 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
           {report.sales.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>Nenhuma venda</div>
           ) : (
-            report.sales.map((sale) => (
+            report.sales.map((sale) => {
+              const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
+              const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
+              const hadCredit = creditAmount > 0 || balanceAmount > 0;
+              const partiallyPaid = hadCredit && creditAmount > 0 && balanceAmount > 0;
+              const fullyPaid = hadCredit && sale.isPaid;
+              return (
               <div key={sale.id} onClick={() => handleViewReceipt(sale.id)} style={{ padding: Spacing.sm, backgroundColor: sale.refunded ? '#fff5f5' : Colors.backgroundSecondary, borderRadius: BorderRadius.md, marginBottom: Spacing.xs, cursor: 'pointer', border: sale.refunded ? `1px solid ${Colors.danger}` : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <div>
@@ -252,46 +259,33 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
                       {sale.categoryName}
                     </span>
                     {sale.customerName && <span style={{ fontSize: FontSizes.xs, color: Colors.text, marginLeft: Spacing.xs }}>• {sale.customerName}</span>}
+                    {creditAmount > 0 && !fullyPaid && <span style={{ fontSize: FontSizes.xs, backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: Spacing.xs }}>Fiado</span>}
+                    {fullyPaid && <span style={{ fontSize: FontSizes.xs, backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: Spacing.xs }}>Fiado Pago</span>}
                   </div>
-                  <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.refunded ? Colors.danger : sale.payments.some(p => p.method === 'credit') ? Colors.warning : Colors.success, textDecoration: sale.refunded ? 'line-through' : 'none' }}>
-                    {formatPrice(sale.total)}
-                  </span>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.refunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success, textDecoration: sale.refunded || fullyPaid ? 'line-through' : 'none' }}>
+                      {formatPrice(sale.total)}
+                    </span>
+                    {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
+                    {partiallyPaid && (
+                      <>
+                        <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(balanceAmount)}</div>
+                        <div style={{ fontSize: FontSizes.xs, color: Colors.warning }}>Saldo: -{formatPrice(creditAmount)}</div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div style={{ fontSize: FontSizes.xs, color: Colors.text }}>{sale.eventName}</div>
                 <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
                 {sale.refunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
               </div>
-            ))
+            );})
           )}
         </div>
       </div>
 
       {/* Receipt Modal */}
-      {selectedReceipt && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => setSelectedReceipt(null)}>
-          <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, padding: Spacing.lg, maxWidth: 400, width: '90%', maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: 0, marginBottom: Spacing.md }}>Recibo</h3>
-            <div style={{ fontSize: FontSizes.sm, color: Colors.textSecondary, marginBottom: Spacing.sm }}>
-              {selectedReceipt.eventName} • {new Date(selectedReceipt.createdAt).toLocaleString('pt-PT')}
-            </div>
-            <div style={{ borderTop: `1px solid ${Colors.border}`, paddingTop: Spacing.sm }}>
-              {selectedReceipt.items.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: Spacing.xs }}>
-                  <span>{item.quantity}x {item.description}</span>
-                  <span>{formatPrice(item.total)}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ borderTop: `1px solid ${Colors.border}`, paddingTop: Spacing.sm, marginTop: Spacing.sm, fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-              <span>Total</span>
-              <span>{formatPrice(selectedReceipt.total)}</span>
-            </div>
-            <button onClick={() => setSelectedReceipt(null)} style={{ width: '100%', marginTop: Spacing.md, padding: Spacing.sm, backgroundColor: Colors.primary, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.md, cursor: 'pointer' }}>
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
+      {selectedReceipt && <ReceiptView receipt={selectedReceipt} onClose={() => setSelectedReceipt(null)} />}
     </div>
   );
 };

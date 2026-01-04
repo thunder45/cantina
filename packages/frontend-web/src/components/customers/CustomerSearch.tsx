@@ -16,7 +16,7 @@ interface CustomerWithBalance extends Customer {
 interface CustomerSearchProps {
   apiClient: ApiClient;
   onSelectCustomer: (customer: Customer) => void;
-  onCreateCustomer?: (name: string) => Promise<Customer>;
+  onCreateCustomer?: (name: string, initialBalance?: number) => Promise<Customer>;
 }
 
 type FilterType = 'all' | 'withBalance' | 'noBalance';
@@ -32,6 +32,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
+  const [newInitialBalanceStr, setNewInitialBalanceStr] = useState('0');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -107,11 +108,13 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
     if (!newCustomerName.trim()) return;
     try {
       setCreating(true);
+      const initialBalance = parseFloat(newInitialBalanceStr) || 0;
       const customer = onCreateCustomer 
-        ? await onCreateCustomer(newCustomerName.trim())
-        : await customerService.createCustomer(newCustomerName.trim());
+        ? await onCreateCustomer(newCustomerName.trim(), initialBalance)
+        : await customerService.createCustomer(newCustomerName.trim(), undefined, initialBalance);
       setShowCreateModal(false);
       setNewCustomerName('');
+      setNewInitialBalanceStr('0');
       onSelectCustomer(customer);
     } catch {
       setError('Erro ao criar cliente');
@@ -344,7 +347,6 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
               type="text"
               value={newCustomerName}
               onChange={(e) => setNewCustomerName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleCreateCustomer()}
               placeholder="Nome do cliente"
               autoFocus
               style={{
@@ -357,9 +359,32 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                 boxSizing: 'border-box',
               }}
             />
+            <div style={{ marginBottom: Spacing.md }}>
+              <label style={{ display: 'block', fontSize: FontSizes.sm, color: Colors.textSecondary, marginBottom: Spacing.xs }}>
+                Saldo inicial (opcional)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={newInitialBalanceStr}
+                onChange={(e) => setNewInitialBalanceStr(e.target.value)}
+                placeholder="0.00"
+                style={{
+                  width: '100%',
+                  padding: Spacing.md,
+                  fontSize: FontSizes.md,
+                  border: `1px solid ${Colors.border}`,
+                  borderRadius: BorderRadius.md,
+                  boxSizing: 'border-box',
+                }}
+              />
+              <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                Use valor negativo se o cliente já tinha dívida
+              </p>
+            </div>
             <div style={{ display: 'flex', gap: Spacing.sm, justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => { setShowCreateModal(false); setNewInitialBalanceStr('0'); }}
                 style={{
                   padding: `${Spacing.sm}px ${Spacing.lg}px`,
                   backgroundColor: Colors.backgroundSecondary,

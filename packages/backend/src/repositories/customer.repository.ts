@@ -18,11 +18,12 @@ function isCustomerRecord(item: any): item is Customer {
   return item && typeof item.name === 'string' && !item.id?.startsWith('tx#');
 }
 
-export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT): Promise<Customer> {
+export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT, initialBalance: number = 0): Promise<Customer> {
   const customer: Customer = {
     id: uuidv4(),
     name,
     creditLimit,
+    initialBalance,
     createdAt: new Date().toISOString(),
     version: 1,
   };
@@ -168,6 +169,8 @@ export async function getTransactionBySaleId(saleId: string): Promise<CustomerTr
 }
 
 export async function calculateBalance(customerId: string): Promise<number> {
+  const customer = await getCustomerById(customerId);
+  const initialBalance = customer?.initialBalance || 0;
   const txs = await getTransactionsByCustomer(customerId);
   return txs.reduce((balance, tx) => {
     if (tx.type === 'deposit' || tx.type === 'refund') {
@@ -175,7 +178,7 @@ export async function calculateBalance(customerId: string): Promise<number> {
     } else {
       return balance - tx.amount;
     }
-  }, 0);
+  }, initialBalance);
 }
 
 export async function getUnpaidPurchases(customerId: string): Promise<CustomerTransaction[]> {

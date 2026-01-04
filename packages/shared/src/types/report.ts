@@ -23,6 +23,7 @@ export interface SaleDetail {
   customerName?: string;
   createdBy: string;
   refunded: boolean;
+  isPaid: boolean;
 }
 
 export interface ItemSoldSummary {
