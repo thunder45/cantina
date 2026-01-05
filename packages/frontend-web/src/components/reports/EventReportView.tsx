@@ -62,7 +62,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
       cash: 'Dinheiro',
       card: 'Cartão',
       transfer: 'Transferência',
-      credit: 'Anotado',
+      credit: 'Fiado',
       balance: 'Fiado Pago',
     };
     return labels[method] || method;
@@ -229,7 +229,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           color={Colors.success}
         />
         <SummaryCard
-          title="Anotado"
+          title="Fiado"
           value={formatPrice(report.totalPending)}
           color={Colors.warning}
         />
@@ -412,45 +412,17 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                 const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
                 const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
                 const hadCredit = creditAmount > 0 || balanceAmount > 0;
-                const fullyPaid = hadCredit && sale.isPaid;
+                const paymentStr = sale.payments.map(p => `${getPaymentMethodLabel(p.method)}: ${formatPrice(p.amount)}`).join(' + ');
                 return (
-                <div
-                  key={sale.id}
-                  style={{
-                    padding: Spacing.sm,
-                    backgroundColor: sale.refunded ? '#fff5f5' : Colors.backgroundSecondary,
-                    borderRadius: BorderRadius.md,
-                    border: sale.refunded ? `1px solid ${Colors.danger}` : 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                      <div>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                        {sale.customerName && <span>• {sale.customerName}</span>}
-                        {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: 4 }}>Fiado</span>}
-                        {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 4 }}>Fiado Pago</span>}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ 
-                        fontSize: FontSizes.sm, 
-                        fontWeight: 600, 
-                        color: sale.refunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success,
-                        textDecoration: sale.refunded || fullyPaid ? 'line-through' : 'none',
-                      }}>
-                        {formatPrice(sale.total)}
-                      </span>
-                      {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
-                    </div>
+                <div key={sale.id} style={{ padding: Spacing.sm, backgroundColor: sale.refunded ? '#fff5f5' : Colors.backgroundSecondary, borderRadius: BorderRadius.md, border: sale.refunded ? `1px solid ${Colors.danger}` : 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
+                    <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.refunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success, textDecoration: sale.refunded ? 'line-through' : 'none' }}>{formatPrice(sale.total)}</span>
                   </div>
-                  <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 4 }}>
-                    {sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
-                  </div>
-                  <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
-                    {sale.payments.map(p => `${getPaymentMethodLabel(p.method)}: ${formatPrice(p.amount)}`).join(' + ')}
-                    {sale.refunded && <span style={{ color: Colors.danger, marginLeft: 8 }}>ESTORNADO</span>}
-                  </div>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>{paymentStr}</div>
+                  {hadCredit && sale.customerName && <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>• {sale.customerName}</div>}
+                  {sale.refunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
                 </div>
               );})}
             </div>
