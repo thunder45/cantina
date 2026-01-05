@@ -6,7 +6,6 @@ import { PaymentMethod } from '@cantina-pos/shared';
 
 interface CreateCustomerBody {
   name: string;
-  creditLimit?: number;
   initialBalance?: number;
 }
 
@@ -14,10 +13,6 @@ interface TransactionBody {
   amount: number;
   paymentMethod: PaymentMethod;
   description?: string;
-}
-
-interface UpdateCreditLimitBody {
-  creditLimit: number;
 }
 
 interface UpdateCustomerBody {
@@ -49,10 +44,7 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
     if (httpMethod === 'POST' && customerId && path.includes('/withdraw')) {
       return await withdraw(customerId, event, createdBy);
     }
-    if (httpMethod === 'PATCH' && customerId && path.includes('/credit-limit')) {
-      return await updateCreditLimit(customerId, event);
-    }
-    if (httpMethod === 'PATCH' && customerId && !path.includes('/credit-limit')) {
+    if (httpMethod === 'PATCH' && customerId) {
       return await updateCustomer(customerId, event);
     }
     if (httpMethod === 'DELETE' && customerId) {
@@ -89,7 +81,7 @@ async function createCustomer(event: APIGatewayEvent): Promise<APIGatewayRespons
   const nameError = validateName(body.name, 'name');
   if (nameError) return error('ERR_VALIDATION', nameError.message, 400);
 
-  const customer = await customerService.createCustomer(body.name.trim(), body.creditLimit, body.initialBalance);
+  const customer = await customerService.createCustomer(body.name.trim(), body.initialBalance);
   return created(customer);
 }
 
@@ -131,17 +123,6 @@ async function withdraw(customerId: string, event: APIGatewayEvent, createdBy: s
 
   const tx = await customerService.withdraw(customerId, body.amount, body.paymentMethod, createdBy, body.description);
   return created(tx);
-}
-
-async function updateCreditLimit(customerId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<UpdateCreditLimitBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  if (body.creditLimit === undefined || body.creditLimit < 0) {
-    return error('ERR_INVALID_CREDIT_LIMIT', 'Limite de crédito inválido', 400);
-  }
-
-  const customer = await customerService.updateCreditLimit(customerId, body.creditLimit);
-  return success(customer);
 }
 
 async function updateCustomer(customerId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {

@@ -111,7 +111,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
       const initialBalance = parseFloat(newInitialBalanceStr) || 0;
       const customer = onCreateCustomer 
         ? await onCreateCustomer(newCustomerName.trim(), initialBalance)
-        : await customerService.createCustomer(newCustomerName.trim(), undefined, initialBalance);
+        : await customerService.createCustomer(newCustomerName.trim(), initialBalance);
       setShowCreateModal(false);
       setNewCustomerName('');
       setNewInitialBalanceStr('0');

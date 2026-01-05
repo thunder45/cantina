@@ -1,5 +1,4 @@
 import * as customerService from '../customer.service';
-import { DEFAULT_CREDIT_LIMIT } from '@cantina-pos/shared';
 
 describe('CustomerService', () => {
   beforeEach(() => {
@@ -12,13 +11,12 @@ describe('CustomerService', () => {
       
       expect(customer.id).toBeDefined();
       expect(customer.name).toBe('João Silva');
-      expect(customer.creditLimit).toBe(DEFAULT_CREDIT_LIMIT);
       expect(customer.createdAt).toBeDefined();
     });
 
-    it('should create customer with custom credit limit', async () => {
-      const customer = await customerService.createCustomer('Maria', 200);
-      expect(customer.creditLimit).toBe(200);
+    it('should create customer with initial balance', async () => {
+      const customer = await customerService.createCustomer('Maria', 50);
+      expect(customer.initialBalance).toBe(50);
     });
 
     it('should trim whitespace from name', async () => {
@@ -114,8 +112,8 @@ describe('CustomerService', () => {
       expect(balance).toBe(70);
     });
 
-    it('should allow purchase within credit limit', async () => {
-      const customer = await customerService.createCustomer('Test', 100);
+    it('should allow purchase creating debt', async () => {
+      const customer = await customerService.createCustomer('Test');
       
       await customerService.recordPurchase(customer.id, 50, 'sale-123', 'user1');
       
@@ -123,11 +121,11 @@ describe('CustomerService', () => {
       expect(balance).toBe(-50);
     });
 
-    it('should allow purchase beyond credit limit (credit limit removed)', async () => {
-      const customer = await customerService.createCustomer('Test', 50);
-      await customerService.recordPurchase(customer.id, 100, 'sale-123', 'user1');
+    it('should allow any purchase amount (no credit limit)', async () => {
+      const customer = await customerService.createCustomer('Test');
+      await customerService.recordPurchase(customer.id, 1000, 'sale-123', 'user1');
       const balance = await customerService.getCustomerBalance(customer.id);
-      expect(balance).toBe(-100);
+      expect(balance).toBe(-1000);
     });
   });
 
@@ -140,34 +138,6 @@ describe('CustomerService', () => {
       
       const balance = await customerService.getCustomerBalance(customer.id);
       expect(balance).toBe(0);
-    });
-  });
-
-  describe('canPurchase', () => {
-    it('should return true when within credit limit', async () => {
-      const customer = await customerService.createCustomer('Test', 100);
-      const result = await customerService.canPurchase(customer.id, 50);
-      expect(result.allowed).toBe(true);
-      expect(result.availableCredit).toBe(100);
-    });
-
-    it('should return false when exceeds credit limit', async () => {
-      const customer = await customerService.createCustomer('Test', 50);
-      const result = await customerService.canPurchase(customer.id, 100);
-      expect(result.allowed).toBe(false);
-    });
-  });
-
-  describe('updateCreditLimit', () => {
-    it('should update credit limit', async () => {
-      const customer = await customerService.createCustomer('Test');
-      const updated = await customerService.updateCreditLimit(customer.id, 200);
-      expect(updated.creditLimit).toBe(200);
-    });
-
-    it('should throw error for negative limit', async () => {
-      const customer = await customerService.createCustomer('Test');
-      await expect(customerService.updateCreditLimit(customer.id, -10)).rejects.toThrow('ERR_INVALID_CREDIT_LIMIT');
     });
   });
 

@@ -211,8 +211,8 @@ export class CustomerApiService {
     return this.client.get('/customers');
   }
 
-  async createCustomer(name: string, creditLimit?: number, initialBalance?: number): Promise<Customer> {
-    return this.client.post('/customers', { name, creditLimit, initialBalance });
+  async createCustomer(name: string, initialBalance?: number): Promise<Customer> {
+    return this.client.post('/customers', { name, initialBalance });
   }
 
   async getCustomer(id: string): Promise<CustomerWithBalance> {
@@ -239,10 +239,6 @@ export class CustomerApiService {
 
   async withdraw(customerId: string, amount: number, paymentMethod: PaymentMethod): Promise<CustomerTransaction> {
     return this.client.post(`/customers/${customerId}/withdraw`, { amount, paymentMethod });
-  }
-
-  async updateCreditLimit(customerId: string, creditLimit: number): Promise<Customer> {
-    return this.client.patch(`/customers/${customerId}/credit-limit`, { creditLimit });
   }
 
   async updateCustomer(customerId: string, updates: { name?: string; initialBalance?: number }): Promise<Customer> {

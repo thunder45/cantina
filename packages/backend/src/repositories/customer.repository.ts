@@ -1,4 +1,4 @@
-import { Customer, CustomerTransaction, CreateTransactionInput, DEFAULT_CREDIT_LIMIT } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CreateTransactionInput } from '@cantina-pos/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -18,11 +18,10 @@ function isCustomerRecord(item: any): item is Customer {
   return item && typeof item.name === 'string' && !item.id?.startsWith('tx#');
 }
 
-export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT, initialBalance: number = 0): Promise<Customer> {
+export async function createCustomer(name: string, initialBalance: number = 0): Promise<Customer> {
   const customer: Customer = {
     id: uuidv4(),
     name,
-    creditLimit,
     initialBalance,
     createdAt: new Date().toISOString(),
     version: 1,

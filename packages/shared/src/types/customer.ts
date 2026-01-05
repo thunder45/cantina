@@ -1,12 +1,8 @@
 import { PaymentMethod, ReceiptItem } from './sale';
 
-// Limite de crédito padrão (dívida máxima permitida)
-export const DEFAULT_CREDIT_LIMIT = 100;
-
 export interface Customer {
   id: string;
   name: string;
-  creditLimit: number; // Limite de crédito (dívida máxima)
   initialBalance: number; // Saldo inicial (pode ser negativo)
   createdAt: string;
   deletedAt?: string;
@@ -15,7 +11,6 @@ export interface Customer {
 
 export interface CreateCustomerInput {
   name: string;
-  creditLimit?: number;
   initialBalance?: number;
 }
 

@@ -37,7 +37,7 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
   }, []);
 
   const handleCreateCustomer = useCallback(async (name: string, initialBalance?: number): Promise<Customer> => {
-    return customerService.createCustomer(name, undefined, initialBalance);
+    return customerService.createCustomer(name, initialBalance);
   }, []);
 
   const handleTransactionConfirmed = useCallback(async () => {

@@ -1,15 +1,15 @@
-import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, PaymentPart, DEFAULT_CREDIT_LIMIT, ReceiptItem } from '@cantina-pos/shared';
+import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, PaymentPart, ReceiptItem } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
 import * as saleRepository from '../repositories/sale.repository';
 import * as eventRepository from '../repositories/event.repository';
 import * as eventCategoryRepository from '../repositories/event-category.repository';
 import * as auditLogService from './audit-log.service';
 import * as reconciliationService from './reconciliation.service';
-import { executeTransaction, executeTransactionBatches, TransactItem } from '../repositories/dynamodb-transactions';
+import { executeTransaction, TransactItem } from '../repositories/dynamodb-transactions';
 
-export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT, initialBalance: number = 0): Promise<Customer> {
+export async function createCustomer(name: string, initialBalance: number = 0): Promise<Customer> {
   if (!name?.trim()) throw new Error('ERR_EMPTY_NAME');
-  return customerRepository.createCustomer(name.trim(), creditLimit, initialBalance);
+  return customerRepository.createCustomer(name.trim(), initialBalance);
 }
 
 export async function getCustomer(id: string): Promise<Customer> {
@@ -378,22 +378,6 @@ export async function recordRefund(
   await applyPaymentFIFO(customerId, amount);
 
   return tx;
-}
-
-// Verificar se cliente pode fazer compra com valor X
-export async function canPurchase(customerId: string, amount: number): Promise<{ allowed: boolean; availableCredit: number }> {
-  const customer = await getCustomer(customerId);
-  const balance = await customerRepository.calculateBalance(customerId);
-  const availableCredit = balance + customer.creditLimit;
-  return {
-    allowed: amount <= availableCredit,
-    availableCredit,
-  };
-}
-
-export async function updateCreditLimit(customerId: string, creditLimit: number): Promise<Customer> {
-  if (creditLimit < 0) throw new Error('ERR_INVALID_CREDIT_LIMIT');
-  return customerRepository.updateCustomer(customerId, { creditLimit });
 }
 
 export async function renameCustomer(customerId: string, name: string): Promise<Customer> {
