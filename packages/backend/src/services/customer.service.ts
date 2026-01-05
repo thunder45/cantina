@@ -140,7 +140,7 @@ export async function deposit(
 }
 
 // Apply payment to unpaid purchases in FIFO order (oldest first)
-// Uses batched transactions (20 items per batch) for better atomicity
+// Uses TransactWriteCommand in batches of 10 purchases (20 items max) for atomicity
 // Also syncs Sale.payments: reduces credit, adds balance, marks isPaid when credit=0
 async function applyPaymentFIFO(customerId: string, amount: number): Promise<void> {
   const unpaidPurchases = await customerRepository.getUnpaidPurchases(customerId);
@@ -162,31 +162,97 @@ async function applyPaymentFIFO(customerId: string, amount: number): Promise<voi
 
   if (updates.length === 0) return;
 
-  // Executar atualizações em batches
-  // Cada update = 1 CustomerTransaction + 1 Sale (se existir) = até 2 items por purchase
+  const isProduction = customerRepository.isProductionMode();
   const BATCH_SIZE = 10; // 10 purchases = até 20 items por batch
   
   for (let i = 0; i < updates.length; i += BATCH_SIZE) {
     const batch = updates.slice(i, i + BATCH_SIZE);
+    const batchIndex = Math.floor(i / BATCH_SIZE);
     
     try {
-      // Atualizar CustomerTransactions
-      for (const { purchase, newAmountPaid } of batch) {
-        await customerRepository.updateTransactionAmountPaid(purchase.id, newAmountPaid);
-      }
-      
-      // Atualizar Sales
-      for (const { purchase, toApply } of batch) {
-        if (purchase.saleId) {
-          await syncSalePayments(purchase.saleId, toApply);
+      if (isProduction) {
+        // Produção: usar TransactWriteCommand para atomicidade
+        const transactItems: TransactItem[] = [];
+        const customersTable = customerRepository.getTableName()!;
+        const salesTable = saleRepository.getTableName()!;
+        
+        for (const { purchase, newAmountPaid, toApply } of batch) {
+          // Update CustomerTransaction.amountPaid
+          transactItems.push({
+            Update: {
+              TableName: customersTable,
+              Key: { id: `tx#${purchase.id}` },
+              UpdateExpression: 'SET amountPaid = :ap',
+              ExpressionAttributeValues: { ':ap': newAmountPaid },
+            },
+          });
+          
+          // Update Sale.payments se existir
+          if (purchase.saleId) {
+            const newPayments = await buildUpdatedSalePayments(purchase.saleId, toApply);
+            if (newPayments) {
+              transactItems.push({
+                Update: {
+                  TableName: salesTable,
+                  Key: { id: purchase.saleId },
+                  UpdateExpression: 'SET payments = :p, isPaid = :ip',
+                  ExpressionAttributeValues: { 
+                    ':p': newPayments.payments,
+                    ':ip': newPayments.isPaid,
+                  },
+                },
+              });
+            }
+          }
+        }
+        
+        await executeTransaction(customerRepository.getDocClient()!, transactItems);
+      } else {
+        // Dev mode: operações separadas (Map não suporta transactions)
+        for (const { purchase, newAmountPaid } of batch) {
+          await customerRepository.updateTransactionAmountPaid(purchase.id, newAmountPaid);
+        }
+        for (const { purchase, toApply } of batch) {
+          if (purchase.saleId) {
+            await syncSalePayments(purchase.saleId, toApply);
+          }
         }
       }
     } catch (err) {
-      console.error(`[FIFO_BATCH_FAILED] Customer: ${customerId}, Batch: ${i / BATCH_SIZE}, Error: ${(err as Error).message}`);
-      await reconciliationService.handleFIFOFailure(customerId, `applyPaymentFIFO.batch${i / BATCH_SIZE}`, err as Error);
+      console.error(`[FIFO_BATCH_FAILED] Customer: ${customerId}, Batch: ${batchIndex}, Error: ${(err as Error).message}`);
+      await reconciliationService.handleFIFOFailure(customerId, `applyPaymentFIFO.batch${batchIndex}`, err as Error);
       // Continua com próximos batches
     }
   }
+}
+
+// Build updated payments array for a sale (for TransactWriteCommand)
+async function buildUpdatedSalePayments(saleId: string, amountPaid: number): Promise<{ payments: PaymentPart[]; isPaid: boolean } | null> {
+  const sale = await saleRepository.getSaleById(saleId);
+  if (!sale) return null;
+  
+  const payments = [...sale.payments];
+  const creditIdx = payments.findIndex(p => p.method === 'credit');
+  if (creditIdx === -1) return null;
+  
+  const creditPayment = payments[creditIdx];
+  const toDeduct = Math.min(amountPaid, creditPayment.amount);
+  
+  creditPayment.amount -= toDeduct;
+  
+  const balanceIdx = payments.findIndex(p => p.method === 'balance');
+  if (balanceIdx >= 0) {
+    payments[balanceIdx].amount += toDeduct;
+  } else {
+    payments.push({ method: 'balance', amount: toDeduct });
+  }
+  
+  if (creditPayment.amount <= 0) {
+    payments.splice(creditIdx, 1);
+  }
+  
+  const isPaid = !payments.some(p => p.method === 'credit');
+  return { payments, isPaid };
 }
 
 // Sync Sale payments: reduce credit by amount, add balance payment

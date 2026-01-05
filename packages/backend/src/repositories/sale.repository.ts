@@ -191,3 +191,8 @@ export async function getSaleCount(eventId?: string): Promise<number> {
   }
   return sales.size;
 }
+
+// Exports para transações atômicas cross-repository
+export function getTableName(): string | undefined {
+  return TABLE_NAME;
+}

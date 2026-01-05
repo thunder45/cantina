@@ -7,9 +7,24 @@
 | Prioridade | 🔴 Alta |
 | Esforço | Baixo (2-4 horas) |
 | Risco | Baixo |
-| Status | Pendente |
+| Status | ✅ Implementado |
 
 Usar `TransactWriteCommand` do DynamoDB para garantir atomicidade em operações que modificam múltiplas tabelas.
+
+## Decisão de Implementação
+
+Após análise do limite de 25 items do TransactWriteCommand:
+
+| Operação | Items | Estratégia |
+|----------|-------|------------|
+| `recordPurchase` | 2 max | TransactWriteCommand ✅ |
+| `deposit` / `applyPaymentFIFO` | 2-40+ | Batches de 20 items (10 purchases) |
+| `recalculateFIFO` | 24+ | Operações separadas (manter atual) |
+
+**Mitigações para operações não-atômicas:**
+1. Log/alerta em caso de falha de qualquer operação
+2. Job de reconciliação semanal
+3. Reconciliação automática quando houver falha
 
 ## Problema Atual
 
@@ -181,24 +196,26 @@ cd packages/infra && npx cdk deploy CantinaBetaStack ...
 
 ## Critérios de Sucesso
 
-- [ ] Compra a crédito com saldo positivo cria transação E atualiza Sale.payments
-- [ ] Se DynamoDB falhar, nenhuma operação é persistida
-- [ ] Depósito que paga múltiplas compras atualiza tudo atomicamente
-- [ ] Testes locais continuam funcionando (dev mode)
+- [x] Compra a crédito com saldo positivo cria transação E atualiza Sale.payments
+- [x] applyPaymentFIFO processa em batches de 20 items
+- [x] Log de erro quando batch falha
+- [x] Reconciliação automática em caso de falha
+- [ ] Job de reconciliação semanal (pendente: configurar EventBridge)
+- [x] Testes locais continuam funcionando (dev mode)
 
-## Checklist de Implementação
+## Arquivos Criados/Modificados
 
-- [ ] Criar `dynamodb-transactions.ts`
-- [ ] Refatorar `recordPurchase()`
-- [ ] Refatorar `applyPaymentFIFO()`
-- [ ] Testar em beta
-- [ ] Testar cenário de falha
-- [ ] Deploy em produção
-- [ ] Atualizar status neste documento
+| Arquivo | Mudança |
+|---------|---------|
+| `src/repositories/dynamodb-transactions.ts` | Helper para TransactWriteCommand |
+| `src/services/reconciliation.service.ts` | Serviço de reconciliação FIFO |
+| `src/services/customer.service.ts` | applyPaymentFIFO com batches |
 
 ## Lições Aprendidas
 
-*(Preencher após implementação)*
+- TransactWriteCommand tem limite de 25 items - operações FIFO grandes precisam de batches
+- Reconciliação é essencial como safety net para operações não-atômicas
+- Batches de 20 (não 25) dão margem de segurança
 
 ---
 

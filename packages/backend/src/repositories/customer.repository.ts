@@ -233,3 +233,16 @@ export async function getTransactionCount(): Promise<number> {
   }
   return transactions.size;
 }
+
+// Exports para transações atômicas cross-repository
+export function getDocClient(): DynamoDBDocumentClient | null {
+  return docClient;
+}
+
+export function getTableName(): string | undefined {
+  return TABLE_NAME;
+}
+
+export function isProductionMode(): boolean {
+  return isProduction;
+}
