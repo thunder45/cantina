@@ -8,7 +8,7 @@ import {
   FontSizes,
   BorderRadius,
 } from '@cantina-pos/shared';
-import { GlobalReportView, StockReportView } from '../components/reports';
+import { GlobalReportView, EventReportView, StockReportView } from '../components/reports';
 
 interface ReportsPageProps {
   apiClient: ApiClient;
@@ -191,7 +191,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           <GlobalReportView apiClient={apiClient} />
         )}
         {activeTab === 'event' && event && (
-          <GlobalReportView apiClient={apiClient} eventId={event.id} onExportCSV={handleExportCSV} />
+          <EventReportView apiClient={apiClient} event={event} onExportCSV={handleExportCSV} />
         )}
         {activeTab === 'stock' && event && (
           <StockReportView apiClient={apiClient} event={event} />
