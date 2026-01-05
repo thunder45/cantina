@@ -57,9 +57,12 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
         totalRefunded += sale.total;
       } else {
         totalSales += sale.total;
-        const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
-        totalPending += creditAmount;
-        totalPaid += sale.total - creditAmount;
+        if (sale.isPaid) totalPaid += sale.total;
+        else {
+          const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
+          totalPending += creditAmount;
+          totalPaid += sale.total - creditAmount;
+        }
       }
       
       // Payment breakdown
@@ -104,9 +107,12 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
     for (const sale of salesForEvent) {
       if (!sale.refunded) {
         catStats.total += sale.total;
-        const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
-        catStats.pending += creditAmount;
-        catStats.paid += sale.total - creditAmount;
+        if (sale.isPaid) catStats.paid += sale.total;
+        else {
+          const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
+          catStats.pending += creditAmount;
+          catStats.paid += sale.total - creditAmount;
+        }
       }
     }
     categoryStatsMap.set(event.categoryId, catStats);
