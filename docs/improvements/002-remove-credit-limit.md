@@ -7,7 +7,7 @@
 | Prioridade | 🟡 Média |
 | Esforço | Baixo (1-2 horas) |
 | Risco | Baixo |
-| Status | Pendente |
+| Status | ✅ Implementado |
 
 Remover completamente o campo `creditLimit` que não é mais utilizado.
 
@@ -185,32 +185,18 @@ aws dynamodb scan --table-name cantina-customers \
 
 ## Critérios de Sucesso
 
-- [ ] Build compila sem erros
-- [ ] Criar cliente funciona sem creditLimit
-- [ ] Nenhuma referência a creditLimit no código
-- [ ] Testes passam
-
-## Checklist de Implementação
-
-- [ ] Atualizar `packages/shared/src/types/customer.ts`
-- [ ] Atualizar `packages/backend/src/repositories/customer.repository.ts`
-- [ ] Atualizar `packages/backend/src/services/customer.service.ts`
-- [ ] Atualizar `packages/backend/src/api/handlers/customers.handler.ts`
-- [ ] Atualizar `packages/backend/src/api/router.ts`
-- [ ] Remover testes relacionados a creditLimit
-- [ ] Build shared
-- [ ] Build backend
-- [ ] Verificar frontend compila
-- [ ] Deploy beta
-- [ ] Testar criação de cliente
-- [ ] Deploy produção
-- [ ] Atualizar status neste documento
+- [x] Build compila sem erros
+- [x] Criar cliente funciona sem creditLimit
+- [x] Nenhuma referência a creditLimit no código
+- [x] Testes passam (217 testes)
 
 ## Lições Aprendidas
 
-*(Preencher após implementação)*
+- Remoção de código morto é simples quando TypeScript aponta todos os usos
+- Testes precisam ser atualizados junto com o código
 
 ---
 
 *Criado: 2026-01-05*
 *Última atualização: 2026-01-05*
+*Implementado: 2026-01-05*
