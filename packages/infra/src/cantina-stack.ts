@@ -98,6 +98,11 @@ export class CantinaStack extends cdk.Stack {
       indexName: 'eventId-index',
       partitionKey: { name: 'eventId', type: dynamodb.AttributeType.STRING },
     });
+    salesTable.addGlobalSecondaryIndex({
+      indexName: 'yearMonth-createdAt-index',
+      partitionKey: { name: 'yearMonth', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
+    });
 
     const customersTable = new dynamodb.Table(this, 'CustomersTable', {
       tableName: `${envPrefix}cantina-customers`,

@@ -32,6 +32,7 @@ export interface Sale {
   refundedAt?: string;
   createdBy: string;  // User who created the sale (from Cognito)
   createdAt: string;
+  yearMonth: string;  // "YYYY-MM" for GSI queries by date
   version: number; // For optimistic locking
 }
 

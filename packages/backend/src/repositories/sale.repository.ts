@@ -24,6 +24,7 @@ export async function createSale(
   customerId?: string
 ): Promise<Sale> {
   const hasCredit = payments.some(p => p.method === 'credit');
+  const createdAt = new Date().toISOString();
   const sale: Sale = {
     id: uuidv4(),
     eventId,
@@ -35,7 +36,8 @@ export async function createSale(
     isPaid: !hasCredit,
     isRefunded: false,
     createdBy,
-    createdAt: new Date().toISOString(),
+    createdAt,
+    yearMonth: createdAt.substring(0, 7),
     version: 1,
   };
 
