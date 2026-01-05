@@ -415,45 +415,52 @@ export async function updateCustomer(
 
 // Recalculate all amountPaid for purchases based on deposits and initialBalance
 async function recalculateFIFO(customerId: string): Promise<void> {
+  console.log(`[FIFO_RECALC] Starting for customer ${customerId}`);
   const customer = await customerRepository.getCustomerById(customerId);
   if (!customer) return;
 
   const txs = await customerRepository.getTransactionsByCustomer(customerId);
   const sorted = txs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  // Reset all purchase amountPaid to 0
-  const purchases = sorted.filter(tx => tx.type === 'purchase');
-  for (const p of purchases) {
-    await customerRepository.updateTransactionAmountPaid(p.id.replace('tx#', ''), 0);
-  }
-
-  // Calculate available balance chronologically
-  let available = customer.initialBalance || 0;
+  // Calculate total available: initialBalance + deposits - withdrawals
+  let totalAvailable = customer.initialBalance || 0;
+  const purchases: typeof txs = [];
   
   for (const tx of sorted) {
     if (tx.type === 'deposit' || tx.type === 'refund') {
-      available += tx.amount;
+      totalAvailable += tx.amount;
     } else if (tx.type === 'purchase') {
-      // Apply available balance to this purchase
-      const toApply = Math.min(Math.max(available, 0), tx.amount);
-      if (toApply > 0) {
-        await customerRepository.updateTransactionAmountPaid(tx.id.replace('tx#', ''), toApply);
-        // Sync Sale.payments
-        if (tx.saleId) {
-          await syncSalePaymentsForRecalc(tx.saleId, toApply, tx.amount);
-        }
-      }
-      available -= tx.amount;
+      purchases.push(tx);
     } else if (tx.type === 'withdrawal') {
-      available -= tx.amount;
+      totalAvailable -= tx.amount;
     }
   }
+  
+  console.log(`[FIFO_RECALC] Total available: ${totalAvailable}, Purchases: ${purchases.length}`);
+
+  // Apply available balance to purchases in FIFO order (oldest first)
+  let remaining = totalAvailable;
+  for (const p of purchases) {
+    const toApply = Math.min(Math.max(remaining, 0), p.amount);
+    console.log(`[FIFO_RECALC] purchase ${p.amount}, remaining: ${remaining}, toApply: ${toApply}, saleId: ${p.saleId}`);
+    
+    await customerRepository.updateTransactionAmountPaid(p.id.replace('tx#', ''), toApply);
+    if (p.saleId) {
+      await syncSalePaymentsForRecalc(p.saleId, toApply, p.amount);
+    }
+    remaining -= p.amount;
+  }
+  console.log(`[FIFO_RECALC] Final remaining: ${remaining}`);
 }
 
 // Sync Sale payments after FIFO recalculation
 async function syncSalePaymentsForRecalc(saleId: string, amountPaid: number, total: number): Promise<void> {
+  console.log(`[FIFO_SYNC] saleId: ${saleId}, amountPaid: ${amountPaid}, total: ${total}`);
   const sale = await saleRepository.getSaleById(saleId);
-  if (!sale) return;
+  if (!sale) {
+    console.log(`[FIFO_SYNC] Sale not found: ${saleId}`);
+    return;
+  }
 
   const creditAmount = total - amountPaid;
   const payments: PaymentPart[] = [];
@@ -465,6 +472,7 @@ async function syncSalePaymentsForRecalc(saleId: string, amountPaid: number, tot
     payments.push({ method: 'credit', amount: creditAmount });
   }
   
+  console.log(`[FIFO_SYNC] Updating sale ${saleId} with payments:`, JSON.stringify(payments), `isPaid: ${creditAmount === 0}`);
   await saleRepository.updateSalePayments(saleId, payments, creditAmount === 0);
 }
 

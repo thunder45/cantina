@@ -18,6 +18,7 @@ export async function confirmSale(
   if (!payments?.length) throw new Error('ERR_NO_PAYMENT');
 
   const paymentTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+  console.log(`[PAYMENT_DEBUG] Order total: ${order.total}, Payment total: ${paymentTotal}, Diff: ${Math.abs(paymentTotal - order.total)}, Payments:`, JSON.stringify(payments));
   if (Math.abs(paymentTotal - order.total) > 0.01) throw new Error('ERR_PAYMENT_MISMATCH');
   for (const payment of payments) {
     if (payment.amount <= 0) throw new Error('ERR_INVALID_PAYMENT_AMOUNT');
