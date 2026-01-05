@@ -218,7 +218,7 @@ aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" 
 | Componentes React | PascalCase | `CustomerHistory.tsx` |
 | Funções | camelCase | `getCustomerBalance()` |
 | Interfaces | PascalCase | `CustomerTransaction` |
-| Constantes | UPPER_SNAKE | `DEFAULT_CREDIT_LIMIT` |
+| Constantes | UPPER_SNAKE | `BATCH_SIZE` |
 | Tabelas DynamoDB | kebab-case | `cantina-customers` |
 | Erros | ERR_UPPER_SNAKE | `ERR_CUSTOMER_NOT_FOUND` |
 
@@ -676,10 +676,15 @@ export const ExampleList: React.FC<ExampleListProps> = ({ apiClient, onSelect })
 
 ### Janeiro 2026
 
-#### Remoção do Limite de Crédito
-- **Mudança**: Removida validação de `creditLimit` nas compras
-- **Motivo**: Clientes podem comprar a crédito sem limite
-- **Arquivos**: `sales.service.ts`, `customer.service.ts`, `CustomerHistory.tsx`
+#### Remoção Completa do creditLimit (Task 002)
+- **Mudança**: Campo `creditLimit` removido completamente do sistema
+- **Removido de**: Customer interface, createCustomer, updateCreditLimit, canPurchase, rota /credit-limit
+- **Motivo**: Clientes podem comprar a crédito sem limite - campo não era mais usado
+
+#### Transações DynamoDB Atômicas (Task 001)
+- **Mudança**: `applyPaymentFIFO` agora usa `TransactWriteCommand` em batches
+- **Arquivos**: `dynamodb-transactions.ts`, `reconciliation.service.ts`, `customer.service.ts`
+- **Motivo**: Garantir consistência entre CustomerTransaction e Sale.payments
 
 #### FIFO Auto-Pay from Balance
 - **Mudança**: Compras a crédito agora usam saldo positivo automaticamente
