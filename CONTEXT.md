@@ -94,10 +94,12 @@ cantina/
 | cantina-menu-items | id | eventId-index |
 | cantina-menu-groups | id | eventId-index |
 | cantina-orders | id | eventId-index |
-| cantina-sales | id | eventId-index, customerId-index |
+| cantina-sales | id | eventId-index, customerId-index, yearMonth-createdAt-index |
 | cantina-customers | id | - (transações usam pk=customerId) |
 | cantina-catalog-items | id | - |
 | cantina-audit-logs | id | - |
+
+**Nota**: O GSI `yearMonth-createdAt-index` permite queries eficientes por período (YYYY-MM) para relatórios globais.
 
 ---
 
@@ -222,10 +224,12 @@ aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" 
 | Tabelas DynamoDB | kebab-case | `cantina-customers` |
 | Erros | ERR_UPPER_SNAKE | `ERR_CUSTOMER_NOT_FOUND` |
 
-### 4.2 Estrutura de Handler
+### 4.2 Estrutura de Handler (com Zod)
 
 ```typescript
 // packages/backend/src/api/handlers/[domain].handler.ts
+import { validateBody } from '../validation';
+import { CreateEntitySchema } from '../schemas';
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, path } = event;
@@ -236,7 +240,10 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
       return await getResource(resourceId);
     }
     if (httpMethod === 'POST' && !resourceId) {
-      return await createResource(event);
+      const v = validateBody(event.body, CreateEntitySchema);
+      if (!v.success) return v.response;
+      const entity = await entityService.create(v.data);
+      return created(entity);
     }
     // ... mais rotas
     return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
@@ -245,6 +252,11 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
   }
 }
 ```
+
+**Validação com Zod** (desde Task 005):
+- Schemas declarativos em `src/api/schemas.ts`
+- Helper `validateBody()` retorna `{ success, data }` ou `{ success: false, response }`
+- Trim automático em strings antes de validar `min(1)`
 
 ### 4.3 Estrutura de Service
 
@@ -461,6 +473,7 @@ aws dynamodb update-item --table-name cantina-customers \
 | @aws-sdk/client-dynamodb | Acesso DynamoDB | ^3.946 |
 | @aws-sdk/lib-dynamodb | Document client | ^3.946 |
 | uuid | Geração de IDs | ^9.0 |
+| zod | Validação de schemas | ^3.24 |
 | react | UI | ^18.2 |
 | vite | Build frontend | ^5.4 |
 | aws-cdk-lib | Infraestrutura | ^2.x |
@@ -675,6 +688,30 @@ export const ExampleList: React.FC<ExampleListProps> = ({ apiClient, onSelect })
 ## 9. HISTÓRICO DE MUDANÇAS INCREMENTAIS
 
 ### Janeiro 2026
+
+#### Validação com Zod (Task 005)
+- **Mudança**: Todos os handlers migrados para validação declarativa com Zod
+- **Arquivos**: `src/api/schemas.ts`, `src/api/validation.ts`, todos os handlers
+- **Benefícios**: Type-safe, mensagens de erro consistentes, trim automático
+
+#### GSI para Relatórios por Data (Task 004)
+- **Mudança**: Adicionado GSI `yearMonth-createdAt-index` na tabela de sales
+- **Campo novo**: `Sale.yearMonth` (formato YYYY-MM)
+- **Motivo**: Queries eficientes por período sem scan completo
+
+#### Melhorias de UX nos Relatórios
+- **Widgets colapsáveis**: Resumo, Itens Vendidos, Pagamentos podem ser colapsados
+- **Filtros por pagamento/cliente**: EventReportView permite filtrar vendas
+- **Formato de vendas padronizado**: 4 linhas (data+total, items, pagamentos, cliente)
+
+#### Correções de Bugs
+- **endDate inclusivo**: Filtro de data agora inclui o dia inteiro (T23:59:59.999Z)
+- **totalPending**: Corrigido para somar apenas compras com `isPaid === false`
+- **EventReportView**: Tab "📅 Evento" agora usa componente correto
+
+#### Padronização de Terminologia
+- "Anotado" → "Fiado" (compra a crédito)
+- "Saldo" → "Fiado Pago" (pagamento de dívida)
 
 #### Remoção Completa do creditLimit (Task 002)
 - **Mudança**: Campo `creditLimit` removido completamente do sistema

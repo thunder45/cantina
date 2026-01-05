@@ -7,7 +7,7 @@
 | Prioridade | 🟢 Baixa |
 | Esforço | Médio (1-2 dias) |
 | Risco | Baixo |
-| Status | Pendente |
+| Status | ✅ Concluído |
 
 Usar Zod para validação declarativa de inputs em vez de validação manual.
 

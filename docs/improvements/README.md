@@ -9,11 +9,11 @@ Cada melhoria tem seu próprio documento detalhado na pasta `docs/improvements/`
 
 | # | Melhoria | Prioridade | Esforço | Status |
 |---|----------|------------|---------|--------|
-| 1 | [Transações DynamoDB Atômicas](./001-dynamodb-transactions.md) | 🔴 Alta | Baixo | Pendente |
-| 2 | [Remover creditLimit](./002-remove-credit-limit.md) | 🟡 Média | Baixo | Pendente |
+| 1 | [Transações DynamoDB Atômicas](./001-dynamodb-transactions.md) | 🔴 Alta | Baixo | ✅ Concluído |
+| 2 | [Remover creditLimit](./002-remove-credit-limit.md) | 🟡 Média | Baixo | ✅ Concluído |
 | 3 | [Separar Tabela de Transactions](./003-separate-transactions-table.md) | 🟡 Média | Médio | Pendente |
-| 4 | [GSI para Relatórios por Data](./004-gsi-reports-by-date.md) | 🟡 Média | Baixo | Pendente |
-| 5 | [Validação com Zod](./005-zod-validation.md) | 🟢 Baixa | Médio | Pendente |
+| 4 | [GSI para Relatórios por Data](./004-gsi-reports-by-date.md) | 🟡 Média | Baixo | ✅ Concluído |
+| 5 | [Validação com Zod](./005-zod-validation.md) | 🟢 Baixa | Médio | ✅ Concluído |
 | 6 | [Separar Lambdas por Domínio](./006-separate-lambdas.md) | 🟢 Baixa | Médio | Futuro |
 | 7 | [Cache para Relatórios](./007-reports-cache.md) | 🟢 Baixa | Alto | Futuro |
 | 8 | [Event Sourcing](./008-event-sourcing.md) | 🟢 Baixa | Alto | Futuro |
@@ -26,26 +26,26 @@ Cada melhoria tem seu próprio documento detalhado na pasta `docs/improvements/`
            ┌─────────┬─────────┬─────────┐
      Alto  │  #1 ✅  │         │   #8    │
 IMPACTO    ├─────────┼─────────┼─────────┤
-     Médio │  #4     │  #3 #5  │   #7    │
+     Médio │  #4 ✅  │  #3 #5✅│   #7    │
            ├─────────┼─────────┼─────────┤
-     Baixo │  #2     │   #6    │         │
+     Baixo │  #2 ✅  │   #6    │         │
            └─────────┴─────────┴─────────┘
 
-✅ = Fazer primeiro
+✅ = Concluído
 ```
 
 ## Ordem de Execução Recomendada
 
-### Fase 1 - Quick Wins (1-2 dias)
-1. **#1 Transações DynamoDB** - Elimina risco de inconsistência
-2. **#2 Remover creditLimit** - Limpeza de código morto
+### Fase 1 - Quick Wins ✅ CONCLUÍDO
+1. **#1 Transações DynamoDB** - ✅ Elimina risco de inconsistência
+2. **#2 Remover creditLimit** - ✅ Limpeza de código morto
 
-### Fase 2 - Fundação (3-5 dias)
-3. **#4 GSI para Relatórios** - Melhora performance
-4. **#3 Separar Transactions** - Melhora modelo de dados
+### Fase 2 - Fundação (parcial)
+3. **#4 GSI para Relatórios** - ✅ Melhora performance
+4. **#3 Separar Transactions** - Pendente (melhora modelo de dados)
 
-### Fase 3 - Qualidade (3-5 dias)
-5. **#5 Validação Zod** - Melhora robustez
+### Fase 3 - Qualidade ✅ CONCLUÍDO
+5. **#5 Validação Zod** - ✅ Melhora robustez
 
 ### Fase 4 - Escala (Futuro)
 6. **#6 Separar Lambdas** - Quando necessário

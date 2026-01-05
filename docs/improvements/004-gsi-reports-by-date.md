@@ -7,7 +7,7 @@
 | Prioridade | 🟡 Média |
 | Esforço | Baixo (2-4 horas) |
 | Risco | Baixo |
-| Status | Pendente |
+| Status | ✅ Concluído |
 
 Adicionar GSI na tabela de vendas para queries eficientes por período.
 
