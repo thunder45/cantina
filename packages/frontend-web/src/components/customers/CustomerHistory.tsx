@@ -159,7 +159,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
 
   const translateMethod = (method?: PaymentMethod): string => {
     const map: Record<PaymentMethod, string> = {
-      cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Saldo', credit: 'Fiado'
+      cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Fiado Pago', credit: 'Fiado'
     };
     return method ? map[method] || method : '';
   };

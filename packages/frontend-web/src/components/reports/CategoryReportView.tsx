@@ -52,7 +52,8 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
       cash: 'Dinheiro',
       card: 'Cartão',
       transfer: 'Transferência',
-      credit: 'Anotado',
+      credit: 'Fiado',
+      balance: 'Fiado Pago',
     };
     return labels[method] || method;
   };
@@ -161,7 +162,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
           color={Colors.success}
         />
         <SummaryCard
-          title="Anotado"
+          title="Fiado"
           value={formatPrice(report.totalPending)}
           color={Colors.warning}
         />
