@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   GlobalReport,
+  Event,
   EventCategory,
   CustomerWithBalance,
   ApiClient,
   ReportApiService,
+  EventApiService,
   EventCategoryApiService,
   CustomerApiService,
   SalesApiService,
@@ -29,6 +31,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   onExportCSV,
 }) => {
   const [report, setReport] = useState<GlobalReport | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
   const [customers, setCustomers] = useState<CustomerWithBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   const [salesCollapsed, setSalesCollapsed] = useState(false);
   
   // Filters
+  const [eventFilter, setEventFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -48,16 +52,19 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   const [customerFilter, setCustomerFilter] = useState<string>('');
 
   const reportService = new ReportApiService(apiClient);
+  const eventService = new EventApiService(apiClient);
   const categoryService = new EventCategoryApiService(apiClient);
   const customerService = new CustomerApiService(apiClient);
   const salesService = new SalesApiService(apiClient);
 
   const loadFilters = useCallback(async () => {
     try {
-      const [cats, custs] = await Promise.all([
+      const [evts, cats, custs] = await Promise.all([
+        eventService.getEvents(),
         categoryService.getCategories(),
         customerService.getAllCustomers(),
       ]);
+      setEvents(evts);
       setCategories(cats);
       setCustomers(custs);
     } catch (err) {
@@ -70,7 +77,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       setLoading(true);
       setError(null);
       const data = await reportService.getGlobalReport({
-        eventId: eventId || undefined,
+        eventId: eventId || eventFilter || undefined,
         categoryId: categoryFilter || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -84,7 +91,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [eventId, categoryFilter, startDate, endDate, paymentMethodFilter, customerFilter]);
+  }, [eventId, eventFilter, categoryFilter, startDate, endDate, paymentMethodFilter, customerFilter]);
 
   useEffect(() => {
     loadFilters();
@@ -146,6 +153,13 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
         {showAllFilters && (
           <>
             <div>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Evento</label>
+              <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
+                <option value="">Todos</option>
+                {events.map(evt => <option key={evt.id} value={evt.id}>{evt.name}</option>)}
+              </select>
+            </div>
+            <div>
               <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Categoria</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
                 <option value="">Todas</option>
@@ -179,8 +193,8 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-        {(categoryFilter || startDate || endDate || paymentMethodFilter || customerFilter) && (
-          <button onClick={() => { setCategoryFilter(''); setStartDate(''); setEndDate(''); setPaymentMethodFilter(''); setCustomerFilter(''); }} style={{ padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, fontSize: FontSizes.sm, cursor: 'pointer' }}>
+        {(eventFilter || categoryFilter || startDate || endDate || paymentMethodFilter || customerFilter) && (
+          <button onClick={() => { setEventFilter(''); setCategoryFilter(''); setStartDate(''); setEndDate(''); setPaymentMethodFilter(''); setCustomerFilter(''); }} style={{ padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, fontSize: FontSizes.sm, cursor: 'pointer' }}>
             Limpar
           </button>
         )}
