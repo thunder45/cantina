@@ -51,8 +51,13 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
       continue;
     }
     totalSales += sale.total;
-    if (sale.isPaid) totalPaid += sale.total;
-    else totalPending += sale.total;
+    if (sale.isPaid) {
+      totalPaid += sale.total;
+    } else {
+      const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
+      totalPending += creditAmount;
+      totalPaid += sale.total - creditAmount;
+    }
 
     for (const item of sale.items) {
       const existing = itemsMap.get(item.description);
