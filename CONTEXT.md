@@ -147,6 +147,16 @@ if (isProduction) {
 - `CustomerTransaction.amountPaid`: Quanto desta compra já foi pago
 - `Sale.payments`: Array com breakdown (balance vs credit)
 
+**Implementação atômica** (desde 2026-01-05):
+- `applyPaymentFIFO` usa `TransactWriteCommand` em batches de 10 purchases (20 items max)
+- Em caso de falha, `reconciliationService.handleFIFOFailure()` tenta reconciliar
+- Job de reconciliação semanal verifica consistência de todos os clientes
+
+**Arquivos relacionados**:
+- `src/services/customer.service.ts` - `applyPaymentFIFO()`, `buildUpdatedSalePayments()`
+- `src/services/reconciliation.service.ts` - `reconcileCustomer()`, `reconcileAll()`
+- `src/repositories/dynamodb-transactions.ts` - `executeTransaction()`, `executeTransactionBatches()`
+
 ### 3.5 Soft Delete para Clientes
 
 **Decisão**: Clientes não são deletados fisicamente. Usam `deletedAt`.
@@ -159,7 +169,42 @@ if (isProduction) {
 
 **Motivo**: Testar mudanças sem afetar produção.
 
-**Deploy beta**: `npx cdk deploy CantinaBetaStack --context subDomain="cantina-beta" --context skipAuth=true`
+**URLs**:
+- Beta: https://cantina-beta.advm.lu
+- Produção: https://cantina.advm.lu
+
+**Deploy beta**:
+```bash
+# Backend
+cd packages/infra
+npx cdk deploy CantinaBetaStack -c subDomain=cantina-beta --profile cantina --require-approval never
+
+# Frontend
+cd packages/frontend-web
+VITE_API_URL="https://cantina-beta.advm.lu" VITE_SKIP_AUTH=true npm run build
+aws s3 sync dist/ s3://beta-cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E3RFATVK47GGJ7 --paths "/*" --profile cantina
+```
+
+**Deploy produção**:
+```bash
+# Backend
+cd packages/infra
+npx cdk deploy CantinaStack --profile cantina --require-approval never
+
+# Frontend
+cd packages/frontend-web
+VITE_API_URL="https://cantina.advm.lu" npm run build
+aws s3 sync dist/ s3://cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" --profile cantina
+```
+
+### 3.7 Arquivos de Infraestrutura
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `repositories/dynamodb-transactions.ts` | Helper para `TransactWriteCommand` com batches |
+| `services/reconciliation.service.ts` | Detecta e corrige inconsistências FIFO |
 
 ---
 
@@ -354,9 +399,11 @@ export const Component: React.FC<ComponentProps> = ({
    - Problema: Usuários veem versão antiga após deploy
    - Solução: Sempre invalidar após deploy + hard refresh no browser
 
-3. **Transações DynamoDB não são atômicas**
-   - Problema: Se `syncSalePayments` falhar após criar transação, dados ficam inconsistentes
-   - Solução: Criar transação primeiro, depois sincronizar (ordem importa)
+3. **Transações DynamoDB - Atomicidade**
+   - Problema: Operações que atualizam múltiplos items podem falhar parcialmente
+   - Solução: `TransactWriteCommand` para operações críticas (limite: 25 items)
+   - Para FIFO com muitas compras: batches de 20 items + reconciliação automática em falha
+   - Arquivos: `dynamodb-transactions.ts`, `reconciliation.service.ts`
 
 4. **GSI eventual consistency**
    - Problema: Query em GSI pode não retornar item recém-criado
@@ -377,51 +424,19 @@ export const Component: React.FC<ComponentProps> = ({
 7. Adicione API client em `packages/shared/src/api/services.ts`
 8. Implemente componentes React
 9. Teste localmente: `npm run dev` em backend e frontend
-10. Deploy beta, teste, merge para main, deploy prod
+10. Deploy beta, teste, merge para main, deploy prod (ver seção 3.6)
 
-### 6.2 Deploy para Beta
-
-```bash
-# 1. Build
-npm run build --workspace=@cantina-pos/shared
-npm run build:lambda --workspace=@cantina-pos/backend
-
-# 2. Deploy infra + Lambda
-cd packages/infra
-npx cdk deploy CantinaBetaStack --profile cantina \
-  --context subDomain="cantina-beta" --context skipAuth=true
-
-# 3. Build e deploy frontend
-cd ../frontend-web
-VITE_API_URL="https://cantina-beta.advm.lu" VITE_SKIP_AUTH=true npm run build
-aws s3 sync dist/ s3://beta-cantina-frontend-625272706584 --delete --profile cantina
-aws cloudfront create-invalidation --distribution-id E3RFATVK47GGJ7 --paths "/*" --profile cantina
-```
-
-### 6.3 Deploy para Produção
+### 6.2 Build Completo
 
 ```bash
-# 1. Merge para main
-git checkout main
-git merge feature/nome-da-feature
-git push origin main
-
-# 2. Build
+# Build shared + backend
 npm run build --workspace=@cantina-pos/shared
 npm run build:lambda --workspace=@cantina-pos/backend
-
-# 3. Deploy infra + Lambda
-cd packages/infra
-npx cdk deploy CantinaStack --profile cantina
-
-# 4. Build e deploy frontend
-cd ../frontend-web
-VITE_API_URL="https://cantina.advm.lu" npm run build
-aws s3 sync dist/ s3://cantina-frontend-625272706584 --delete --profile cantina
-aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" --profile cantina
 ```
 
-### 6.4 Corrigir Dados em Produção
+Ver seção **3.6 Ambiente Beta Separado** para comandos de deploy.
+
+### 6.3 Corrigir Dados em Produção
 
 ```bash
 # 1. SEMPRE faça backup primeiro
