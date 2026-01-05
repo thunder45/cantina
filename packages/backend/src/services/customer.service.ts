@@ -1,5 +1,6 @@
 import { Customer, CustomerTransaction, CustomerHistory, CustomerWithBalance, CustomerHistoryFilter, PaymentMethod, PaymentPart, ReceiptItem } from '@cantina-pos/shared';
 import * as customerRepository from '../repositories/customer.repository';
+import * as transactionRepository from '../repositories/customer-transaction.repository';
 import * as saleRepository from '../repositories/sale.repository';
 import * as eventRepository from '../repositories/event.repository';
 import * as eventCategoryRepository from '../repositories/event-category.repository';
@@ -35,14 +36,27 @@ export async function getAllCustomers(): Promise<Customer[]> {
   return customerRepository.getAllCustomers();
 }
 
+async function calculateBalance(customerId: string): Promise<number> {
+  const customer = await customerRepository.getCustomerById(customerId);
+  const initialBalance = customer?.initialBalance || 0;
+  const txs = await transactionRepository.getTransactionsByCustomer(customerId);
+  return txs.reduce((balance, tx) => {
+    if (tx.type === 'deposit' || tx.type === 'refund') {
+      return balance + tx.amount;
+    } else {
+      return balance - tx.amount;
+    }
+  }, initialBalance);
+}
+
 export async function getCustomerBalance(customerId: string): Promise<number> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-  return customerRepository.calculateBalance(customerId);
+  return calculateBalance(customerId);
 }
 
 export async function getCustomerWithBalance(customerId: string): Promise<CustomerWithBalance> {
   const customer = await getCustomer(customerId);
-  const balance = await customerRepository.calculateBalance(customerId);
+  const balance = await calculateBalance(customerId);
   return { ...customer, balance };
 }
 
@@ -50,13 +64,13 @@ export async function getCustomersWithBalances(): Promise<CustomerWithBalance[]>
   const customers = await customerRepository.getAllCustomers();
   return Promise.all(customers.map(async c => ({
     ...c,
-    balance: await customerRepository.calculateBalance(c.id),
+    balance: await calculateBalance(c.id),
   })));
 }
 
 export async function getCustomerHistory(customerId: string, filter?: CustomerHistoryFilter): Promise<CustomerHistory> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
-  let transactions = await customerRepository.getTransactionsByCustomer(customerId);
+  let transactions = await transactionRepository.getTransactionsByCustomer(customerId);
   
   // Enrich purchase transactions with event/category data
   const enrichedTransactions = await Promise.all(transactions.map(async (tx) => {
@@ -102,7 +116,7 @@ export async function getCustomerHistory(customerId: string, filter?: CustomerHi
     filtered = filtered.filter(tx => new Date(tx.createdAt) <= end);
   }
   
-  const balance = await customerRepository.calculateBalance(customerId);
+  const balance = await calculateBalance(customerId);
   return { transactions: filtered, balance };
 }
 
@@ -122,7 +136,7 @@ export async function deposit(
     return withdraw(customerId, Math.abs(amount), paymentMethod, createdBy, description || 'Correção');
   }
 
-  const tx = await customerRepository.createTransaction(customerId, {
+  const tx = await transactionRepository.createTransaction(customerId, {
     type: 'deposit',
     amount,
     paymentMethod,
@@ -143,7 +157,7 @@ export async function deposit(
 // Uses TransactWriteCommand in batches of 10 purchases (20 items max) for atomicity
 // Also syncs Sale.payments: reduces credit, adds balance, marks isPaid when credit=0
 async function applyPaymentFIFO(customerId: string, amount: number): Promise<void> {
-  const unpaidPurchases = await customerRepository.getUnpaidPurchases(customerId);
+  const unpaidPurchases = await transactionRepository.getUnpaidPurchases(customerId);
   let remaining = amount;
   
   // Preparar todas as atualizações
@@ -173,15 +187,15 @@ async function applyPaymentFIFO(customerId: string, amount: number): Promise<voi
       if (isProduction) {
         // Produção: usar TransactWriteCommand para atomicidade
         const transactItems: TransactItem[] = [];
-        const customersTable = customerRepository.getTableName()!;
+        const transactionsTable = transactionRepository.getTableName()!;
         const salesTable = saleRepository.getTableName()!;
         
         for (const { purchase, newAmountPaid, toApply } of batch) {
           // Update CustomerTransaction.amountPaid
           transactItems.push({
             Update: {
-              TableName: customersTable,
-              Key: { id: `tx#${purchase.id}` },
+              TableName: transactionsTable,
+              Key: { customerId, id: purchase.id },
               UpdateExpression: 'SET amountPaid = :ap',
               ExpressionAttributeValues: { ':ap': newAmountPaid },
             },
@@ -206,11 +220,11 @@ async function applyPaymentFIFO(customerId: string, amount: number): Promise<voi
           }
         }
         
-        await executeTransaction(customerRepository.getDocClient()!, transactItems);
+        await executeTransaction(transactionRepository.getDocClient()!, transactItems);
       } else {
         // Dev mode: operações separadas (Map não suporta transactions)
         for (const { purchase, newAmountPaid } of batch) {
-          await customerRepository.updateTransactionAmountPaid(purchase.id, newAmountPaid);
+          await transactionRepository.updateTransactionAmountPaid(customerId, purchase.id, newAmountPaid);
         }
         for (const { purchase, toApply } of batch) {
           if (purchase.saleId) {
@@ -299,10 +313,10 @@ export async function withdraw(
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
   if (amount <= 0) throw new Error('ERR_INVALID_AMOUNT');
 
-  const balance = await customerRepository.calculateBalance(customerId);
+  const balance = await calculateBalance(customerId);
   if (amount > balance) throw new Error('ERR_INSUFFICIENT_BALANCE');
 
-  const tx = await customerRepository.createTransaction(customerId, {
+  const tx = await transactionRepository.createTransaction(customerId, {
     type: 'withdrawal',
     amount,
     paymentMethod,
@@ -327,14 +341,14 @@ export async function recordPurchase(
   // If no explicit paidAmount, use available positive balance
   let effectivePaidAmount = paidAmount;
   if (paidAmount === 0) {
-    const balance = await customerRepository.calculateBalance(customerId);
+    const balance = await calculateBalance(customerId);
     if (balance > 0) {
       effectivePaidAmount = Math.min(balance, amount);
     }
   }
 
   // Criar transação (sempre necessário)
-  const tx = await customerRepository.createTransaction(customerId, {
+  const tx = await transactionRepository.createTransaction(customerId, {
     type: 'purchase',
     amount,
     saleId,
@@ -366,7 +380,7 @@ export async function recordRefund(
 ): Promise<CustomerTransaction> {
   if (!await customerRepository.customerExists(customerId)) throw new Error('ERR_CUSTOMER_NOT_FOUND');
 
-  const tx = await customerRepository.createTransaction(customerId, {
+  const tx = await transactionRepository.createTransaction(customerId, {
     type: 'refund',
     amount,
     saleId,
@@ -419,7 +433,7 @@ async function recalculateFIFO(customerId: string): Promise<void> {
   const customer = await customerRepository.getCustomerById(customerId);
   if (!customer) return;
 
-  const txs = await customerRepository.getTransactionsByCustomer(customerId);
+  const txs = await transactionRepository.getTransactionsByCustomer(customerId);
   const sorted = txs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   // Calculate total available: initialBalance + deposits - withdrawals
@@ -444,7 +458,7 @@ async function recalculateFIFO(customerId: string): Promise<void> {
     const toApply = Math.min(Math.max(remaining, 0), p.amount);
     console.log(`[FIFO_RECALC] purchase ${p.amount}, remaining: ${remaining}, toApply: ${toApply}, saleId: ${p.saleId}`);
     
-    await customerRepository.updateTransactionAmountPaid(p.id.replace('tx#', ''), toApply);
+    await transactionRepository.updateTransactionAmountPaid(customerId, p.id, toApply);
     if (p.saleId) {
       await syncSalePaymentsForRecalc(p.saleId, toApply, p.amount);
     }
@@ -477,7 +491,7 @@ async function syncSalePaymentsForRecalc(saleId: string, amountPaid: number, tot
 }
 
 export async function deleteCustomer(id: string): Promise<Customer> {
-  const txs = await customerRepository.getTransactionsByCustomer(id);
+  const txs = await transactionRepository.getTransactionsByCustomer(id);
   const hasSales = txs.some(tx => tx.type === 'purchase');
   if (hasSales) throw new Error('ERR_CUSTOMER_HAS_SALES');
   return customerRepository.deleteCustomer(id);
@@ -485,4 +499,5 @@ export async function deleteCustomer(id: string): Promise<Customer> {
 
 export function resetService(): void {
   customerRepository.resetRepository();
+  transactionRepository.resetRepository();
 }

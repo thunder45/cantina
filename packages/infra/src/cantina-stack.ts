@@ -106,6 +106,18 @@ export class CantinaStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const customerTransactionsTable = new dynamodb.Table(this, 'CustomerTransactionsTable', {
+      tableName: `${envPrefix}cantina-customer-transactions`,
+      partitionKey: { name: 'customerId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    customerTransactionsTable.addGlobalSecondaryIndex({
+      indexName: 'saleId-index',
+      partitionKey: { name: 'saleId', type: dynamodb.AttributeType.STRING },
+    });
+
     const menuGroupsTable = new dynamodb.Table(this, 'MenuGroupsTable', {
       tableName: `${envPrefix}cantina-menu-groups`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
@@ -160,6 +172,7 @@ export class CantinaStack extends cdk.Stack {
         ORDERS_TABLE: ordersTable.tableName,
         SALES_TABLE: salesTable.tableName,
         CUSTOMERS_TABLE: customersTable.tableName,
+        CUSTOMER_TRANSACTIONS_TABLE: customerTransactionsTable.tableName,
         MENU_GROUPS_TABLE: menuGroupsTable.tableName,
         CATALOG_ITEMS_TABLE: catalogItemsTable.tableName,
         SESSIONS_TABLE: sessionsTable.tableName,
@@ -179,6 +192,7 @@ export class CantinaStack extends cdk.Stack {
     ordersTable.grantReadWriteData(backendLambda);
     salesTable.grantReadWriteData(backendLambda);
     customersTable.grantReadWriteData(backendLambda);
+    customerTransactionsTable.grantReadWriteData(backendLambda);
     menuGroupsTable.grantReadWriteData(backendLambda);
     catalogItemsTable.grantReadWriteData(backendLambda);
     sessionsTable.grantReadWriteData(backendLambda);

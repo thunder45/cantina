@@ -1,4 +1,5 @@
 import * as customerRepository from '../repositories/customer.repository';
+import * as transactionRepository from '../repositories/customer-transaction.repository';
 import * as saleRepository from '../repositories/sale.repository';
 import { PaymentPart } from '@cantina-pos/shared';
 
@@ -27,7 +28,7 @@ export async function reconcileCustomer(customerId: string): Promise<Reconciliat
   }
 
   const issues: string[] = [];
-  const txs = await customerRepository.getTransactionsByCustomer(customerId);
+  const txs = await transactionRepository.getTransactionsByCustomer(customerId);
   const sorted = txs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   // Calcular o que deveria ser o amountPaid de cada compra
@@ -71,7 +72,7 @@ export async function reconcileCustomer(customerId: string): Promise<Reconciliat
     try {
       for (const d of discrepancies) {
         // Corrigir CustomerTransaction.amountPaid
-        await customerRepository.updateTransactionAmountPaid(d.txId, d.expected);
+        await transactionRepository.updateTransactionAmountPaid(customerId, d.txId, d.expected);
 
         // Corrigir Sale.payments se existir
         if (d.saleId) {
