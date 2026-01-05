@@ -91,10 +91,13 @@ function filterSalesByPeriod(sales: Sale[], startDate?: string, endDate?: string
   if (endDate && isNaN(new Date(endDate).getTime())) throw new Error('ERR_INVALID_DATE_FORMAT');
   if (startDate && endDate && new Date(startDate) > new Date(endDate)) throw new Error('ERR_INVALID_DATE_RANGE');
 
+  // Make endDate inclusive (end of day)
+  const endDateTime = endDate ? new Date(endDate + 'T23:59:59.999Z') : undefined;
+
   return sales.filter(sale => {
     const saleDate = new Date(sale.createdAt);
     if (startDate && saleDate < new Date(startDate)) return false;
-    if (endDate && saleDate > new Date(endDate)) return false;
+    if (endDateTime && saleDate > endDateTime) return false;
     return true;
   });
 }
