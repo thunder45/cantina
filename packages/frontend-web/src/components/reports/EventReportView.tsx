@@ -27,6 +27,9 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [categoryCollapsed, setCategoryCollapsed] = useState(false);
+  const [paymentCollapsed, setPaymentCollapsed] = useState(false);
+  const [salesCollapsed, setSalesCollapsed] = useState(false);
 
   const reportService = new ReportApiService(apiClient);
 
@@ -60,6 +63,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
       card: 'Cartão',
       transfer: 'Transferência',
       credit: 'Anotado',
+      balance: 'Fiado Pago',
     };
     return labels[method] || method;
   };
@@ -248,6 +252,9 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           padding: Spacing.md,
           borderBottom: `1px solid ${Colors.border}`,
           backgroundColor: Colors.backgroundSecondary,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}>
           <h3 style={{
             margin: 0,
@@ -255,9 +262,16 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Itens Vendidos
+            Por Categoria
           </h3>
+          <button
+            onClick={() => setCategoryCollapsed(!categoryCollapsed)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}
+          >
+            {categoryCollapsed ? '▼' : '▲'}
+          </button>
         </div>
+        {!categoryCollapsed && (
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
           {report.itemsSold.length === 0 ? (
             <div style={{
@@ -290,6 +304,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             </table>
           )}
         </div>
+        )}
       </div>
 
       {/* Payment Breakdown */}
@@ -298,11 +313,15 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         borderRadius: BorderRadius.lg,
         border: `1px solid ${Colors.border}`,
         overflow: 'hidden',
+        marginBottom: Spacing.lg,
       }}>
         <div style={{
           padding: Spacing.md,
           borderBottom: `1px solid ${Colors.border}`,
           backgroundColor: Colors.backgroundSecondary,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}>
           <h3 style={{
             margin: 0,
@@ -312,7 +331,14 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           }}>
             Formas de Pagamento
           </h3>
+          <button
+            onClick={() => setPaymentCollapsed(!paymentCollapsed)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}
+          >
+            {paymentCollapsed ? '▼' : '▲'}
+          </button>
         </div>
+        {!paymentCollapsed && (
         <div style={{ padding: Spacing.md }}>
           {report.paymentBreakdown.length === 0 ? (
             <div style={{
@@ -346,6 +372,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Sales Detail */}
@@ -359,11 +386,21 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           padding: Spacing.md,
           borderBottom: `1px solid ${Colors.border}`,
           backgroundColor: Colors.backgroundSecondary,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>
-            Vendas Detalhadas ({report.sales?.length || 0})
+            Vendas ({report.sales?.length || 0})
           </h3>
+          <button
+            onClick={() => setSalesCollapsed(!salesCollapsed)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}
+          >
+            {salesCollapsed ? '▼' : '▲'}
+          </button>
         </div>
+        {!salesCollapsed && (
         <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
           {!report.sales || report.sales.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>
@@ -375,7 +412,6 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                 const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
                 const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
                 const hadCredit = creditAmount > 0 || balanceAmount > 0;
-                const partiallyPaid = hadCredit && creditAmount > 0 && balanceAmount > 0;
                 const fullyPaid = hadCredit && sale.isPaid;
                 return (
                 <div
@@ -387,13 +423,15 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                     border: sale.refunded ? `1px solid ${Colors.danger}` : 'none',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                      {new Date(sale.createdAt).toLocaleString('pt-PT')}
-                      {sale.customerName && ` • ${sale.customerName}`}
-                      {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: 8 }}>Fiado</span>}
-                      {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 8 }}>Fiado Pago</span>}
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                      <div>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        {sale.customerName && <span>• {sale.customerName}</span>}
+                        {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: 4 }}>Fiado</span>}
+                        {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 4 }}>Fiado Pago</span>}
+                      </div>
+                    </div>
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ 
                         fontSize: FontSizes.sm, 
@@ -404,15 +442,9 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                         {formatPrice(sale.total)}
                       </span>
                       {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
-                      {partiallyPaid && (
-                        <>
-                          <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(balanceAmount)}</div>
-                          <div style={{ fontSize: FontSizes.xs, color: Colors.warning }}>Saldo: -{formatPrice(creditAmount)}</div>
-                        </>
-                      )}
                     </div>
                   </div>
-                  <div style={{ fontSize: FontSizes.xs, color: Colors.text }}>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 4 }}>
                     {sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
@@ -424,6 +456,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

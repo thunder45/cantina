@@ -173,7 +173,10 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-              {customers.map(customer => (
+              {customers.map(customer => {
+                const balance = customer.balance || 0;
+                const isPositive = balance >= 0;
+                return (
                 <div
                   key={customer.id}
                   onClick={() => onSelect(customer)}
@@ -202,12 +205,12 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                     width: 40,
                     height: 40,
                     borderRadius: '50%',
-                    backgroundColor: (customer.balance || 0) > 0 ? Colors.warning : Colors.success,
+                    backgroundColor: isPositive ? Colors.success : Colors.warning,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    color: '#000',
+                    color: isPositive ? Colors.textLight : '#000',
                     fontSize: FontSizes.sm,
                     flexShrink: 0,
                   }}>
@@ -219,17 +222,19 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                     <div style={{ fontWeight: 600, color: Colors.text, fontSize: FontSizes.md }}>
                       {customer.name}
                     </div>
-                    <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                      {(customer.balance || 0) > 0 
-                        ? `Saldo: ${formatCurrency(customer.balance || 0)}`
-                        : 'Sem saldo pendente'}
+                    <div style={{ 
+                      fontSize: FontSizes.xs, 
+                      color: isPositive ? Colors.success : Colors.warning,
+                      fontWeight: 500,
+                    }}>
+                      Saldo: {isPositive ? '+' : ''}{formatCurrency(balance)}
                     </div>
                   </div>
 
                   {/* Arrow */}
                   <span style={{ color: Colors.textSecondary, fontSize: 18 }}>→</span>
                 </div>
-              ))}
+              );})}
             </div>
           )}
         </div>

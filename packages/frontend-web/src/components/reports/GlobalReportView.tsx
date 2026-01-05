@@ -35,6 +35,11 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   
+  // Collapse states
+  const [categoryCollapsed, setCategoryCollapsed] = useState(false);
+  const [paymentCollapsed, setPaymentCollapsed] = useState(false);
+  const [salesCollapsed, setSalesCollapsed] = useState(false);
+  
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
@@ -105,7 +110,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       cash: 'Dinheiro',
       card: 'Cartão',
       transfer: 'Transferência',
-      balance: 'Saldo',
+      balance: 'Fiado Pago',
       credit: 'Fiado',
     };
     return labels[method] || method;
@@ -197,9 +202,11 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       {/* Category Breakdown */}
       {report.categoryBreakdown.length > 0 && (
         <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, marginBottom: Spacing.lg, overflow: 'hidden' }}>
-          <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary }}>
+          <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Por Categoria</h3>
+            <button onClick={() => setCategoryCollapsed(!categoryCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{categoryCollapsed ? '▼' : '▲'}</button>
           </div>
+          {!categoryCollapsed && (
           <div style={{ padding: Spacing.md }}>
             {report.categoryBreakdown.map((cat) => (
               <div key={cat.categoryId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, borderRadius: BorderRadius.md, marginBottom: Spacing.xs }}>
@@ -211,14 +218,17 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
       {/* Payment Breakdown */}
       <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, marginBottom: Spacing.lg, overflow: 'hidden' }}>
-        <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary }}>
+        <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Formas de Pagamento</h3>
+          <button onClick={() => setPaymentCollapsed(!paymentCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{paymentCollapsed ? '▼' : '▲'}</button>
         </div>
+        {!paymentCollapsed && (
         <div style={{ padding: Spacing.md }}>
           {report.paymentBreakdown.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>Nenhum pagamento</div>
@@ -231,13 +241,16 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
             ))
           )}
         </div>
+        )}
       </div>
 
       {/* Sales Detail */}
       <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, overflow: 'hidden' }}>
-        <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary }}>
+        <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Vendas ({report.sales.length})</h3>
+          <button onClick={() => setSalesCollapsed(!salesCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{salesCollapsed ? '▼' : '▲'}</button>
         </div>
+        {!salesCollapsed && (
         <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
           {report.sales.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>Nenhuma venda</div>
@@ -246,42 +259,34 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
               const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
               const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
               const hadCredit = creditAmount > 0 || balanceAmount > 0;
-              const partiallyPaid = hadCredit && creditAmount > 0 && balanceAmount > 0;
               const fullyPaid = hadCredit && sale.isPaid;
               return (
               <div key={sale.id} onClick={() => handleViewReceipt(sale.id)} style={{ padding: Spacing.sm, backgroundColor: sale.refunded ? '#fff5f5' : Colors.backgroundSecondary, borderRadius: BorderRadius.md, marginBottom: Spacing.xs, cursor: 'pointer', border: sale.refunded ? `1px solid ${Colors.danger}` : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <div>
-                    <span style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                      {new Date(sale.createdAt).toLocaleString('pt-PT')}
-                    </span>
-                    <span style={{ fontSize: FontSizes.xs, backgroundColor: Colors.primary, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: Spacing.xs }}>
-                      {sale.categoryName}
-                    </span>
-                    {sale.customerName && <span style={{ fontSize: FontSizes.xs, color: Colors.text, marginLeft: Spacing.xs }}>• {sale.customerName}</span>}
-                    {creditAmount > 0 && !fullyPaid && <span style={{ fontSize: FontSizes.xs, backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: Spacing.xs }}>Fiado</span>}
-                    {fullyPaid && <span style={{ fontSize: FontSizes.xs, backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: Spacing.xs }}>Fiado Pago</span>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                    <div>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                      <span style={{ backgroundColor: Colors.primary, color: Colors.textLight, padding: '1px 4px', borderRadius: 3 }}>{sale.categoryName}</span>
+                      {sale.customerName && <span>• {sale.customerName}</span>}
+                      {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3 }}>Fiado</span>}
+                      {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3 }}>Fiado Pago</span>}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.refunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success, textDecoration: sale.refunded || fullyPaid ? 'line-through' : 'none' }}>
                       {formatPrice(sale.total)}
                     </span>
                     {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
-                    {partiallyPaid && (
-                      <>
-                        <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(balanceAmount)}</div>
-                        <div style={{ fontSize: FontSizes.xs, color: Colors.warning }}>Saldo: -{formatPrice(creditAmount)}</div>
-                      </>
-                    )}
                   </div>
                 </div>
-                <div style={{ fontSize: FontSizes.xs, color: Colors.text }}>{sale.eventName}</div>
+                <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 4 }}>{sale.eventName}</div>
                 <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
                 {sale.refunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
               </div>
             );})
           )}
         </div>
+        )}
       </div>
 
       {/* Receipt Modal */}

@@ -6,6 +6,7 @@ import {
   PaymentPart,
   ApiClient,
   SalesApiService,
+  CustomerApiService,
   Colors,
   Spacing,
   FontSizes,
@@ -16,6 +17,10 @@ import {
   PaymentModal,
   ReceiptModal,
 } from '../components/sales';
+
+interface SaleWithCustomer extends Sale {
+  customerName?: string;
+}
 
 interface SalesPageProps {
   apiClient: ApiClient;
@@ -32,7 +37,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
   const [showPayment, setShowPayment] = useState(false);
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
-  const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
+  const [salesHistory, setSalesHistory] = useState<SaleWithCustomer[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistorySale, setSelectedHistorySale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,14 +45,32 @@ export const SalesPage: React.FC<SalesPageProps> = ({
   const [orderKey, setOrderKey] = useState(0); // Key to force OrderBuilder reset
 
   const salesService = new SalesApiService(apiClient);
+  const customerService = new CustomerApiService(apiClient);
 
-  // Load sales history
+  // Load sales history with customer names
   const loadSalesHistory = useCallback(async () => {
     try {
       const sales = await salesService.getSales(event.id);
-      setSalesHistory(sales.sort((a, b) => 
+      const sortedSales = sales.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      );
+      
+      // Fetch customer names for sales with customerId
+      const salesWithNames: SaleWithCustomer[] = await Promise.all(
+        sortedSales.map(async (sale) => {
+          if (sale.customerId) {
+            try {
+              const customer = await customerService.getCustomer(sale.customerId);
+              return { ...sale, customerName: customer.name };
+            } catch {
+              return sale;
+            }
+          }
+          return sale;
+        })
+      );
+      
+      setSalesHistory(salesWithNames);
     } catch (err) {
       console.error('Failed to load sales history:', err);
     }
@@ -296,75 +319,67 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-                  {salesHistory.map(sale => (
+                  {salesHistory.map(sale => {
+                    const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
+                    const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
+                    const hadCredit = creditAmount > 0 || balanceAmount > 0;
+                    const fullyPaid = hadCredit && sale.isPaid;
+                    
+                    // Determine payment method label for non-credit sales
+                    const getPaymentLabel = () => {
+                      if (hadCredit) return null;
+                      const methods = sale.payments.map(p => {
+                        const labels: Record<string, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência' };
+                        return labels[p.method] || p.method;
+                      });
+                      return methods.length > 1 ? 'Misto' : methods[0];
+                    };
+                    const paymentLabel = getPaymentLabel();
+                    
+                    return (
                     <button
                       key={sale.id}
                       onClick={() => setSelectedHistorySale(sale)}
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: Spacing.md,
-                        backgroundColor: sale.isRefunded 
-                          ? Colors.backgroundSecondary 
-                          : Colors.background,
-                        border: `1px solid ${Colors.border}`,
+                        display: 'block',
+                        width: '100%',
+                        padding: Spacing.sm,
+                        backgroundColor: sale.isRefunded ? '#fff5f5' : Colors.backgroundSecondary,
+                        border: sale.isRefunded ? `1px solid ${Colors.danger}` : `1px solid ${Colors.border}`,
                         borderRadius: BorderRadius.md,
                         cursor: 'pointer',
                         textAlign: 'left',
-                        opacity: sale.isRefunded ? 0.6 : 1,
+                        opacity: sale.isRefunded ? 0.7 : 1,
                       }}
                     >
-                      <div>
-                        <div style={{
-                          fontSize: FontSizes.sm,
-                          fontWeight: 500,
-                          color: Colors.text,
-                        }}>
-                          {sale.items.length} item(s)
-                          {sale.isRefunded && (
-                            <span style={{
-                              marginLeft: Spacing.sm,
-                              padding: `2px ${Spacing.xs}px`,
-                              backgroundColor: Colors.danger,
-                              color: Colors.textLight,
-                              borderRadius: BorderRadius.sm,
-                              fontSize: FontSizes.xs,
-                            }}>
-                              Estornado
-                            </span>
-                          )}
-                          {!sale.isPaid && !sale.isRefunded && (
-                            <span style={{
-                              marginLeft: Spacing.sm,
-                              padding: `2px ${Spacing.xs}px`,
-                              backgroundColor: Colors.warning,
-                              color: Colors.text,
-                              borderRadius: BorderRadius.sm,
-                              fontSize: FontSizes.xs,
-                            }}>
-                              Pendente
-                            </span>
-                          )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                          <div>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                            {sale.customerName && <span>• {sale.customerName}</span>}
+                            {paymentLabel && <span>• {paymentLabel}</span>}
+                            {creditAmount > 0 && !fullyPaid && <span style={{ backgroundColor: Colors.warning, color: '#000', padding: '1px 4px', borderRadius: 3, marginLeft: 4, fontSize: FontSizes.xs }}>Fiado</span>}
+                            {fullyPaid && <span style={{ backgroundColor: Colors.success, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 4, fontSize: FontSizes.xs }}>Fiado Pago</span>}
+                            {sale.isRefunded && <span style={{ backgroundColor: Colors.danger, color: Colors.textLight, padding: '1px 4px', borderRadius: 3, marginLeft: 4, fontSize: FontSizes.xs }}>Estornado</span>}
+                          </div>
                         </div>
-                        <div style={{
-                          fontSize: FontSizes.xs,
-                          color: Colors.textSecondary,
-                          marginTop: Spacing.xs,
-                        }}>
-                          {formatDate(sale.createdAt)} • ID: {sale.id.slice(0, 8)}
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ 
+                            fontSize: FontSizes.sm, 
+                            fontWeight: 600, 
+                            color: sale.isRefunded ? Colors.danger : creditAmount > 0 && !fullyPaid ? Colors.warning : Colors.success,
+                            textDecoration: sale.isRefunded || fullyPaid ? 'line-through' : 'none',
+                          }}>
+                            {formatPrice(sale.total)}
+                          </span>
+                          {fullyPaid && <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>Pago: {formatPrice(sale.total)}</div>}
                         </div>
                       </div>
-                      <div style={{
-                        fontSize: FontSizes.md,
-                        fontWeight: 600,
-                        color: sale.isRefunded ? Colors.textSecondary : Colors.primary,
-                        textDecoration: sale.isRefunded ? 'line-through' : 'none',
-                      }}>
-                        {formatPrice(sale.total)}
+                      <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 4 }}>
+                        {sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}
                       </div>
                     </button>
-                  ))}
+                  );})}
                 </div>
               )}
             </div>
