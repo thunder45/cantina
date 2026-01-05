@@ -1,18 +1,8 @@
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, handleError, error } from '../response';
-import { validateId, validatePayments, validateName, parseBody } from '../validation';
+import { validateBody } from '../validation';
+import { ConfirmSaleSchema, RefundSaleSchema } from '../schemas';
 import * as salesService from '../../services/sales.service';
-import { PaymentPart } from '@cantina-pos/shared';
-
-interface ConfirmSaleBody {
-  orderId: string;
-  payments: PaymentPart[];
-  customerId?: string;
-}
-
-interface RefundSaleBody {
-  reason: string;
-}
 
 function getUserId(event: APIGatewayEvent): string {
   const claims = event.requestContext?.authorizer?.claims;
@@ -47,25 +37,10 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
 }
 
 async function confirmSale(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<ConfirmSaleBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const orderIdError = validateId(body.orderId, 'orderId');
-  if (orderIdError) return error('ERR_VALIDATION', orderIdError.message, 400);
-
-  const paymentErrors = validatePayments(body.payments);
-  if (paymentErrors.length > 0) {
-    return error('ERR_VALIDATION', 'Erro de validação', 400,
-      Object.fromEntries(paymentErrors.map(e => [e.field, e.message])));
-  }
-
-  if (body.customerId !== undefined && body.customerId !== null) {
-    const customerIdError = validateId(body.customerId, 'customerId');
-    if (customerIdError) return error('ERR_VALIDATION', customerIdError.message, 400);
-  }
-
+  const v = validateBody(event.body, ConfirmSaleSchema);
+  if (!v.success) return v.response;
   const userId = getUserId(event);
-  const sale = await salesService.confirmSale(body.orderId, body.payments, userId, body.customerId);
+  const sale = await salesService.confirmSale(v.data.orderId, v.data.payments, userId, v.data.customerId);
   return created(sale);
 }
 
@@ -85,13 +60,9 @@ async function getReceipt(saleId: string): Promise<APIGatewayResponse> {
 }
 
 async function refundSale(saleId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<RefundSaleBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const reasonError = validateName(body.reason, 'reason');
-  if (reasonError) return error('ERR_VALIDATION', 'Motivo do estorno é obrigatório', 400);
-
+  const v = validateBody(event.body, RefundSaleSchema);
+  if (!v.success) return v.response;
   const userId = getUserId(event);
-  const refund = await salesService.refundSale(saleId, body.reason, userId);
+  const refund = await salesService.refundSale(saleId, v.data.reason, userId);
   return success(refund);
 }

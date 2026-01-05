@@ -1,16 +1,8 @@
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, noContent, handleError, error } from '../response';
-import { validateId, validateQuantity, parseBody, combineValidationErrors } from '../validation';
+import { validateBody } from '../validation';
+import { CreateOrderSchema, UpdateOrderItemSchema } from '../schemas';
 import * as orderService from '../../services/order.service';
-
-interface CreateOrderBody {
-  eventId: string;
-}
-
-interface UpdateOrderItemBody {
-  menuItemId: string;
-  quantity: number;
-}
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, path } = event;
@@ -44,13 +36,9 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
 }
 
 async function createOrder(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CreateOrderBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const eventIdError = validateId(body.eventId, 'eventId');
-  if (eventIdError) return error('ERR_VALIDATION', eventIdError.message, 400);
-
-  const order = await orderService.createOrder(body.eventId);
+  const v = validateBody(event.body, CreateOrderSchema);
+  if (!v.success) return v.response;
+  const order = await orderService.createOrder(v.data.eventId);
   return created(order);
 }
 
@@ -60,24 +48,15 @@ async function getOrder(orderId: string): Promise<APIGatewayResponse> {
 }
 
 async function updateOrderItem(orderId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<UpdateOrderItemBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const validation = combineValidationErrors(
-    validateId(body.menuItemId, 'menuItemId'),
-    validateQuantity(body.quantity, 'quantity')
-  );
-  if (!validation.valid) {
-    return error('ERR_VALIDATION', 'Erro de validação', 400,
-      Object.fromEntries(validation.errors.map(e => [e.field, e.message])));
-  }
+  const v = validateBody(event.body, UpdateOrderItemSchema);
+  if (!v.success) return v.response;
 
   const order = await orderService.getOrder(orderId);
-  const existingItem = order.items.find(i => i.menuItemId === body.menuItemId);
+  const existingItem = order.items.find(i => i.menuItemId === v.data.menuItemId);
 
   const updatedOrder = existingItem
-    ? await orderService.updateItemQuantity(orderId, body.menuItemId, body.quantity)
-    : await orderService.addItem(orderId, { menuItemId: body.menuItemId, quantity: body.quantity });
+    ? await orderService.updateItemQuantity(orderId, v.data.menuItemId, v.data.quantity)
+    : await orderService.addItem(orderId, { menuItemId: v.data.menuItemId, quantity: v.data.quantity });
 
   return success(updatedOrder);
 }

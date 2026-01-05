@@ -1,19 +1,13 @@
+import { z } from 'zod';
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, handleError, error } from '../response';
-import { validateName, validateNonEmptyArray, validateId, parseBody, combineValidationErrors } from '../validation';
+import { validateBody } from '../validation';
+import { CreateEventSchema } from '../schemas';
 import * as eventService from '../../services/event.service';
-import { CreateEventInput } from '@cantina-pos/shared';
 
-interface CreateEventBody {
-  categoryId: string;
-  name: string;
-  dates: string[];
-  categories?: string[];
-}
-
-interface UpdateStatusBody {
-  status: 'active' | 'closed';
-}
+const UpdateStatusSchema = z.object({
+  status: z.enum(['active', 'closed']),
+});
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, path } = event;
@@ -42,26 +36,9 @@ export async function handler(event: APIGatewayEvent): Promise<APIGatewayRespons
 }
 
 async function createEvent(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CreateEventBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const validation = combineValidationErrors(
-    validateId(body.categoryId, 'categoryId'),
-    validateName(body.name, 'name'),
-    validateNonEmptyArray(body.dates, 'dates')
-  );
-  if (!validation.valid) {
-    return error('ERR_VALIDATION', 'Erro de validação', 400,
-      Object.fromEntries(validation.errors.map(e => [e.field, e.message])));
-  }
-
-  const input: CreateEventInput = {
-    categoryId: body.categoryId,
-    name: body.name.trim(),
-    dates: body.dates,
-    categories: body.categories,
-  };
-  const createdEvent = await eventService.createEvent(input);
+  const v = validateBody(event.body, CreateEventSchema);
+  if (!v.success) return v.response;
+  const createdEvent = await eventService.createEvent(v.data);
   return created(createdEvent);
 }
 
@@ -81,10 +58,8 @@ async function getEvent(id: string): Promise<APIGatewayResponse> {
 }
 
 async function updateEventStatus(id: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<UpdateStatusBody>(event.body);
-  if (!body || !['active', 'closed'].includes(body.status)) {
-    return error('ERR_INVALID_STATUS', 'Status deve ser "active" ou "closed"', 400);
-  }
-  const updatedEvent = await eventService.updateEventStatus(id, body.status);
+  const v = validateBody(event.body, UpdateStatusSchema);
+  if (!v.success) return v.response;
+  const updatedEvent = await eventService.updateEventStatus(id, v.data.status);
   return success(updatedEvent);
 }

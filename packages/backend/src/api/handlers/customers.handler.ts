@@ -1,24 +1,8 @@
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, handleError, error } from '../response';
-import { validateName, parseBody } from '../validation';
+import { validateBody } from '../validation';
+import { CreateCustomerSchema, UpdateCustomerSchema, TransactionSchema } from '../schemas';
 import * as customerService from '../../services/customer.service';
-import { PaymentMethod } from '@cantina-pos/shared';
-
-interface CreateCustomerBody {
-  name: string;
-  initialBalance?: number;
-}
-
-interface TransactionBody {
-  amount: number;
-  paymentMethod: PaymentMethod;
-  description?: string;
-}
-
-interface UpdateCustomerBody {
-  name?: string;
-  initialBalance?: number;
-}
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters, queryStringParameters, path } = event;
@@ -75,13 +59,9 @@ async function getAllCustomers(): Promise<APIGatewayResponse> {
 }
 
 async function createCustomer(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CreateCustomerBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const nameError = validateName(body.name, 'name');
-  if (nameError) return error('ERR_VALIDATION', nameError.message, 400);
-
-  const customer = await customerService.createCustomer(body.name.trim(), body.initialBalance);
+  const v = validateBody(event.body, CreateCustomerSchema);
+  if (!v.success) return v.response;
+  const customer = await customerService.createCustomer(v.data.name, v.data.initialBalance);
   return created(customer);
 }
 
@@ -106,31 +86,23 @@ async function getCustomerHistory(customerId: string, queryParams?: Record<strin
 }
 
 async function deposit(customerId: string, event: APIGatewayEvent, createdBy: string): Promise<APIGatewayResponse> {
-  const body = parseBody<TransactionBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  if (!body.amount || body.amount <= 0) return error('ERR_INVALID_AMOUNT', 'Valor inválido', 400);
-  if (!body.paymentMethod) return error('ERR_INVALID_PAYMENT_METHOD', 'Método de pagamento obrigatório', 400);
-
-  const tx = await customerService.deposit(customerId, body.amount, body.paymentMethod, createdBy, body.description);
+  const v = validateBody(event.body, TransactionSchema);
+  if (!v.success) return v.response;
+  const tx = await customerService.deposit(customerId, v.data.amount, v.data.paymentMethod, createdBy, v.data.description);
   return created(tx);
 }
 
 async function withdraw(customerId: string, event: APIGatewayEvent, createdBy: string): Promise<APIGatewayResponse> {
-  const body = parseBody<TransactionBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  if (!body.amount || body.amount <= 0) return error('ERR_INVALID_AMOUNT', 'Valor inválido', 400);
-  if (!body.paymentMethod) return error('ERR_INVALID_PAYMENT_METHOD', 'Método de pagamento obrigatório', 400);
-
-  const tx = await customerService.withdraw(customerId, body.amount, body.paymentMethod, createdBy, body.description);
+  const v = validateBody(event.body, TransactionSchema);
+  if (!v.success) return v.response;
+  const tx = await customerService.withdraw(customerId, v.data.amount, v.data.paymentMethod, createdBy, v.data.description);
   return created(tx);
 }
 
 async function updateCustomer(customerId: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<UpdateCustomerBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  if (body.name !== undefined && !body.name.trim()) return error('ERR_INVALID_NAME', 'Nome inválido', 400);
-
-  const customer = await customerService.updateCustomer(customerId, body);
+  const v = validateBody(event.body, UpdateCustomerSchema);
+  if (!v.success) return v.response;
+  const customer = await customerService.updateCustomer(customerId, v.data);
   return success(customer);
 }
 

@@ -3,12 +3,9 @@
  */
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, noContent, handleError, error } from '../response';
-import { parseBody, validateName } from '../validation';
+import { validateBody } from '../validation';
+import { CreateCategorySchema } from '../schemas';
 import * as eventCategoryService from '../../services/event-category.service';
-
-interface CategoryBody {
-  name: string;
-}
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters } = event;
@@ -43,15 +40,9 @@ async function getCategories(): Promise<APIGatewayResponse> {
 }
 
 async function createCategory(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CategoryBody>(event.body);
-  if (!body) {
-    return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  }
-  const nameError = validateName(body.name, 'nome');
-  if (nameError) {
-    return error('ERR_EMPTY_NAME', nameError.message, 400);
-  }
-  const category = await eventCategoryService.createCategory({ name: body.name });
+  const v = validateBody(event.body, CreateCategorySchema);
+  if (!v.success) return v.response;
+  const category = await eventCategoryService.createCategory({ name: v.data.name });
   return created(category);
 }
 
@@ -61,15 +52,9 @@ async function getCategory(id: string): Promise<APIGatewayResponse> {
 }
 
 async function updateCategory(id: string, event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CategoryBody>(event.body);
-  if (!body) {
-    return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-  }
-  const nameError = validateName(body.name, 'nome');
-  if (nameError) {
-    return error('ERR_EMPTY_NAME', nameError.message, 400);
-  }
-  const category = await eventCategoryService.updateCategory(id, { name: body.name });
+  const v = validateBody(event.body, CreateCategorySchema);
+  if (!v.success) return v.response;
+  const category = await eventCategoryService.updateCategory(id, { name: v.data.name });
   return success(category);
 }
 

@@ -1,11 +1,8 @@
 import { APIGatewayEvent, APIGatewayResponse } from '../types';
 import { success, created, noContent, handleError, error } from '../response';
-import { validateName, parseBody } from '../validation';
+import { validateBody } from '../validation';
+import { CreateGroupSchema } from '../schemas';
 import * as menuGroupService from '../../services/menu-group.service';
-
-interface CreateGroupBody {
-  name: string;
-}
 
 export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
   const { httpMethod, pathParameters } = event;
@@ -33,13 +30,9 @@ async function listGroups(): Promise<APIGatewayResponse> {
 }
 
 async function createGroup(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const body = parseBody<CreateGroupBody>(event.body);
-  if (!body) return error('ERR_INVALID_BODY', 'Corpo da requisição inválido', 400);
-
-  const nameError = validateName(body.name, 'name');
-  if (nameError) return error('ERR_VALIDATION', nameError.message, 400);
-
-  const group = await menuGroupService.createGroup(body.name.trim());
+  const v = validateBody(event.body, CreateGroupSchema);
+  if (!v.success) return v.response;
+  const group = await menuGroupService.createGroup(v.data.name);
   return created(group);
 }
 
