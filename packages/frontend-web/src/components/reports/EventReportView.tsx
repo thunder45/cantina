@@ -24,9 +24,8 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
   const [report, setReport] = useState<EventReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const [paymentFilter, setPaymentFilter] = useState<string>('');
+  const [customerFilter, setCustomerFilter] = useState<string>('');
   const [categoryCollapsed, setCategoryCollapsed] = useState(false);
   const [paymentCollapsed, setPaymentCollapsed] = useState(false);
   const [salesCollapsed, setSalesCollapsed] = useState(false);
@@ -37,11 +36,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const data = await reportService.getEventReport(event.id, {
-        category: selectedCategory || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      });
+      const data = await reportService.getEventReport(event.id);
       setReport(data);
     } catch (err) {
       setError('Erro ao carregar relatório');
@@ -49,7 +44,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [event.id, selectedCategory, startDate, endDate]);
+  }, [event.id]);
 
   useEffect(() => {
     loadReport();
@@ -67,6 +62,12 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
     };
     return labels[method] || method;
   };
+
+  const filteredSales = (report?.sales || []).filter(sale => {
+    if (paymentFilter && !sale.payments.some(p => p.method === paymentFilter)) return false;
+    if (customerFilter && sale.customerName !== customerFilter) return false;
+    return true;
+  });
 
   if (loading) {
     return (
@@ -120,76 +121,28 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         marginBottom: Spacing.lg,
         flexWrap: 'wrap',
       }}>
-        {/* Category Filter */}
+        {/* Payment Filter */}
         <div>
-          <label style={{
-            display: 'block',
-            marginBottom: Spacing.xs,
-            fontSize: FontSizes.xs,
-            color: Colors.textSecondary,
-          }}>
-            Categoria
-          </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              padding: Spacing.sm,
-              fontSize: FontSizes.sm,
-              border: `1px solid ${Colors.border}`,
-              borderRadius: BorderRadius.md,
-              minWidth: 150,
-            }}
-          >
-            <option value="">Todas</option>
-            {event.categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Pagamento</label>
+          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 150 }}>
+            <option value="">Todos</option>
+            <option value="cash">Dinheiro</option>
+            <option value="card">Cartão</option>
+            <option value="transfer">Transferência</option>
+            <option value="credit">Fiado</option>
+            <option value="balance">Fiado Pago</option>
           </select>
         </div>
 
-        {/* Period Filter */}
+        {/* Customer Filter */}
         <div>
-          <label style={{
-            display: 'block',
-            marginBottom: Spacing.xs,
-            fontSize: FontSizes.xs,
-            color: Colors.textSecondary,
-          }}>
-            Data Início
-          </label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            style={{
-              padding: Spacing.sm,
-              fontSize: FontSizes.sm,
-              border: `1px solid ${Colors.border}`,
-              borderRadius: BorderRadius.md,
-            }}
-          />
-        </div>
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: Spacing.xs,
-            fontSize: FontSizes.xs,
-            color: Colors.textSecondary,
-          }}>
-            Data Fim
-          </label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            style={{
-              padding: Spacing.sm,
-              fontSize: FontSizes.sm,
-              border: `1px solid ${Colors.border}`,
-              borderRadius: BorderRadius.md,
-            }}
-          />
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Cliente</label>
+          <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 150 }}>
+            <option value="">Todos</option>
+            {report && [...new Set(report.sales.filter(s => s.customerName).map(s => s.customerName))].map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
         </div>
 
         {/* Export Button */}
@@ -391,7 +344,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           alignItems: 'center',
         }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>
-            Vendas ({report.sales?.length || 0})
+            Vendas ({filteredSales.length})
           </h3>
           <button
             onClick={() => setSalesCollapsed(!salesCollapsed)}
@@ -402,13 +355,13 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         </div>
         {!salesCollapsed && (
         <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
-          {!report.sales || report.sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>
               Nenhuma venda registada
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
-              {report.sales.map((sale) => {
+              {filteredSales.map((sale) => {
                 const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
                 const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
                 const hadCredit = creditAmount > 0 || balanceAmount > 0;
