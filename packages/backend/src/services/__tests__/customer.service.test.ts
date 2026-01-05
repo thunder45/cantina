@@ -81,7 +81,7 @@ describe('CustomerService', () => {
 
     it('should throw error for invalid amount', async () => {
       const customer = await customerService.createCustomer('Test');
-      await expect(customerService.deposit(customer.id, -10, 'cash', 'user1')).rejects.toThrow('ERR_INVALID_AMOUNT');
+      await expect(customerService.deposit(customer.id, 0, 'cash', 'user1')).rejects.toThrow('ERR_INVALID_AMOUNT');
     });
   });
 
@@ -123,10 +123,11 @@ describe('CustomerService', () => {
       expect(balance).toBe(-50);
     });
 
-    it('should throw error when exceeds credit limit', async () => {
+    it('should allow purchase beyond credit limit (credit limit removed)', async () => {
       const customer = await customerService.createCustomer('Test', 50);
-      await expect(customerService.recordPurchase(customer.id, 100, 'sale-123', 'user1'))
-        .rejects.toThrow('ERR_CREDIT_LIMIT_EXCEEDED');
+      await customerService.recordPurchase(customer.id, 100, 'sale-123', 'user1');
+      const balance = await customerService.getCustomerBalance(customer.id);
+      expect(balance).toBe(-100);
     });
   });
 

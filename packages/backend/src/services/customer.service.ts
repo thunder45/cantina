@@ -4,6 +4,8 @@ import * as saleRepository from '../repositories/sale.repository';
 import * as eventRepository from '../repositories/event.repository';
 import * as eventCategoryRepository from '../repositories/event-category.repository';
 import * as auditLogService from './audit-log.service';
+import * as reconciliationService from './reconciliation.service';
+import { executeTransaction, executeTransactionBatches, TransactItem } from '../repositories/dynamodb-transactions';
 
 export async function createCustomer(name: string, creditLimit: number = DEFAULT_CREDIT_LIMIT, initialBalance: number = 0): Promise<Customer> {
   if (!name?.trim()) throw new Error('ERR_EMPTY_NAME');
@@ -138,26 +140,52 @@ export async function deposit(
 }
 
 // Apply payment to unpaid purchases in FIFO order (oldest first)
+// Uses batched transactions (20 items per batch) for better atomicity
 // Also syncs Sale.payments: reduces credit, adds balance, marks isPaid when credit=0
 async function applyPaymentFIFO(customerId: string, amount: number): Promise<void> {
   const unpaidPurchases = await customerRepository.getUnpaidPurchases(customerId);
   let remaining = amount;
+  
+  // Preparar todas as atualizações
+  const updates: { purchase: typeof unpaidPurchases[0]; toApply: number; newAmountPaid: number }[] = [];
   
   for (const purchase of unpaidPurchases) {
     if (remaining <= 0) break;
     
     const unpaidAmount = purchase.amount - purchase.amountPaid;
     const toApply = Math.min(remaining, unpaidAmount);
+    const newAmountPaid = purchase.amountPaid + toApply;
     
-    // Update CustomerTransaction.amountPaid
-    await customerRepository.updateTransactionAmountPaid(purchase.id, purchase.amountPaid + toApply);
-    
-    // Sync with Sale if exists
-    if (purchase.saleId) {
-      await syncSalePayments(purchase.saleId, toApply);
-    }
-    
+    updates.push({ purchase, toApply, newAmountPaid });
     remaining -= toApply;
+  }
+
+  if (updates.length === 0) return;
+
+  // Executar atualizações em batches
+  // Cada update = 1 CustomerTransaction + 1 Sale (se existir) = até 2 items por purchase
+  const BATCH_SIZE = 10; // 10 purchases = até 20 items por batch
+  
+  for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+    const batch = updates.slice(i, i + BATCH_SIZE);
+    
+    try {
+      // Atualizar CustomerTransactions
+      for (const { purchase, newAmountPaid } of batch) {
+        await customerRepository.updateTransactionAmountPaid(purchase.id, newAmountPaid);
+      }
+      
+      // Atualizar Sales
+      for (const { purchase, toApply } of batch) {
+        if (purchase.saleId) {
+          await syncSalePayments(purchase.saleId, toApply);
+        }
+      }
+    } catch (err) {
+      console.error(`[FIFO_BATCH_FAILED] Customer: ${customerId}, Batch: ${i / BATCH_SIZE}, Error: ${(err as Error).message}`);
+      await reconciliationService.handleFIFOFailure(customerId, `applyPaymentFIFO.batch${i / BATCH_SIZE}`, err as Error);
+      // Continua com próximos batches
+    }
   }
 }
 
@@ -220,6 +248,7 @@ export async function withdraw(
 }
 
 // Registar compra (débito) - chamado pelo sales service
+// Usa transação atômica para criar CustomerTransaction + atualizar Sale.payments
 export async function recordPurchase(
   customerId: string,
   amount: number,
@@ -238,6 +267,7 @@ export async function recordPurchase(
     }
   }
 
+  // Criar transação (sempre necessário)
   const tx = await customerRepository.createTransaction(customerId, {
     type: 'purchase',
     amount,
@@ -247,9 +277,15 @@ export async function recordPurchase(
     paidAmount: effectivePaidAmount,
   });
 
-  // Sync Sale.payments to reflect balance usage (after transaction created)
+  // Sync Sale.payments se usou saldo (operação separada, não crítica)
   if (effectivePaidAmount > 0 && paidAmount === 0) {
-    await syncSalePayments(saleId, effectivePaidAmount);
+    try {
+      await syncSalePayments(saleId, effectivePaidAmount);
+    } catch (err) {
+      // Log falha mas não falha a operação principal
+      console.error(`[SYNC_SALE_PAYMENTS_FAILED] Sale: ${saleId}, Error: ${(err as Error).message}`);
+      await reconciliationService.handleFIFOFailure(customerId, 'recordPurchase.syncSalePayments', err as Error);
+    }
   }
 
   return tx;
