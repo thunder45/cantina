@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   ApiClient,
@@ -18,6 +19,7 @@ interface CustomersPageProps {
 }
 
 export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
+  const { t } = useTranslation();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerBalance, setCustomerBalance] = useState<number>(0);
   const [modalType, setModalType] = useState<'deposit' | 'withdraw' | null>(null);
@@ -71,10 +73,10 @@ export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
         borderBottom: `1px solid ${Colors.border}`,
       }}>
         <h2 style={{ margin: 0, fontSize: FontSizes.lg, fontWeight: 600, color: Colors.text }}>
-          Gestão de Clientes
+          {t('customers.management')}
         </h2>
         <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.sm, color: Colors.textSecondary }}>
-          Pesquise clientes, visualize histórico e faça depósitos
+          {t('customers.managementDescription')}
         </p>
       </div>
 

@@ -49,12 +49,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const urlError = params.get('error');
     if (urlError) {
       const errorMessages: Record<string, string> = {
-        domain_not_allowed: 'Acesso restrito a usuários @advm.lu',
-        invalid_state: 'Sessão expirada. Tente novamente.',
-        auth_failed: 'Falha na autenticação. Tente novamente.',
-        access_denied: 'Acesso negado pelo usuário.',
+        domain_not_allowed: 'Access restricted to @advm.lu users',
+        invalid_state: 'Session expired. Please try again.',
+        auth_failed: 'Authentication failed. Please try again.',
+        access_denied: 'Access denied by user.',
       };
-      setError(errorMessages[urlError] || 'Erro de autenticação');
+      setError(errorMessages[urlError] || 'Authentication error');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         window.location.href = data.url;
       }
     } catch (err) {
-      setError('Falha ao iniciar login');
+      setError('Failed to start login');
     }
   }, []);
 

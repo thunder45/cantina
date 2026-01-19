@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   PaymentMethod,
@@ -19,12 +20,6 @@ interface TransactionModalProps {
   onCancel: () => void;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash', label: 'Dinheiro' },
-  { value: 'card', label: 'Cartão' },
-  { value: 'transfer', label: 'Transferência' },
-];
-
 export const TransactionModal: React.FC<TransactionModalProps> = ({
   apiClient,
   customer,
@@ -33,6 +28,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState<string>('');
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [loading, setLoading] = useState(false);
@@ -42,13 +38,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
   const parsedAmount = parseFloat(amount) || 0;
 
+  const paymentMethods: { value: PaymentMethod; label: string }[] = [
+    { value: 'cash', label: t('payment.cash') },
+    { value: 'card', label: t('payment.card') },
+    { value: 'transfer', label: t('payment.transfer') },
+  ];
+
   const handleConfirm = async () => {
     if (parsedAmount <= 0) {
-      setError('Valor deve ser maior que zero');
+      setError(t('errors.invalidAmount'));
       return;
     }
     if (maxAmount && parsedAmount > maxAmount) {
-      setError(`Valor não pode exceder ${formatPrice(maxAmount)}`);
+      setError(t('errors.maxAmount', { max: formatPrice(maxAmount) }));
       return;
     }
 
@@ -62,14 +64,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       }
       onConfirm();
     } catch (err: any) {
-      setError(err.message || 'Erro ao processar transação');
+      setError(err.message || t('errors.generic'));
     } finally {
       setLoading(false);
     }
   };
 
-  const title = type === 'deposit' ? 'Depositar Crédito' : 'Devolver Dinheiro';
-  const buttonText = type === 'deposit' ? 'Depositar' : 'Devolver';
+  const title = type === 'deposit' ? t('customers.depositCredit') : t('customers.returnMoney');
+  const buttonText = type === 'deposit' ? t('customers.deposit') : t('customers.withdrawal');
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={onCancel}>
@@ -77,7 +79,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         <h3 style={{ margin: 0, marginBottom: Spacing.md, fontSize: FontSizes.lg, fontWeight: 600 }}>{title}</h3>
         
         <div style={{ marginBottom: Spacing.md, padding: Spacing.md, backgroundColor: Colors.backgroundSecondary, borderRadius: BorderRadius.md }}>
-          <div style={{ fontSize: FontSizes.sm, color: Colors.textSecondary }}>Cliente</div>
+          <div style={{ fontSize: FontSizes.sm, color: Colors.textSecondary }}>{t('receipt.customer')}</div>
           <div style={{ fontSize: FontSizes.md, fontWeight: 600 }}>{customer.name}</div>
         </div>
 
@@ -88,7 +90,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         )}
 
         <div style={{ marginBottom: Spacing.md }}>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.sm, fontWeight: 500 }}>Valor</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.sm, fontWeight: 500 }}>{t('payment.amount')}</label>
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', left: Spacing.sm, top: '50%', transform: 'translateY(-50%)', color: Colors.textSecondary }}>€</span>
             <input
@@ -104,9 +106,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         </div>
 
         <div style={{ marginBottom: Spacing.lg }}>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.sm, fontWeight: 500 }}>Método</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.sm, fontWeight: 500 }}>{t('customers.method')}</label>
           <div style={{ display: 'flex', gap: Spacing.sm }}>
-            {PAYMENT_METHODS.map((m) => (
+            {paymentMethods.map((m) => (
               <button
                 key={m.value}
                 onClick={() => setMethod(m.value)}
@@ -129,14 +131,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <div style={{ display: 'flex', gap: Spacing.sm }}>
           <button onClick={onCancel} style={{ flex: 1, padding: Spacing.md, backgroundColor: Colors.backgroundSecondary, color: Colors.text, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, fontSize: FontSizes.md, cursor: 'pointer' }}>
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || parsedAmount <= 0}
             style={{ flex: 2, padding: Spacing.md, backgroundColor: type === 'deposit' ? Colors.success : Colors.warning, color: type === 'deposit' ? Colors.textLight : Colors.text, border: 'none', borderRadius: BorderRadius.md, fontSize: FontSizes.md, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading || parsedAmount <= 0 ? 0.7 : 1 }}
           >
-            {loading ? 'A processar...' : `${buttonText} ${parsedAmount > 0 ? formatPrice(parsedAmount) : ''}`}
+            {loading ? t('common.loading') : `${buttonText} ${parsedAmount > 0 ? formatPrice(parsedAmount) : ''}`}
           </button>
         </div>
       </div>

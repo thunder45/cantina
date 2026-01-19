@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MenuGroup } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
@@ -19,6 +20,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
   onDeleteGroup,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [newGroupName, setNewGroupName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -55,7 +57,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
         alignItems: 'center',
       }}>
         <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>
-          Grupos
+          {t('menu.groups')}
         </h3>
         <button
           onClick={() => setShowAddForm(true)}
@@ -70,7 +72,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
           }}
           disabled={loading}
         >
-          + Novo
+          + {t('common.new')}
         </button>
       </div>
 
@@ -82,7 +84,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Nome do grupo"
+            placeholder={t('menu.groupName')}
             autoFocus
             style={{
               width: '100%',
@@ -108,7 +110,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
               }}
               disabled={!newGroupName.trim()}
             >
-              Adicionar
+              {t('common.add')}
             </button>
             <button
               onClick={() => {
@@ -126,7 +128,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -144,7 +146,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
           transition: 'background-color 0.2s',
         }}
       >
-        Todos os Itens
+        {t('menu.allItems')}
       </div>
 
       {/* Group List */}
@@ -181,7 +183,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
                 cursor: 'pointer',
                 opacity: 0.7,
               }}
-              title="Remover grupo"
+              title={t('common.removeGroup')}
             >
               ×
             </button>
@@ -191,7 +193,7 @@ export const MenuGroupList: React.FC<MenuGroupListProps> = ({
 
       {groups.length === 0 && (
         <div style={{ padding: Spacing.md, textAlign: 'center', color: Colors.textSecondary }}>
-          Nenhum grupo criado
+          {t('common.noGroupsCreated')}
         </div>
       )}
     </div>

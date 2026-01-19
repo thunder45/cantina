@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   PaymentPart,
@@ -19,12 +20,6 @@ interface PaymentRegistrationModalProps {
   onCancel: () => void;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash', label: 'Dinheiro' },
-  { value: 'card', label: 'Cartão' },
-  { value: 'transfer', label: 'Transferência' },
-];
-
 export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> = ({
   apiClient,
   customer,
@@ -32,6 +27,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
   onConfirm,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [paymentAmount, setPaymentAmount] = useState<string>(balance.toFixed(2));
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
   const [useMixedPayment, setUseMixedPayment] = useState(false);
@@ -43,6 +39,12 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
 
   const customerService = new CustomerApiService(apiClient);
 
+  const paymentMethods: { value: PaymentMethod; label: string }[] = [
+    { value: 'cash', label: t('payment.cash') },
+    { value: 'card', label: t('payment.card') },
+    { value: 'transfer', label: t('payment.transfer') },
+  ];
+
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
   const parsedAmount = parseFloat(paymentAmount) || 0;
@@ -52,11 +54,11 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
   const handleAddMixedPayment = () => {
     const amount = parseFloat(mixedAmount) || 0;
     if (amount <= 0) {
-      setError('Valor deve ser maior que zero');
+      setError(t('errors.invalidAmount'));
       return;
     }
     if (amount > remainingForMixed) {
-      setError('Valor excede o restante');
+      setError(t('errors.exceedsRemaining'));
       return;
     }
     setMixedPayments([...mixedPayments, { method: mixedMethod, amount }]);
@@ -70,18 +72,18 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
 
   const handleConfirm = async () => {
     if (parsedAmount <= 0) {
-      setError('Valor deve ser maior que zero');
+      setError(t('errors.invalidAmount'));
       return;
     }
     if (parsedAmount > balance) {
-      setError('Valor não pode exceder o saldo pendente');
+      setError(t('errors.exceedsPending'));
       return;
     }
 
     let payments: PaymentPart[];
     if (useMixedPayment) {
       if (mixedTotal !== parsedAmount) {
-        setError('Soma dos pagamentos deve ser igual ao valor total');
+        setError(t('errors.sumMustMatch'));
         return;
       }
       payments = mixedPayments;
@@ -95,7 +97,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
       await customerService.registerPayment(customer.id, payments);
       onConfirm();
     } catch (err) {
-      setError('Erro ao registar pagamento');
+      setError(t('errors.generic'));
       console.error('Failed to register payment:', err);
     } finally {
       setLoading(false);
@@ -142,7 +144,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
           borderBottom: `1px solid ${Colors.border}`,
         }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.lg, fontWeight: 600 }}>
-            Registar Pagamento
+            {t('customers.registerPayment')}
           </h3>
           <button
             onClick={onCancel}
@@ -168,7 +170,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
             marginBottom: Spacing.md,
           }}>
             <div style={{ fontSize: FontSizes.sm, color: Colors.textSecondary }}>
-              Cliente
+              {t('receipt.customer')}
             </div>
             <div style={{ fontSize: FontSizes.lg, fontWeight: 600, color: Colors.text }}>
               {customer.name}
@@ -178,7 +180,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
               fontSize: FontSizes.sm,
               color: Colors.textSecondary,
             }}>
-              Saldo pendente: <strong style={{ color: Colors.warning }}>{formatPrice(balance)}</strong>
+              {t('customers.pendingBalance')}: <strong style={{ color: Colors.warning }}>{formatPrice(balance)}</strong>
             </div>
           </div>
 
@@ -205,7 +207,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
               fontWeight: 500,
               color: Colors.text,
             }}>
-              Valor do Pagamento
+              {t('payment.amount')}
             </label>
             <div style={{ display: 'flex', gap: Spacing.sm }}>
               <div style={{ position: 'relative', flex: 1 }}>
@@ -249,7 +251,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                   whiteSpace: 'nowrap',
                 }}
               >
-                Pagar Tudo
+                {t('customers.payAll')}
               </button>
             </div>
           </div>
@@ -271,7 +273,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                 }}
               />
               <span style={{ fontSize: FontSizes.sm, color: Colors.text }}>
-                Pagamento misto (múltiplos métodos)
+                {t('payment.mixed')}
               </span>
             </label>
           </div>
@@ -286,10 +288,10 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                 fontWeight: 500,
                 color: Colors.text,
               }}>
-                Método de Pagamento
+                {t('payment.selectMethod')}
               </label>
               <div style={{ display: 'flex', gap: Spacing.sm }}>
-                {PAYMENT_METHODS.map((method) => (
+                {paymentMethods.map((method) => (
                   <button
                     key={method.value}
                     onClick={() => setSelectedMethod(method.value)}
@@ -336,7 +338,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                       }}
                     >
                       <span style={{ fontSize: FontSizes.sm }}>
-                        {PAYMENT_METHODS.find(m => m.value === payment.method)?.label}: {formatPrice(payment.amount)}
+                        {paymentMethods.find(m => m.value === payment.method)?.label}: {formatPrice(payment.amount)}
                       </span>
                       <button
                         onClick={() => handleRemoveMixedPayment(index)}
@@ -358,8 +360,8 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                     marginTop: Spacing.sm,
                   }}>
                     {remainingForMixed > 0 
-                      ? `Restante: ${formatPrice(remainingForMixed)}`
-                      : 'Valor completo'}
+                      ? `${t('payment.remaining')}: ${formatPrice(remainingForMixed)}`
+                      : t('customers.valueComplete')}
                   </div>
                 </div>
               )}
@@ -378,7 +380,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                       fontSize: FontSizes.xs,
                       color: Colors.textSecondary,
                     }}>
-                      Método
+                      {t('customers.method')}
                     </label>
                     <select
                       value={mixedMethod}
@@ -391,7 +393,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                         borderRadius: BorderRadius.md,
                       }}
                     >
-                      {PAYMENT_METHODS.map((method) => (
+                      {paymentMethods.map((method) => (
                         <option key={method.value} value={method.value}>
                           {method.label}
                         </option>
@@ -405,7 +407,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
                       fontSize: FontSizes.xs,
                       color: Colors.textSecondary,
                     }}>
-                      Valor
+                      {t('payment.amount')}
                     </label>
                     <input
                       type="number"
@@ -463,7 +465,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
               cursor: 'pointer',
             }}
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleConfirm}
@@ -481,7 +483,7 @@ export const PaymentRegistrationModal: React.FC<PaymentRegistrationModalProps> =
               opacity: loading || parsedAmount <= 0 || (useMixedPayment && mixedTotal !== parsedAmount) ? 0.7 : 1,
             }}
           >
-            {loading ? 'A processar...' : `Confirmar ${formatPrice(parsedAmount)}`}
+            {loading ? t('common.loading') : `${t('common.confirm')} ${formatPrice(parsedAmount)}`}
           </button>
         </div>
       </div>

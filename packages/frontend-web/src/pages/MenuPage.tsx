@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Event, MenuGroup, MenuItem, CatalogItem, AddMenuItemInput, CreateCatalogItemInput } from '@cantina-pos/shared';
 import { MenuGroupApiService, MenuItemApiService, CatalogApiService, ApiClient } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, getModalStyles } from '@cantina-pos/shared';
@@ -17,6 +18,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   event,
   onStartSales,
 }) => {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<MenuGroup[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
@@ -52,7 +54,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       setMenuItems(itemsData);
       setCatalogItems(catalogData);
     } catch (err) {
-      setError('Erro ao carregar dados do menu');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load menu data:', err);
     } finally {
       setLoading(false);
@@ -68,7 +70,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       const newGroup = await groupService.createGroup(name);
       setGroups([...groups, newGroup].sort((a, b) => a.order - b.order));
     } catch (err) {
-      setError('Erro ao criar grupo');
+      setError(t('errors.saveFailed'));
       console.error('Failed to create group:', err);
     }
   };
@@ -76,7 +78,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   const handleDeleteGroup = async (groupId: string) => {
     const hasItems = menuItems.some(item => item.groupId === groupId);
     if (hasItems) {
-      setError('Não é possível excluir grupo com itens associados');
+      setError(t('menu.cannotDeleteGroupWithItems'));
       return;
     }
     try {
@@ -86,7 +88,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
         setSelectedGroupId(null);
       }
     } catch (err) {
-      setError('Erro ao excluir grupo');
+      setError(t('errors.deleteFailed'));
       console.error('Failed to delete group:', err);
     }
   };
@@ -102,7 +104,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       setMenuItems(menuItems.map(i => i.id === id ? updated : i));
       setSelectedEditItem(null);
     } catch (err) {
-      setError('Erro ao atualizar item');
+      setError(t('errors.saveFailed'));
       console.error('Failed to update menu item:', err);
     } finally {
       setFormLoading(false);
@@ -114,7 +116,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       await menuItemService.removeMenuItem(itemId);
       setMenuItems(menuItems.filter(i => i.id !== itemId));
     } catch (err) {
-      setError('Erro ao remover item do menu');
+      setError(t('errors.deleteFailed'));
       console.error('Failed to remove menu item:', err);
     }
   };
@@ -134,7 +136,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       setMenuItems([...menuItems, newItem]);
       setSelectedCatalogItem(null);
     } catch (err) {
-      setError('Erro ao adicionar item ao menu');
+      setError(t('errors.saveFailed'));
       console.error('Failed to add menu item:', err);
     } finally {
       setFormLoading(false);
@@ -151,7 +153,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       // Automatically select the new item to add to menu
       setSelectedCatalogItem(newItem);
     } catch (err) {
-      setError('Erro ao criar item no catálogo');
+      setError(t('errors.saveFailed'));
       console.error('Failed to create catalog item:', err);
     } finally {
       setFormLoading(false);
@@ -164,13 +166,13 @@ export const MenuPage: React.FC<MenuPageProps> = ({
 
   const getGroupName = (groupId: string): string => {
     const group = groups.find(g => g.id === groupId);
-    return group?.name || 'Sem grupo';
+    return group?.name || t('menu.noGroup');
   };
 
   if (loading) {
     return (
       <div style={{ padding: Spacing.xl, textAlign: 'center' }}>
-        <p style={{ color: Colors.textSecondary }}>A carregar menu...</p>
+        <p style={{ color: Colors.textSecondary }}>{t('common.loading')}</p>
       </div>
     );
   }
@@ -201,7 +203,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
               textDecoration: 'underline',
             }}
           >
-            Fechar
+            {t('common.close')}
           </button>
         </div>
       )}
@@ -219,7 +221,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
               Menu - {event.name}
             </h1>
             <p style={{ margin: 0, marginTop: Spacing.xs, color: Colors.textSecondary }}>
-              {menuItems.length} itens no menu
+              {t('menu.itemsInMenu', { count: menuItems.length })}
             </p>
           </div>
           <div style={{ display: 'flex', gap: Spacing.sm }}>
@@ -235,7 +237,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              + Adicionar Item
+              + {t('menu.addItem')}
             </button>
             <button
               onClick={onStartSales}
@@ -252,7 +254,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
                 opacity: menuItems.length === 0 ? 0.6 : 1,
               }}
             >
-              Iniciar Vendas
+              {t('events.startSales')}
             </button>
           </div>
         </div>
@@ -290,8 +292,8 @@ export const MenuPage: React.FC<MenuPageProps> = ({
               }}>
                 <p style={{ color: Colors.textSecondary, margin: 0 }}>
                   {selectedGroupId 
-                    ? 'Nenhum item neste grupo' 
-                    : 'Nenhum item no menu. Adicione itens do catálogo.'}
+                    ? t('menu.noItemsInGroup') 
+                    : t('menu.noItemsAddFromCatalog')}
                 </p>
               </div>
             ) : (
@@ -333,7 +335,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div style={modalStyles.header}>
-              <h3 style={modalStyles.title}>Selecionar do Catálogo</h3>
+              <h3 style={modalStyles.title}>{t('menu.selectFromCatalog')}</h3>
               <button
                 onClick={() => setShowCatalogBrowser(false)}
                 style={modalStyles.closeButton}

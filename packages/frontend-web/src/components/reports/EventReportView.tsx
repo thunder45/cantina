@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Event,
   EventReport,
@@ -21,6 +22,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
   event,
   onExportCSV,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<EventReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
       const data = await reportService.getEventReport(event.id);
       setReport(data);
     } catch (err) {
-      setError('Erro ao carregar relatório');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load report:', err);
     } finally {
       setLoading(false);
@@ -53,15 +55,8 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
   const getPaymentMethodLabel = (method: string): string => {
-    const labels: Record<string, string> = {
-      cash: 'Dinheiro',
-      card: 'Cartão',
-      transfer: 'Transferência',
-      credit: 'Fiado',
-      balance: 'Fiado Pago',
-      gift: 'Oferta',
-    };
-    return labels[method] || method;
+    const key = method === 'balance' ? 'payment.balancePaid' : `payment.${method}`;
+    return t(key);
   };
 
   const getPaymentMethodColor = (method: string): string => {
@@ -85,7 +80,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         height: 200,
         color: Colors.textSecondary,
       }}>
-        A carregar relatório...
+        {t('common.loading')}
       </div>
     );
   }
@@ -130,23 +125,23 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
       }}>
         {/* Payment Filter */}
         <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Pagamento</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('receipt.payment')}</label>
           <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 150 }}>
-            <option value="">Todos</option>
-            <option value="cash">Dinheiro</option>
-            <option value="card">Cartão</option>
-            <option value="transfer">Transferência</option>
-            <option value="credit">Fiado</option>
-            <option value="balance">Fiado Pago</option>
-            <option value="gift">Oferta</option>
+            <option value="">{t('reports.allPayments')}</option>
+            <option value="cash">{t('payment.cash')}</option>
+            <option value="card">{t('payment.card')}</option>
+            <option value="transfer">{t('payment.transfer')}</option>
+            <option value="credit">{t('payment.credit')}</option>
+            <option value="balance">{t('payment.balancePaid')}</option>
+            <option value="gift">{t('payment.gift')}</option>
           </select>
         </div>
 
         {/* Customer Filter */}
         <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Cliente</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('receipt.customer')}</label>
           <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 150 }}>
-            <option value="">Todos</option>
+            <option value="">{t('reports.allCustomers')}</option>
             {report && [...new Set(report.sales.filter(s => s.customerName).map(s => s.customerName))].map(name => (
               <option key={name} value={name}>{name}</option>
             ))}
@@ -167,7 +162,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
               cursor: 'pointer',
             }}
           >
-            📥 Exportar CSV
+            📥 {t('reports.exportCsv')}
           </button>
         </div>
       </div>
@@ -180,27 +175,27 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         marginBottom: Spacing.lg,
       }}>
         <SummaryCard
-          title="Total Vendas"
+          title={t('reports.totalSales')}
           value={formatPrice(report.totalSales)}
           color={Colors.primary}
         />
         <SummaryCard
-          title="Total Pago"
+          title={t('reports.totalPaid')}
           value={formatPrice(report.totalPaid)}
           color={Colors.success}
         />
         <SummaryCard
-          title="Fiado"
+          title={t('reports.totalPending')}
           value={formatPrice(report.totalPending)}
           color={Colors.warning}
         />
         <SummaryCard
-          title="Ofertado"
+          title={t('reports.totalGifted')}
           value={formatPrice(report.totalGifted)}
           color="#8b5cf6"
         />
         <SummaryCard
-          title="Estornado"
+          title={t('reports.totalRefunded')}
           value={formatPrice(report.totalRefunded)}
           color={Colors.danger}
         />
@@ -228,7 +223,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Por Categoria
+            {t('reports.byCategory')}
           </h3>
           <button
             onClick={() => setCategoryCollapsed(!categoryCollapsed)}
@@ -245,15 +240,15 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
               textAlign: 'center',
               color: Colors.textSecondary,
             }}>
-              Nenhum item vendido
+              {t('reports.noData')}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: Colors.backgroundSecondary }}>
                   <th style={tableHeaderStyle}>Item</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Qtd</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Total</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>{t('common.quantity')}</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>{t('common.total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,7 +290,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Formas de Pagamento
+            {t('payment.paymentMethods')}
           </h3>
           <button
             onClick={() => setPaymentCollapsed(!paymentCollapsed)}
@@ -311,7 +306,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
               textAlign: 'center',
               color: Colors.textSecondary,
             }}>
-              Nenhum pagamento registado
+              {t('reports.noPayments')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
@@ -357,7 +352,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
           alignItems: 'center',
         }}>
           <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>
-            Vendas ({filteredSales.length})
+            {t('nav.sales')} ({filteredSales.length})
           </h3>
           <button
             onClick={() => setSalesCollapsed(!salesCollapsed)}
@@ -370,7 +365,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
         <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
           {filteredSales.length === 0 ? (
             <div style={{ textAlign: 'center', color: Colors.textSecondary }}>
-              Nenhuma venda registada
+              {t('sales.noSales')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
@@ -389,7 +384,7 @@ export const EventReportView: React.FC<EventReportViewProps> = ({
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>{paymentStr}{hadCredit && sale.customerName && ` • ${sale.customerName}`}</div>
-                  {sale.refunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
+                  {sale.refunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>{t('sales.refunded')}</span>}
                 </div>
               );})}
             </div>

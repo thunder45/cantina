@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   CustomerTransaction,
@@ -33,6 +34,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
   onBack,
   onCustomerUpdated,
 }) => {
+  const { t } = useTranslation();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<CustomerTransaction[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
@@ -67,12 +69,12 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
       setBalance(history.balance);
       setTransactions(history.transactions);
     } catch (err) {
-      setError('Erro ao carregar dados do cliente');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load customer data:', err);
     } finally {
       setLoading(false);
     }
-  }, [customer.id, categoryFilter, startDate, endDate]);
+  }, [customer.id, categoryFilter, startDate, endDate, t]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -111,7 +113,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
       return;
     }
     if (!newName.trim()) {
-      setError('Nome inválido');
+      setError(t('errors.validation'));
       return;
     }
     try {
@@ -122,9 +124,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
       const updated = await customerService.updateCustomer(customer.id, updates);
       onCustomerUpdated?.(updated);
       setEditing(false);
-      if (balanceChanged) loadCustomerData(); // Reload to get recalculated transactions
+      if (balanceChanged) loadCustomerData();
     } catch (err) {
-      setError('Erro ao atualizar cliente');
+      setError(t('errors.saveFailed'));
     }
   };
 
@@ -135,12 +137,12 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Apagar cliente "${customer.name}"?`)) return;
+    if (!window.confirm(t('customers.confirmDelete', { name: customer.name }))) return;
     try {
       await customerService.deleteCustomer(customer.id);
       onBack();
     } catch (err: any) {
-      setError(err.message?.includes('HAS_SALES') ? 'Cliente tem vendas registadas' : 'Erro ao apagar cliente');
+      setError(err.message?.includes('HAS_SALES') ? t('customers.hasSales') : t('errors.deleteFailed'));
     }
   };
 
@@ -158,15 +160,13 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
   };
 
   const translateMethod = (method?: PaymentMethod): string => {
-    const map: Record<PaymentMethod, string> = {
-      cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Fiado Pago', credit: 'Fiado', gift: 'Oferta'
-    };
-    return method ? map[method] || method : '';
+    if (!method) return '';
+    const key = method === 'balance' ? 'balancePaid' : method;
+    return t(`payment.${key}`);
   };
 
   const translateType = (type: CustomerTransaction['type']): string => {
-    const map = { deposit: 'Depósito', withdrawal: 'Devolução', purchase: 'Compra', refund: 'Estorno' };
-    return map[type];
+    return t(`customers.tx.${type}`);
   };
 
   const filteredTransactions = activeTab === 'all' 
@@ -180,7 +180,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
   if (loading && transactions.length === 0) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, color: Colors.textSecondary }}>
-        A carregar...
+        {t('common.loading')}
       </div>
     );
   }
@@ -198,12 +198,12 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
           {headerCollapsed ? '▼' : '▲'}
         </button>
         <button onClick={onBack} style={{ background: 'none', border: 'none', color: Colors.primary, cursor: 'pointer', fontSize: FontSizes.sm, padding: 0, marginBottom: Spacing.sm }}>
-          ← Voltar à pesquisa
+          ← {t('customers.backToSearch')}
         </button>
         {!headerCollapsed && (editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-              <label style={{ fontSize: FontSizes.sm, color: Colors.textSecondary, width: 100 }}>Nome:</label>
+              <label style={{ fontSize: FontSizes.sm, color: Colors.textSecondary, width: 100 }}>{t('common.name')}:</label>
               <input
                 type="text"
                 value={newName}
@@ -213,7 +213,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
-              <label style={{ fontSize: FontSizes.sm, color: Colors.textSecondary, width: 100 }}>Saldo inicial:</label>
+              <label style={{ fontSize: FontSizes.sm, color: Colors.textSecondary, width: 100 }}>{t('customers.initialBalance')}:</label>
               <input
                 type="number"
                 step="0.01"
@@ -223,8 +223,8 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               />
             </div>
             <div style={{ display: 'flex', gap: Spacing.sm }}>
-              <button onClick={handleSave} style={{ padding: `${Spacing.xs}px ${Spacing.md}px`, backgroundColor: Colors.success, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.sm, cursor: 'pointer' }}>Guardar</button>
-              <button onClick={cancelEdit} style={{ padding: `${Spacing.xs}px ${Spacing.md}px`, backgroundColor: Colors.backgroundSecondary, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.sm, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleSave} style={{ padding: `${Spacing.xs}px ${Spacing.md}px`, backgroundColor: Colors.success, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.sm, cursor: 'pointer' }}>{t('common.save')}</button>
+              <button onClick={cancelEdit} style={{ padding: `${Spacing.xs}px ${Spacing.md}px`, backgroundColor: Colors.backgroundSecondary, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.sm, cursor: 'pointer' }}>{t('common.cancel')}</button>
             </div>
           </div>
         ) : (
@@ -238,7 +238,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               </div>
               {initialBalance !== 0 && (
                 <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.sm, color: initialBalance >= 0 ? Colors.success : Colors.warning }}>
-                  Saldo inicial: {formatPrice(initialBalance)}
+                  {t('customers.initialBalance')}: {formatPrice(initialBalance)}
                 </p>
               )}
             </div>
@@ -250,7 +250,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               color: balance >= 0 ? Colors.textLight : Colors.text,
             }}>
               <div style={{ fontSize: FontSizes.sm, opacity: 0.8 }}>
-                {balance >= 0 ? 'Saldo Disponível' : 'Saldo Devedor'}
+                {balance >= 0 ? t('customers.availableBalance') : t('customers.debtBalance')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.xs }}>
                 <div style={{ fontSize: FontSizes.xl, fontWeight: 700 }}>
@@ -266,7 +266,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                   fontWeight: 500,
                   cursor: 'pointer',
                 }}>
-                  Depositar
+                  {t('customers.deposit')}
                 </button>
                 {balance > 0 && (
                   <button onClick={onWithdraw} style={{
@@ -279,7 +279,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                     fontWeight: 500,
                     cursor: 'pointer',
                   }}>
-                    Devolver
+                    {t('customers.withdrawal')}
                   </button>
                 )}
               </div>
@@ -313,7 +313,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
             minWidth: 120,
           }}
         >
-          <option value="">Todas categorias</option>
+          <option value="">{t('reports.allCategories')}</option>
           {categories.map(cat => (
             <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
@@ -322,7 +322,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          placeholder="Data início"
+          placeholder={t('reports.startDate')}
           style={{
             padding: `${Spacing.xs}px ${Spacing.sm}px`,
             borderRadius: BorderRadius.sm,
@@ -334,7 +334,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          placeholder="Data fim"
+          placeholder={t('reports.endDate')}
           style={{
             padding: `${Spacing.xs}px ${Spacing.sm}px`,
             borderRadius: BorderRadius.sm,
@@ -354,7 +354,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               cursor: 'pointer',
             }}
           >
-            Limpar
+            {t('common.clear')}
           </button>
         )}
       </div>
@@ -376,7 +376,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
               cursor: 'pointer',
             }}
           >
-            {tab === 'all' ? 'Tudo' : tab === 'deposits' ? 'Depósitos' : 'Compras'}
+            {tab === 'all' ? t('common.all') : tab === 'deposits' ? t('customers.deposits') : t('customers.purchases')}
           </button>
         ))}
       </div>
@@ -385,7 +385,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
       <div style={{ flex: 1, overflowY: 'auto', padding: Spacing.md }}>
         {filteredTransactions.length === 0 ? (
           <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
-            Nenhum registo encontrado
+            {t('common.noResults')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
@@ -453,16 +453,16 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                     </div>
                     {fullyPaid && (
                       <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>
-                        Pago: {formatPrice(tx.amount)}
+                        {t('customers.paid')}: {formatPrice(tx.amount)}
                       </div>
                     )}
                     {partiallyPaid && (
                       <>
                         <div style={{ fontSize: FontSizes.xs, color: Colors.success }}>
-                          Pago: {formatPrice(tx.amountPaid)}
+                          {t('customers.paid')}: {formatPrice(tx.amountPaid)}
                         </div>
                         <div style={{ fontSize: FontSizes.xs, color: Colors.warning }}>
-                          Saldo: -{formatPrice(remaining)}
+                          {t('customers.balance')}: -{formatPrice(remaining)}
                         </div>
                       </>
                     )}

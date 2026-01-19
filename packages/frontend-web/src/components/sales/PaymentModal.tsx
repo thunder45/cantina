@@ -94,18 +94,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   // Add payment part for mixed payments
   const handleAddPayment = useCallback(() => {
     if (!selectedMethod) {
-      setError('Selecione um método de pagamento');
+      setError(t('payment.selectMethod'));
       return;
     }
 
     const amount = parseFloat(currentAmount);
     if (isNaN(amount) || amount <= 0) {
-      setError('Valor inválido');
+      setError(t('errors.invalidAmount'));
       return;
     }
 
     if (amount > remainingAmount + 0.01) { // Small tolerance for floating point
-      setError('Valor excede o restante');
+      setError(t('errors.exceedsRemaining'));
       return;
     }
 
@@ -119,7 +119,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setCurrentAmount('');
     setSelectedMethod(null);
     setError(null);
-  }, [selectedMethod, currentAmount, remainingAmount, selectedCustomer, payments]);
+  }, [selectedMethod, currentAmount, remainingAmount, selectedCustomer, payments, t]);
 
   // Remove payment part
   const handleRemovePayment = useCallback((index: number) => {
@@ -133,14 +133,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     if (isMixedPayment) {
       // Validate mixed payment total
       if (Math.abs(paidAmount - order.total) > 0.01) {
-        setError('O total dos pagamentos deve ser igual ao valor do pedido');
+        setError(t('errors.sumMustMatch'));
         return;
       }
 
       // Check if any payment is credit
       const hasCredit = payments.some(p => p.method === 'credit');
       if (hasCredit && !selectedCustomer) {
-        setError('Selecione um cliente para pagamento a crédito');
+        setError(t('errors.customerRequired'));
         return;
       }
 
@@ -148,19 +148,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     } else {
       // Single payment
       if (!selectedMethod) {
-        setError('Selecione um método de pagamento');
+        setError(t('payment.selectMethod'));
         return;
       }
 
       if (selectedMethod === 'credit' && !selectedCustomer) {
-        setError('Selecione um cliente para pagamento a crédito');
+        setError(t('errors.customerRequired'));
         return;
       }
 
       const singlePayment: PaymentPart[] = [{ method: selectedMethod, amount: order.total }];
       onConfirm(singlePayment, selectedMethod === 'credit' ? selectedCustomer?.id : undefined);
     }
-  }, [isMixedPayment, paidAmount, order.total, payments, selectedMethod, selectedCustomer, onConfirm]);
+  }, [isMixedPayment, paidAmount, order.total, payments, selectedMethod, selectedCustomer, onConfirm, t]);
 
   // Check if can confirm
   const canConfirm = useMemo(() => {
@@ -221,7 +221,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         >
           <div style={modalStyles.header}>
             <h3 style={{ ...modalStyles.title, fontSize: getResponsiveFontSize(styleOptions, 'lg') }}>
-              Pagamento
+              {t('receipt.payment')}
             </h3>
             <button 
               onClick={onCancel} 
@@ -259,7 +259,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               textAlign: 'center',
             }}>
               <div style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm'), color: Colors.textSecondary }}>
-                Total a pagar
+                {t('sales.totalToPay')}
               </div>
               <div style={{
                 fontSize: getResponsiveFontSize(styleOptions, 'xl'),
@@ -293,7 +293,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   fontWeight: 500,
                 }}
               >
-                Pagamento Único
+                {t('payment.singlePayment')}
               </button>
               <button
                 onClick={() => {
@@ -312,7 +312,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   fontWeight: 500,
                 }}
               >
-                Pagamento Misto
+                {t('payment.mixed')}
               </button>
             </div>
 
@@ -325,7 +325,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 fontWeight: 500,
                 color: Colors.text,
               }}>
-                Método de pagamento
+                {t('payment.selectMethod')}
                 {platform === 'desktop' && (
                   <span style={{ color: Colors.textSecondary, fontWeight: 400 }}> (1-4)</span>
                 )}
@@ -369,7 +369,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 alignItems: 'center',
               }}>
                 <span style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm'), color: Colors.text }}>
-                  Cliente: <strong>{selectedCustomer.name}</strong>
+                  {t('receipt.customer')}: <strong>{selectedCustomer.name}</strong>
                 </span>
                 <button
                   onClick={() => setShowCustomerSelect(true)}
@@ -382,7 +382,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                   }}
                 >
-                  Alterar
+                  {t('common.edit')}
                 </button>
               </div>
             )}
@@ -436,7 +436,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       fontSize: getResponsiveFontSize(styleOptions, 'md'),
                     }}
                   >
-                    Adicionar
+                    {t('common.add')}
                   </button>
                 </div>
               </div>
@@ -452,7 +452,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   fontWeight: 500,
                   color: Colors.text,
                 }}>
-                  Pagamentos adicionados
+                  {t('payment.addPayment')}
                 </label>
                 <div style={{
                   border: `1px solid ${Colors.border}`,
@@ -524,7 +524,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 minHeight: platform === 'tablet' ? 56 : touchTarget.recommended,
               }}
             >
-              {loading ? 'A processar...' : 'Confirmar Venda'}
+              {loading ? t('common.processing') : t('sales.confirmSale')}
               {platform === 'desktop' && canConfirm && (
                 <span style={{ marginLeft: Spacing.sm, opacity: 0.7, fontSize: FontSizes.sm }}>
                   [Enter]

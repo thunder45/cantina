@@ -3,18 +3,28 @@
 ## Objetivo
 Adicionar suporte multi-idioma ao Sistema POS Cantina: Português (default), Inglês e Francês.
 
-## Status: 🟡 Em progresso
+## Status: ✅ Frontend Completo
 
 ### Progresso
 - [x] Fase 1: Setup (i18next instalado e configurado)
 - [x] Fase 2: Extrair strings PT (pt.json criado)
 - [x] Fase 3: Traduzir EN/FR (en.json e fr.json criados)
-- [x] Fase 4: Migrar componentes (parcial - App.tsx, PaymentModal, GlobalReportView)
+- [x] Fase 4: Migrar componentes (30+ componentes migrados)
 - [x] Fase 5: Language Selector (implementado no header)
 - [ ] Fase 6: Backend i18n
 - [ ] Fase 7: Testes e Polish
 
 ### Deployed em Beta para testes: https://cantina-beta.advm.lu
+
+### Componentes Migrados
+- App.tsx, PaymentModal, GlobalReportView, SalesPage
+- EventReportView, CategoryReportView, ReceiptModal, ReceiptView
+- ReportsPage, CustomerHistory, TransactionModal, PaymentRegistrationModal
+- CustomersPage, EventsPage, MenuPage, CategoryList
+- MenuGroupList, EditMenuItemModal, AddMenuItemForm, CatalogBrowser
+- CreateCatalogItemForm, CustomerSearch, CustomerSelectModal
+- EventForm, EventList, OrderSummary, MenuItemGrid
+- StockReportView, CategoryReportsPage, ProtectedRoute
 
 ---
 
@@ -65,26 +75,24 @@ packages/frontend-web/src/
 - [x] Criar `en.json` baseado em `pt.json`
 - [x] Criar `fr.json` baseado em `pt.json`
 
-### Fase 4: Migrar Componentes 🟡
+### Fase 4: Migrar Componentes ✅
 Ficheiros migrados:
 - [x] `packages/frontend-web/src/App.tsx` (nav labels, logout)
 - [x] `packages/frontend-web/src/components/sales/PaymentModal.tsx`
 - [x] `packages/frontend-web/src/components/reports/GlobalReportView.tsx`
-
-Ficheiros pendentes:
-- [ ] `packages/frontend-web/src/components/sales/ReceiptModal.tsx`
-- [ ] `packages/frontend-web/src/components/common/ReceiptView.tsx`
-- [ ] `packages/frontend-web/src/components/reports/EventReportView.tsx`
-- [ ] `packages/frontend-web/src/components/reports/CategoryReportView.tsx`
-- [ ] `packages/frontend-web/src/pages/ReportsPage.tsx`
-- [ ] `packages/frontend-web/src/components/customers/CustomerHistory.tsx`
-- [ ] `packages/frontend-web/src/components/customers/TransactionModal.tsx`
-- [ ] `packages/frontend-web/src/components/customers/PaymentRegistrationModal.tsx`
-- [ ] `packages/frontend-web/src/pages/CustomersPage.tsx`
-- [ ] `packages/frontend-web/src/pages/SalesPage.tsx`
-- [ ] `packages/frontend-web/src/pages/EventsPage.tsx`
-- [ ] `packages/frontend-web/src/pages/MenuPage.tsx`
-- [ ] `packages/frontend-web/src/components/events/CategoryList.tsx`
+- [x] `packages/frontend-web/src/pages/SalesPage.tsx`
+- [x] `packages/frontend-web/src/components/reports/EventReportView.tsx`
+- [x] `packages/frontend-web/src/components/reports/CategoryReportView.tsx`
+- [x] `packages/frontend-web/src/components/sales/ReceiptModal.tsx`
+- [x] `packages/frontend-web/src/components/common/ReceiptView.tsx`
+- [x] `packages/frontend-web/src/pages/ReportsPage.tsx`
+- [x] `packages/frontend-web/src/components/customers/CustomerHistory.tsx`
+- [x] `packages/frontend-web/src/components/customers/TransactionModal.tsx`
+- [x] `packages/frontend-web/src/components/customers/PaymentRegistrationModal.tsx`
+- [x] `packages/frontend-web/src/pages/CustomersPage.tsx`
+- [x] `packages/frontend-web/src/pages/EventsPage.tsx`
+- [x] `packages/frontend-web/src/pages/MenuPage.tsx`
+- [x] `packages/frontend-web/src/components/events/CategoryList.tsx`
 
 ### Fase 5: Language Selector ✅
 - [x] Criar `LanguageSelector.tsx` componente

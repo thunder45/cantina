@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Event,
   Order,
@@ -33,6 +34,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
   event,
   onBack,
 }) => {
+  const { t } = useTranslation();
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [lastSale, setLastSale] = useState<Sale | null>(null);
@@ -108,7 +110,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
       // Refresh sales history
       loadSalesHistory();
     } catch (err) {
-      setError('Erro ao confirmar venda');
+      setError(t('errors.confirmSale'));
       console.error('Failed to confirm sale:', err);
     } finally {
       setLoading(false);
@@ -187,7 +189,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Modo de Vendas
+            {t('sales.salesMode')}
           </h2>
           <p style={{
             margin: 0,
@@ -210,7 +212,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
             cursor: 'pointer',
           }}
         >
-          Histórico ({salesHistory.length})
+          {t('sales.history')} ({salesHistory.length})
         </button>
       </div>
 
@@ -289,7 +291,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
               borderBottom: `1px solid ${Colors.border}`,
             }}>
               <h3 style={{ margin: 0, fontSize: FontSizes.lg, fontWeight: 600 }}>
-                Histórico de Vendas
+                {t('sales.salesHistory')}
               </h3>
               <button
                 onClick={() => setShowHistory(false)}
@@ -315,7 +317,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                   padding: Spacing.xl,
                   color: Colors.textSecondary,
                 }}>
-                  Nenhuma venda registada
+                  {t('reports.noSalesRecorded')}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>
@@ -323,8 +325,10 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                     const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
                     const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
                     const hadCredit = creditAmount > 0 || balanceAmount > 0;
-                    const labels: Record<string, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Fiado Pago', credit: 'Fiado', gift: 'Oferta' };
-                    const paymentStr = sale.payments.map(p => `${labels[p.method] || p.method}: ${formatPrice(p.amount)}`).join(' + ');
+                    const giftAmount = sale.payments.find(p => p.method === 'gift')?.amount || 0;
+                    const getLabel = (method: string) => method === 'balance' ? t('payment.balancePaid') : t(`payment.${method}`);
+                    const paymentStr = sale.payments.map(p => `${getLabel(p.method)}: ${formatPrice(p.amount)}`).join(' + ');
+                    const priceColor = sale.isRefunded ? Colors.danger : creditAmount > 0 ? Colors.warning : giftAmount > 0 ? '#8b5cf6' : Colors.success;
                     
                     return (
                     <button
@@ -344,11 +348,11 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>{new Date(sale.createdAt).toLocaleString('pt-PT')}</div>
-                        <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.isRefunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success, textDecoration: sale.isRefunded ? 'line-through' : 'none' }}>{formatPrice(sale.total)}</span>
+                        <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: priceColor, textDecoration: sale.isRefunded ? 'line-through' : 'none' }}>{formatPrice(sale.total)}</span>
                       </div>
                       <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
                       <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>{paymentStr}{hadCredit && sale.customerName && ` • ${sale.customerName}`}</div>
-                      {sale.isRefunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
+                      {sale.isRefunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>{t('sales.refunded')}</span>}
                     </button>
                   );})}
                 </div>

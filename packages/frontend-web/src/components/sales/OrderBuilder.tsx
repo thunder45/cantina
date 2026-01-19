@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Event,
   MenuItem,
@@ -32,6 +33,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
   onCheckout,
   onBack,
 }) => {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<MenuGroup[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
       setGroups(groupsData.sort((a, b) => a.order - b.order));
       setMenuItems(itemsData);
     } catch (err) {
-      setError('Erro ao carregar dados do menu');
+      setError(t('errors.loadMenu'));
       console.error('Failed to load menu data:', err);
     } finally {
       setLoading(false);
@@ -127,7 +129,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
       // Check stock availability
       const available = getAvailableStock(menuItem);
       if (available <= 0 && menuItem.stock !== 0) {
-        setError('Item esgotado');
+        setError(t('errors.insufficientStock'));
         return;
       }
 
@@ -141,7 +143,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         : Math.min(newQuantity, menuItem.stock - menuItem.soldCount);
 
       if (maxQuantity < newQuantity && menuItem.stock !== 0) {
-        setError(`Quantidade limitada ao estoque disponível: ${maxQuantity}`);
+        setError(t('errors.stockLimited', { max: maxQuantity }));
       }
 
       // Update order on backend
@@ -173,7 +175,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         ]);
       }
     } catch (err) {
-      setError('Erro ao adicionar item');
+      setError(t('errors.addItem'));
       console.error('Failed to add item:', err);
     } finally {
       setOrderLoading(false);
@@ -198,7 +200,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         if (menuItem && menuItem.stock !== 0) {
           const maxQuantity = menuItem.stock - menuItem.soldCount;
           if (quantity > maxQuantity) {
-            setError(`Quantidade limitada ao estoque disponível: ${maxQuantity}`);
+            setError(t('errors.stockLimited', { max: maxQuantity }));
             quantity = maxQuantity;
           }
         }
@@ -218,7 +220,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         );
       }
     } catch (err) {
-      setError('Erro ao atualizar quantidade');
+      setError(t('errors.updateQuantity'));
       console.error('Failed to update quantity:', err);
     } finally {
       setOrderLoading(false);
@@ -235,7 +237,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
       await orderService.removeOrderItem(currentOrder.id, menuItemId);
       setOrderItems(items => items.filter(item => item.menuItemId !== menuItemId));
     } catch (err) {
-      setError('Erro ao remover item');
+      setError(t('errors.removeItem'));
       console.error('Failed to remove item:', err);
     } finally {
       setOrderLoading(false);
@@ -256,7 +258,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
       setCurrentOrder(null);
       setOrderItems([]);
     } catch (err) {
-      setError('Erro ao cancelar pedido');
+      setError(t('errors.cancelOrder'));
       console.error('Failed to cancel order:', err);
     } finally {
       setOrderLoading(false);
@@ -293,7 +295,7 @@ export const OrderBuilder: React.FC<OrderBuilderProps> = ({
         color: Colors.textSecondary,
         fontSize: getResponsiveFontSize(styleOptions, 'md'),
       }}>
-        A carregar menu...
+        {t('common.loading')}
       </div>
     );
   }

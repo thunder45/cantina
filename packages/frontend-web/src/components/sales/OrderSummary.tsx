@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { OrderItem, Colors, Spacing, FontSizes, BorderRadius, TouchTargets } from '@cantina-pos/shared';
 import { usePlatform } from '../../hooks';
 import { getTouchButtonStyles, getResponsiveFontSize, getResponsivePanelWidth } from '../../styles';
@@ -22,6 +23,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   onCheckout,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const { platform, orientation, isTouch } = usePlatform();
   const styleOptions = { platform, orientation, isTouch };
   const touchTarget = TouchTargets[platform];
@@ -59,7 +61,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           fontWeight: 600,
           color: Colors.text,
         }}>
-          Pedido Atual
+          {t('sales.currentOrder')}
         </h3>
         {items.length > 0 && (
           <button
@@ -77,7 +79,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               opacity: loading ? 0.5 : 1,
             }}
           >
-            Limpar
+            {t('common.clear')}
           </button>
         )}
       </div>
@@ -96,10 +98,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             color: Colors.textSecondary,
           }}>
             <p style={{ margin: 0, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
-              Nenhum item no pedido
+              {t('sales.emptyOrder')}
             </p>
             <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: getResponsiveFontSize(styleOptions, 'sm') }}>
-              Selecione itens do menu para adicionar
+              {t('sales.addItems')}
             </p>
           </div>
         ) : (
@@ -145,7 +147,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
-                    title="Remover item"
+                    title={t('sales.removeItem')}
                   >
                     ×
                   </button>
@@ -280,7 +282,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             minHeight: platform === 'tablet' ? 56 : touchTarget.recommended,
           }}
         >
-          {loading ? 'A processar...' : 'Finalizar Pedido'}
+          {loading ? t('common.processing') : t('sales.finishOrder')}
         </button>
         <div style={{ height: 10 }} />
       </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EventCategory } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
 interface CategoryFormProps {
-  category?: EventCategory; // If provided, we're editing
+  category?: EventCategory;
   onSubmit: (name: string) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -15,6 +16,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(category?.name || '');
   const [error, setError] = useState('');
 
@@ -26,7 +28,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
   const validate = (): boolean => {
     if (!name.trim()) {
-      setError('O nome é obrigatório');
+      setError(t('events.nameRequired'));
       return false;
     }
     setError('');
@@ -72,11 +74,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   return (
     <form onSubmit={handleSubmit} style={{ padding: Spacing.md }}>
       <h2 style={{ fontSize: FontSizes.xl, fontWeight: 600, color: Colors.text, marginBottom: Spacing.lg }}>
-        {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
+        {isEditing ? t('events.editCategory') : t('events.newCategory')}
       </h2>
 
       <div style={{ marginBottom: Spacing.lg }}>
-        <label style={labelStyle}>Nome da Categoria *</label>
+        <label style={labelStyle}>{t('events.categoryName')} *</label>
         <input
           type="text"
           value={name}
@@ -84,7 +86,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             setName(e.target.value);
             setError('');
           }}
-          placeholder="Ex: Retiro, Conferência"
           style={inputStyle}
           disabled={loading}
           autoFocus
@@ -107,7 +108,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           }}
           disabled={loading}
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
@@ -124,7 +125,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           }}
           disabled={loading}
         >
-          {loading ? (isEditing ? 'A guardar...' : 'A criar...') : (isEditing ? 'Guardar' : 'Criar Categoria')}
+          {loading ? t('common.saving') : (isEditing ? t('common.save') : t('events.createCategory'))}
         </button>
       </div>
     </form>

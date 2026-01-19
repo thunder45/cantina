@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MenuItem, MenuGroup, Colors, Spacing, FontSizes, BorderRadius, TouchTargets } from '@cantina-pos/shared';
 import { usePlatform } from '../../hooks';
 import { getResponsiveGridStyles, getTouchButtonStyles, getResponsiveFontSize } from '../../styles';
@@ -20,6 +21,7 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
   onAddItem,
   getAvailableStock,
 }) => {
+  const { t } = useTranslation();
   const { platform, orientation, isTouch } = usePlatform();
   const styleOptions = { platform, orientation, isTouch };
 
@@ -77,7 +79,7 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
           onClick={() => onSelectGroup(null)}
           style={getTabButtonStyle(selectedGroupId === null)}
         >
-          Todos
+          {t('common.all')}
         </button>
         {groups.map(group => (
           <button
@@ -104,7 +106,7 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
             color: Colors.textSecondary,
             fontSize: getResponsiveFontSize(styleOptions, 'md'),
           }}>
-            Nenhum item disponível
+            {t('menu.noItemsAvailable')}
           </div>
         ) : (
           <div style={gridStyles}>
@@ -186,10 +188,10 @@ export const MenuItemGrid: React.FC<MenuItemGridProps> = ({
                     marginTop: Spacing.xs,
                   }}>
                     {!available 
-                      ? 'Esgotado' 
+                      ? t('menu.soldOut') 
                       : isInfinite 
-                        ? '∞ disponível' 
-                        : `${availableStock} disponível`}
+                        ? `∞ ${t('menu.available')}` 
+                        : `${availableStock} ${t('menu.available')}`}
                   </span>
                 </button>
               );

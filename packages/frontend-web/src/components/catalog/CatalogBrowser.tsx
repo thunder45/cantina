@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CatalogItem, MenuGroup } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, formatCurrency } from '@cantina-pos/shared';
 
@@ -17,12 +18,13 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
   onCreateItem,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const getGroupName = (groupId: string): string => {
     const group = groups.find(g => g.id === groupId);
-    return group?.name || 'Sem grupo';
+    return group?.name || t('menu.noGroup');
   };
 
   const filteredItems = catalogItems.filter(item => {
@@ -40,7 +42,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Pesquisar no catálogo..."
+          placeholder={t('menu.searchCatalog')}
           style={{
             width: '100%',
             padding: Spacing.sm,
@@ -64,7 +66,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
               cursor: 'pointer',
             }}
           >
-            Todos
+            {t('common.all')}
           </button>
           {groups.map(group => (
             <button
@@ -89,11 +91,11 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
       {/* Items List */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <p style={{ textAlign: 'center', color: Colors.textSecondary }}>A carregar...</p>
+          <p style={{ textAlign: 'center', color: Colors.textSecondary }}>{t('common.loading')}</p>
         ) : filteredItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: Spacing.lg }}>
             <p style={{ color: Colors.textSecondary }}>
-              {searchQuery ? 'Nenhum item encontrado' : 'Catálogo vazio'}
+              {searchQuery ? t('menu.noItemFound') : t('menu.catalogEmpty')}
             </p>
           </div>
         ) : (
@@ -153,7 +155,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
           textAlign: 'center',
         }}
       >
-        + Criar Novo Item no Catálogo
+        + {t('menu.createCatalogItem')}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { EventCategory, TouchTargets } from '@cantina-pos/shared';
 import { getCardStyles, getListStyles, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 import { usePlatform } from '../../hooks';
@@ -25,6 +26,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
   onDeleteCategory,
   onViewReport,
 }) => {
+  const { t } = useTranslation();
   const { platform, orientation, isTouch } = usePlatform();
   const styleOptions = { platform, orientation, isTouch };
   const touchTarget = TouchTargets[platform];
@@ -35,7 +37,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
     return (
       <div style={{ ...listStyles.loadingContainer, padding: Spacing.xl }}>
         <p style={{ color: Colors.textSecondary, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
-          A carregar categorias...
+          {t('common.loading')}
         </p>
       </div>
     );
@@ -58,7 +60,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
           margin: 0,
           flex: platform === 'mobile' ? '1 1 100%' : 'none',
         }}>
-          Categorias de Eventos
+          {t('events.eventCategories')}
         </h1>
         <button
           onClick={onCreateCategory}
@@ -76,21 +78,21 @@ export const CategoryList: React.FC<CategoryListProps> = ({
             width: platform === 'mobile' ? '100%' : 'auto',
           }}
         >
-          + Nova Categoria
+          + {t('events.newCategory')}
         </button>
       </div>
 
       {categories.length === 0 ? (
         <div style={{ ...listStyles.emptyContainer, textAlign: 'center', padding: Spacing.xl }}>
           <p style={{ ...listStyles.emptyText, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
-            Nenhuma categoria encontrada
+            {t('events.noCategories')}
           </p>
           <p style={{ 
             ...listStyles.emptyText, 
             marginTop: Spacing.sm,
             fontSize: getResponsiveFontSize(styleOptions, 'sm'),
           }}>
-            Crie uma nova categoria para começar
+            {t('events.createCategoryToStart')}
           </p>
         </div>
       ) : (
@@ -148,7 +150,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                           fontSize: getResponsiveFontSize(styleOptions, 'xs'),
                           fontWeight: 500,
                         }}>
-                          Padrão
+                          {t('events.default')}
                         </span>
                       )}
                     </h3>
@@ -157,7 +159,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                       fontSize: getResponsiveFontSize(styleOptions, 'sm'),
                       marginTop: Spacing.xs,
                     }}>
-                      {eventCount} {eventCount === 1 ? 'evento' : 'eventos'}
+                      {eventCount} {eventCount === 1 ? t('events.event') : t('nav.events').toLowerCase()}
                     </p>
                   </div>
                 </button>
@@ -181,7 +183,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
-                      title="Ver Relatório"
+                      title={t('reports.title')}
                     >
                       📊
                     </button>
@@ -203,7 +205,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
-                    title="Editar"
+                    title={t('common.edit')}
                   >
                     ✏️
                   </button>
@@ -226,7 +228,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({
                       justifyContent: 'center',
                     }}
                     disabled={eventCount > 0}
-                    title={eventCount > 0 ? 'Não é possível excluir categoria com eventos' : 'Excluir'}
+                    title={eventCount > 0 ? t('events.cannotDeleteWithEvents') : t('common.delete')}
                   >
                     🗑️
                   </button>

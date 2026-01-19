@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
 import { LoginPage } from './LoginPage';
 
@@ -7,6 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -17,7 +19,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        A carregar...
+        {t('common.loading')}
       </div>
     );
   }

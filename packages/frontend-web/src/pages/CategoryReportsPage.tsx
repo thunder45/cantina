@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   EventCategory,
   ApiClient,
@@ -21,6 +22,7 @@ export const CategoryReportsPage: React.FC<CategoryReportsPageProps> = ({
   category,
   onBack,
 }) => {
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export const CategoryReportsPage: React.FC<CategoryReportsPageProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      setExportError('Erro ao exportar relatório');
+      setExportError(t('errors.exportReport'));
       console.error('Failed to export CSV:', err);
     } finally {
       setExporting(false);
@@ -80,7 +82,7 @@ export const CategoryReportsPage: React.FC<CategoryReportsPageProps> = ({
               cursor: 'pointer',
             }}
           >
-            ← Voltar
+            ← {t('common.back')}
           </button>
         )}
         <div>
@@ -90,7 +92,7 @@ export const CategoryReportsPage: React.FC<CategoryReportsPageProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Relatório de Categoria
+            {t('reports.byCategory')}
           </h2>
           <p style={{
             margin: 0,
@@ -124,7 +126,7 @@ export const CategoryReportsPage: React.FC<CategoryReportsPageProps> = ({
               textDecoration: 'underline',
             }}
           >
-            Fechar
+            {t('common.close')}
           </button>
         </div>
       )}

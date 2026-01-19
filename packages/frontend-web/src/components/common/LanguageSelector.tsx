@@ -2,6 +2,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { supportedLanguages, SupportedLanguage, Colors, FontSizes, Spacing, BorderRadius } from '@cantina-pos/shared';
 
+const langLabels: Record<SupportedLanguage, string> = {
+  pt: '🇵🇹 PT',
+  en: '🇬🇧 EN',
+  fr: '🇫🇷 FR',
+};
+
 export const LanguageSelector: React.FC = () => {
   const { i18n, t } = useTranslation();
 
@@ -24,7 +30,7 @@ export const LanguageSelector: React.FC = () => {
       title={t('language.select')}
     >
       {supportedLanguages.map((lang) => (
-        <option key={lang} value={lang}>{t(`language.${lang}`)}</option>
+        <option key={lang} value={lang}>{langLabels[lang]}</option>
       ))}
     </select>
   );

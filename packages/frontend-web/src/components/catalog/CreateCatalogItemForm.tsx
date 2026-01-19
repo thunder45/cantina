@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MenuGroup, CreateCatalogItemInput } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, parseCurrencyInput } from '@cantina-pos/shared';
 
@@ -15,6 +16,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [description, setDescription] = useState('');
   const [suggestedPrice, setSuggestedPrice] = useState('');
   const [groupId, setGroupId] = useState(groups[0]?.id || '');
@@ -24,18 +26,18 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
     const newErrors: Record<string, string> = {};
     
     if (!description.trim()) {
-      newErrors.description = 'A descrição é obrigatória';
+      newErrors.description = t('menu.descriptionRequired');
     }
     
     const priceValue = parseCurrencyInput(suggestedPrice);
     if (priceValue <= 0) {
-      newErrors.suggestedPrice = 'O preço deve ser maior que zero';
+      newErrors.suggestedPrice = t('menu.priceRequired');
     } else if (!/^\d+([.,]\d{0,2})?$/.test(suggestedPrice.trim())) {
-      newErrors.suggestedPrice = 'O preço deve ter no máximo duas casas decimais';
+      newErrors.suggestedPrice = t('menu.priceDecimals');
     }
     
     if (!groupId) {
-      newErrors.groupId = 'Selecione um grupo';
+      newErrors.groupId = t('common.selectGroup');
     }
 
     setErrors(newErrors);
@@ -73,12 +75,12 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
   return (
     <form onSubmit={handleSubmit} style={{ padding: Spacing.md }}>
       <h3 style={{ margin: 0, marginBottom: Spacing.lg, fontSize: FontSizes.lg, color: Colors.text }}>
-        Novo Item no Catálogo
+        {t('menu.newCatalogItem')}
       </h3>
 
       {/* Description */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Descrição *</label>
+        <label style={labelStyle}>{t('common.description')} *</label>
         <input
           type="text"
           value={description}
@@ -103,7 +105,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
 
       {/* Suggested Price */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Preço Sugerido (€) *</label>
+        <label style={labelStyle}>{t('menu.suggestedPrice')} *</label>
         <input
           type="number"
           step="any"
@@ -129,7 +131,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
 
       {/* Group */}
       <div style={{ marginBottom: Spacing.lg }}>
-        <label style={labelStyle}>Grupo *</label>
+        <label style={labelStyle}>{t('common.group')} *</label>
         <select
           value={groupId}
           onChange={(e) => {
@@ -142,7 +144,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
           }}
           disabled={loading}
         >
-          <option value="">Selecione um grupo</option>
+          <option value="">{t('common.selectGroup')}</option>
           {groups.map(group => (
             <option key={group.id} value={group.id}>
               {group.name}
@@ -172,7 +174,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
           }}
           disabled={loading}
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
@@ -189,7 +191,7 @@ export const CreateCatalogItemForm: React.FC<CreateCatalogItemFormProps> = ({
           }}
           disabled={loading}
         >
-          {loading ? 'A criar...' : 'Criar Item'}
+          {loading ? t('common.creating') : t('common.create')}
         </button>
       </div>
     </form>

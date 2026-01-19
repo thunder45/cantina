@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   MenuItem,
   UpdateMenuItemInput,
@@ -24,6 +25,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [price, setPrice] = useState(item.price.toString());
   const [stock, setStock] = useState(item.stock.toString());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,14 +37,14 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
     const priceValue = parseCurrencyInput(price);
     
     if (priceValue <= 0) {
-      newErrors.price = 'O preço deve ser maior que zero';
+      newErrors.price = t('menu.priceRequired');
     } else if (!/^\d+([.,]\d{0,2})?$/.test(price.trim())) {
-      newErrors.price = 'O preço deve ter no máximo duas casas decimais';
+      newErrors.price = t('menu.priceDecimals');
     }
     
     const stockValue = parseInt(stock, 10);
     if (isNaN(stockValue) || stockValue < 0) {
-      newErrors.stock = 'O estoque deve ser zero ou maior';
+      newErrors.stock = t('menu.stockRequired');
     }
 
     setErrors(newErrors);
@@ -83,7 +85,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={modalStyles.header}>
-          <h3 style={modalStyles.title}>Editar Item do Menu</h3>
+          <h3 style={modalStyles.title}>{t('menu.editItem')}</h3>
           <button onClick={onCancel} style={modalStyles.closeButton} disabled={loading}>
             ×
           </button>
@@ -101,13 +103,13 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               {item.description}
             </p>
             <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-              {item.soldCount} vendidos de {item.stock === 0 ? '∞' : item.stock}
+              {item.soldCount} {t('menu.soldOf')} {item.stock === 0 ? '∞' : item.stock}
             </p>
           </div>
 
           {/* Price */}
           <div style={{ marginBottom: Spacing.md }}>
-            <label style={labelStyle}>Preço de Venda (€) *</label>
+            <label style={labelStyle}>{t('menu.salePrice')} *</label>
             <input
               type="number"
               step="any"
@@ -132,7 +134,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
 
           {/* Stock */}
           <div style={{ marginBottom: Spacing.lg }}>
-            <label style={labelStyle}>Quantidade em Estoque</label>
+            <label style={labelStyle}>{t('menu.stockQuantity')}</label>
             <input
               type="number"
               min="0"
@@ -148,7 +150,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               disabled={loading}
             />
             <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-              Use 0 para estoque infinito
+              {t('menu.stockHint')}
             </p>
             {errors.stock && (
               <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.error }}>
@@ -173,7 +175,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               }}
               disabled={loading}
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -190,7 +192,7 @@ export const EditMenuItemModal: React.FC<EditMenuItemModalProps> = ({
               }}
               disabled={loading}
             >
-              {loading ? 'A guardar...' : 'Guardar Alterações'}
+              {loading ? t('common.saving') : t('menu.saveChanges')}
             </button>
           </div>
         </form>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CatalogItem, MenuGroup, AddMenuItemInput } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, formatCurrency, parseCurrencyInput } from '@cantina-pos/shared';
 
@@ -17,6 +18,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [price, setPrice] = useState(catalogItem.suggestedPrice.toString());
   const [stock, setStock] = useState('0');
   const [groupId, setGroupId] = useState(catalogItem.groupId);
@@ -27,14 +29,14 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
     const priceValue = parseCurrencyInput(price);
     
     if (priceValue <= 0) {
-      newErrors.price = 'O preço deve ser maior que zero';
+      newErrors.price = t('menu.priceRequired');
     } else if (!/^\d+([.,]\d{0,2})?$/.test(price.trim())) {
-      newErrors.price = 'O preço deve ter no máximo duas casas decimais';
+      newErrors.price = t('menu.priceDecimals');
     }
     
     const stockValue = parseInt(stock, 10);
     if (isNaN(stockValue) || stockValue < 0) {
-      newErrors.stock = 'O estoque deve ser zero ou maior';
+      newErrors.stock = t('menu.stockRequired');
     }
 
     setErrors(newErrors);
@@ -74,7 +76,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
   return (
     <form onSubmit={handleSubmit} style={{ padding: Spacing.md }}>
       <h3 style={{ margin: 0, marginBottom: Spacing.lg, fontSize: FontSizes.lg, color: Colors.text }}>
-        Adicionar ao Menu
+        {t('menu.addToMenu')}
       </h3>
 
       {/* Item Info */}
@@ -88,13 +90,13 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
           {catalogItem.description}
         </p>
         <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.sm, color: Colors.textSecondary }}>
-          Preço sugerido: {formatCurrency(catalogItem.suggestedPrice)}
+          {t('menu.suggestedPrice')}: {formatCurrency(catalogItem.suggestedPrice)}
         </p>
       </div>
 
       {/* Price */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Preço de Venda (€) *</label>
+        <label style={labelStyle}>{t('menu.salePrice')} *</label>
         <input
           type="number"
           step="any"
@@ -119,7 +121,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
 
       {/* Stock */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Quantidade em Estoque</label>
+        <label style={labelStyle}>{t('menu.stockQuantity')}</label>
         <input
           type="number"
           min="0"
@@ -135,7 +137,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
           disabled={loading}
         />
         <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-          Use 0 para estoque infinito
+          {t('menu.stockHint')}
         </p>
         {errors.stock && (
           <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.error }}>
@@ -146,7 +148,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
 
       {/* Group */}
       <div style={{ marginBottom: Spacing.lg }}>
-        <label style={labelStyle}>Grupo</label>
+        <label style={labelStyle}>{t('common.group')}</label>
         <select
           value={groupId}
           onChange={(e) => setGroupId(e.target.value)}
@@ -177,7 +179,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
           }}
           disabled={loading}
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
@@ -194,7 +196,7 @@ export const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({
           }}
           disabled={loading}
         >
-          {loading ? 'A adicionar...' : 'Adicionar ao Menu'}
+          {loading ? t('menu.adding') : t('menu.addToMenu')}
         </button>
       </div>
     </form>

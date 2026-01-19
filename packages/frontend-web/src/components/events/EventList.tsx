@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Event, EventCategory, TouchTargets } from '@cantina-pos/shared';
 import { getCardStyles, getListStyles, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 import { usePlatform } from '../../hooks';
@@ -23,6 +24,7 @@ export const EventList: React.FC<EventListProps> = ({
   onCreateEvent,
   onCloseEvent,
 }) => {
+  const { t } = useTranslation();
   const { platform, orientation, isTouch } = usePlatform();
   const styleOptions = { platform, orientation, isTouch };
   const touchTarget = TouchTargets[platform];
@@ -36,9 +38,9 @@ export const EventList: React.FC<EventListProps> = ({
     }
     const sorted = [...dates].sort();
     if (platform === 'mobile') {
-      return `${dates.length} dias`;
+      return `${dates.length} ${t('events.days')}`;
     }
-    return `${new Date(sorted[0]).toLocaleDateString('pt-PT')} - ${new Date(sorted[sorted.length - 1]).toLocaleDateString('pt-PT')} (${dates.length} dias)`;
+    return `${new Date(sorted[0]).toLocaleDateString('pt-PT')} - ${new Date(sorted[sorted.length - 1]).toLocaleDateString('pt-PT')} (${dates.length} ${t('events.days')})`;
   };
 
   const getStatusBadge = (status: 'active' | 'closed') => {
@@ -54,14 +56,14 @@ export const EventList: React.FC<EventListProps> = ({
           color: Colors.textLight,
         }}
       >
-        {isActive ? 'Ativo' : 'Encerrado'}
+        {isActive ? t('events.active') : t('events.closed')}
       </span>
     );
   };
 
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find(c => c.id === categoryId);
-    return category?.name || 'Sem categoria';
+    return category?.name || t('events.uncategorized');
   };
 
   // Group events by category if needed
@@ -154,7 +156,7 @@ export const EventList: React.FC<EventListProps> = ({
                   cursor: isTouch ? 'default' : 'pointer',
                 }}
               >
-                Encerrar
+                {t('events.closeEvent')}
               </button>
             )}
           </div>
@@ -167,7 +169,7 @@ export const EventList: React.FC<EventListProps> = ({
     return (
       <div style={{ ...listStyles.loadingContainer, padding: Spacing.xl }}>
         <p style={{ color: Colors.textSecondary, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
-          A carregar eventos...
+          {t('events.loadingEvents')}
         </p>
       </div>
     );
@@ -190,7 +192,7 @@ export const EventList: React.FC<EventListProps> = ({
           margin: 0,
           flex: platform === 'mobile' ? '1 1 100%' : 'none',
         }}>
-          Eventos
+          {t('events.title')}
         </h1>
         <button
           onClick={onCreateEvent}
@@ -208,21 +210,21 @@ export const EventList: React.FC<EventListProps> = ({
             width: platform === 'mobile' ? '100%' : 'auto',
           }}
         >
-          + Novo Evento
+          + {t('events.newEvent')}
         </button>
       </div>
 
       {events.length === 0 ? (
         <div style={{ ...listStyles.emptyContainer, textAlign: 'center', padding: Spacing.xl }}>
           <p style={{ ...listStyles.emptyText, fontSize: getResponsiveFontSize(styleOptions, 'md') }}>
-            Nenhum evento encontrado
+            {t('events.noEvents')}
           </p>
           <p style={{ 
             ...listStyles.emptyText, 
             marginTop: Spacing.sm,
             fontSize: getResponsiveFontSize(styleOptions, 'sm'),
           }}>
-            Crie um novo evento para começar
+            {t('events.createEventToStart')}
           </p>
         </div>
       ) : groupByCategory && Object.keys(groupedEvents).length > 1 ? (
@@ -274,7 +276,7 @@ export const EventList: React.FC<EventListProps> = ({
                 paddingBottom: Spacing.xs,
                 borderBottom: `2px solid ${Colors.border}`,
               }}>
-                Sem categoria
+                {t('events.uncategorized')}
                 <span style={{
                   marginLeft: Spacing.sm,
                   fontSize: getResponsiveFontSize(styleOptions, 'sm'),

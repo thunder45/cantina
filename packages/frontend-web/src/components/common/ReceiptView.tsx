@@ -1,19 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Receipt, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
 interface ReceiptViewProps {
   receipt: Receipt;
   onClose: () => void;
 }
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'Dinheiro',
-  card: 'Cartão',
-  transfer: 'Transferência',
-  credit: 'Anotado (Fiado)',
-  balance: 'Saldo',
-  gift: 'Oferta',
-};
 
 const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
@@ -23,7 +15,13 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export const ReceiptView: React.FC<ReceiptViewProps> = ({ receipt, onClose }) => (
+export const ReceiptView: React.FC<ReceiptViewProps> = ({ receipt, onClose }) => {
+  const { t } = useTranslation();
+  const getPaymentLabel = (method: string): string => {
+    return method === 'credit' ? t('payment.creditRecorded') : t(`payment.${method}`);
+  };
+
+  return (
   <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={onClose}>
     <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, padding: Spacing.lg, maxWidth: 400, width: '90%', maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
       <div style={{ fontFamily: 'monospace', fontSize: FontSizes.sm }}>
@@ -51,16 +49,16 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ receipt, onClose }) =>
 
         {/* Total */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: FontSizes.md, marginBottom: Spacing.md }}>
-          <span>TOTAL</span>
+          <span>{t('common.total').toUpperCase()}</span>
           <span>{formatPrice(receipt.total)}</span>
         </div>
 
         {/* Payments */}
         <div style={{ marginBottom: Spacing.md, paddingTop: Spacing.sm, borderTop: `1px dashed ${Colors.border}` }}>
-          <div style={{ fontWeight: 600, marginBottom: Spacing.xs }}>Pagamento:</div>
+          <div style={{ fontWeight: 600, marginBottom: Spacing.xs }}>{t('receipt.payment')}:</div>
           {receipt.payments.map((p, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: Colors.textSecondary }}>
-              <span>{PAYMENT_METHOD_LABELS[p.method] || p.method}</span>
+              <span>{getPaymentLabel(p.method)}</span>
               <span>{formatPrice(p.amount)}</span>
             </div>
           ))}
@@ -69,21 +67,22 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ receipt, onClose }) =>
         {/* Customer */}
         {receipt.customerName && (
           <div style={{ marginBottom: Spacing.md, padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, borderRadius: BorderRadius.sm }}>
-            <div style={{ fontWeight: 600 }}>Cliente:</div>
+            <div style={{ fontWeight: 600 }}>{t('receipt.customer')}:</div>
             <div>{receipt.customerName}</div>
           </div>
         )}
 
         {/* Footer */}
         <div style={{ textAlign: 'center', paddingTop: Spacing.md, borderTop: `1px dashed ${Colors.border}`, color: Colors.textSecondary, fontSize: FontSizes.xs }}>
-          <div>Operador: {receipt.createdBy}</div>
-          <div style={{ marginTop: Spacing.sm }}>Obrigado pela preferência!</div>
+          <div>{t('receipt.seller')}: {receipt.createdBy}</div>
+          <div style={{ marginTop: Spacing.sm }}>{t('receipt.thankYou')}</div>
         </div>
       </div>
 
       <button onClick={onClose} style={{ width: '100%', marginTop: Spacing.md, padding: Spacing.sm, backgroundColor: Colors.primary, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.md, cursor: 'pointer' }}>
-        Fechar
+        {t('common.close')}
       </button>
     </div>
   </div>
-);
+  );
+};

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Receipt,
   Sale,
@@ -19,14 +20,6 @@ interface ReceiptModalProps {
   showRefundOption?: boolean;
 }
 
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'Dinheiro',
-  card: 'Cartão',
-  transfer: 'Transferência',
-  credit: 'Anotado (Fiado)',
-  gift: 'Oferta',
-};
-
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   apiClient,
   sale,
@@ -34,6 +27,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onRefund,
   showRefundOption = false,
 }) => {
+  const { t } = useTranslation();
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +51,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     });
   };
 
+  const getPaymentLabel = (method: string): string => {
+    return method === 'credit' ? t('payment.creditRecorded') : t(`payment.${method}`);
+  };
+
   // Load receipt data
   useEffect(() => {
     const loadReceipt = async () => {
@@ -66,7 +64,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         const receiptData = await salesService.getReceipt(sale.id);
         setReceipt(receiptData);
       } catch (err) {
-        setError('Erro ao carregar recibo');
+        setError(t('errors.loadFailed'));
         console.error('Failed to load receipt:', err);
       } finally {
         setLoading(false);
@@ -74,12 +72,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     };
 
     loadReceipt();
-  }, [sale.id]);
+  }, [sale.id, t]);
 
   // Handle refund
   const handleRefund = useCallback(async () => {
     if (!refundReason.trim()) {
-      setError('Motivo do estorno é obrigatório');
+      setError(t('errors.reasonRequired'));
       return;
     }
 
@@ -90,12 +88,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       onRefund?.(sale);
       onClose();
     } catch (err) {
-      setError('Erro ao estornar venda');
+      setError(t('errors.generic'));
       console.error('Failed to refund sale:', err);
     } finally {
       setRefunding(false);
     }
-  }, [sale, refundReason, onRefund, onClose]);
+  }, [sale, refundReason, onRefund, onClose, t]);
 
   return (
     <div style={modalStyles.overlay} onClick={onClose}>
@@ -105,7 +103,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       >
         <div style={modalStyles.header}>
           <h3 style={modalStyles.title}>
-            {sale.isRefunded ? 'Recibo (Estornado)' : 'Recibo'}
+            {sale.isRefunded ? t('receipt.refundedSale') : t('receipt.title')}
           </h3>
           <button onClick={onClose} style={modalStyles.closeButton}>
             ×
@@ -128,7 +126,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
-              A carregar recibo...
+              {t('common.loading')}
             </div>
           ) : receipt ? (
             <div style={{
@@ -164,7 +162,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   marginBottom: Spacing.md,
                   fontWeight: 700,
                 }}>
-                  ESTORNADO
+                  {t('sales.refunded')}
                 </div>
               )}
 
@@ -206,7 +204,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 fontSize: FontSizes.md,
                 marginBottom: Spacing.md,
               }}>
-                <span>TOTAL</span>
+                <span>{t('common.total').toUpperCase()}</span>
                 <span>{formatPrice(receipt.total)}</span>
               </div>
 
@@ -217,7 +215,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 borderTop: `1px dashed ${Colors.border}`,
               }}>
                 <div style={{ fontWeight: 600, marginBottom: Spacing.xs }}>
-                  Pagamento:
+                  {t('receipt.payment')}:
                 </div>
                 {receipt.payments.map((payment, index) => (
                   <div
@@ -228,7 +226,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                       color: Colors.textSecondary,
                     }}
                   >
-                    <span>{PAYMENT_METHOD_LABELS[payment.method] || payment.method}</span>
+                    <span>{getPaymentLabel(payment.method)}</span>
                     <span>{formatPrice(payment.amount)}</span>
                   </div>
                 ))}
@@ -242,11 +240,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   backgroundColor: Colors.backgroundSecondary,
                   borderRadius: BorderRadius.sm,
                 }}>
-                  <div style={{ fontWeight: 600 }}>Cliente:</div>
+                  <div style={{ fontWeight: 600 }}>{t('receipt.customer')}:</div>
                   <div>{receipt.customerName}</div>
                   {!sale.isPaid && (
                     <div style={{ color: Colors.warning, marginTop: Spacing.xs }}>
-                      Pagamento pendente
+                      {t('receipt.paymentPending')}
                     </div>
                   )}
                 </div>
@@ -260,10 +258,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 color: Colors.textSecondary,
                 fontSize: FontSizes.xs,
               }}>
-                <div>Operador: {receipt.createdBy}</div>
+                <div>{t('receipt.seller')}: {receipt.createdBy}</div>
                 <div>ID: {sale.id.slice(0, 8)}</div>
                 <div style={{ marginTop: Spacing.sm }}>
-                  Obrigado pela preferência!
+                  {t('receipt.thankYou')}
                 </div>
               </div>
             </div>
@@ -285,7 +283,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 fontSize: FontSizes.sm,
               }}
             >
-              Estornar Venda
+              {t('sales.refund')}
             </button>
           )}
 
@@ -302,13 +300,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 marginBottom: Spacing.sm,
                 color: Colors.danger,
               }}>
-                Confirmar Estorno
+                {t('sales.confirmRefund')}
               </div>
               <input
                 type="text"
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="Motivo do estorno..."
+                placeholder={t('sales.refundReason')}
                 style={{
                   width: '100%',
                   padding: Spacing.sm,
@@ -336,7 +334,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     fontSize: FontSizes.sm,
                   }}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleRefund}
@@ -353,7 +351,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     fontSize: FontSizes.sm,
                   }}
                 >
-                  {refunding ? 'A estornar...' : 'Confirmar Estorno'}
+                  {refunding ? t('common.loading') : t('sales.confirmRefund')}
                 </button>
               </div>
             </div>

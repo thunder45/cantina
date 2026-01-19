@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Event,
   StockReport,
@@ -19,6 +20,7 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
   apiClient,
   event,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<StockReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
       const data = await reportService.getStockReport(event.id);
       setReport(data);
     } catch (err) {
-      setError('Erro ao carregar relatório de estoque');
+      setError(t('reports.loadingStockReport'));
       console.error('Failed to load stock report:', err);
     } finally {
       setLoading(false);
@@ -52,7 +54,7 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
         height: 200,
         color: Colors.textSecondary,
       }}>
-        A carregar relatório de estoque...
+        {t('reports.loadingStockReport')}
       </div>
     );
   }
@@ -103,21 +105,21 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
         marginBottom: Spacing.lg,
       }}>
         <SummaryCard
-          title="Estoque Inicial"
+          title={t('reports.initialStock')}
           value={totalInitial.toString()}
-          subtitle="unidades"
+          subtitle={t('reports.units')}
           color={Colors.secondary}
         />
         <SummaryCard
-          title="Vendidos"
+          title={t('reports.soldItems')}
           value={totalSold.toString()}
-          subtitle="unidades"
+          subtitle={t('reports.units')}
           color={Colors.success}
         />
         <SummaryCard
-          title="Disponível"
+          title={t('reports.availableStock')}
           value={totalAvailable.toString()}
-          subtitle="unidades"
+          subtitle={t('reports.units')}
           color={Colors.primary}
         />
       </div>
@@ -140,7 +142,7 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Detalhes por Item
+            {t('reports.detailsByItem')}
           </h3>
         </div>
         <div style={{ overflowX: 'auto' }}>
@@ -150,16 +152,16 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
               textAlign: 'center',
               color: Colors.textSecondary,
             }}>
-              Nenhum item no menu
+              {t('reports.noMenuItems')}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: Colors.backgroundSecondary }}>
                   <th style={tableHeaderStyle}>Item</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Inicial</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Vendido</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Disponível</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>{t('reports.initialStock')}</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>{t('reports.soldItems')}</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>{t('reports.availableStock')}</th>
                   <th style={{ ...tableHeaderStyle, textAlign: 'center' }}>Status</th>
                 </tr>
               </thead>
@@ -176,13 +178,13 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
                   
                   if (item.isInfinite) {
                     statusColor = Colors.secondary;
-                    statusText = 'Infinito';
+                    statusText = t('menu.infinite');
                   } else if (item.available === 0) {
                     statusColor = Colors.danger;
-                    statusText = 'Esgotado';
+                    statusText = t('menu.soldOut');
                   } else if (stockPercentage < 20) {
                     statusColor = Colors.warning;
-                    statusText = 'Baixo';
+                    statusText = t('menu.low');
                   }
 
                   return (
@@ -236,7 +238,7 @@ export const StockReportView: React.FC<StockReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Sobras (itens não vendidos)
+            {t('reports.leftovers')}
           </h4>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: Spacing.sm }}>
             {report.items

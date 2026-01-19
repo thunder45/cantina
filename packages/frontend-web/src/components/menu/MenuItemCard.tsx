@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MenuItem } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius, formatCurrency } from '@cantina-pos/shared';
 
@@ -13,6 +14,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   onEdit,
   onRemove,
 }) => {
+  const { t } = useTranslation();
   const isInfiniteStock = item.stock === 0;
   const availableStock = isInfiniteStock ? Infinity : item.stock - item.soldCount;
   const isOutOfStock = !isInfiniteStock && availableStock <= 0;
@@ -60,7 +62,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
               cursor: 'pointer',
             }}
           >
-            Editar
+            {t('common.edit')}
           </button>
           <button
             onClick={() => onRemove(item.id)}
@@ -74,7 +76,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
               cursor: 'pointer',
             }}
           >
-            Remover
+            {t('common.remove')}
           </button>
         </div>
       </div>
@@ -88,14 +90,14 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         color: Colors.textSecondary,
       }}>
         <span>
-          Estoque: {isInfiniteStock ? '∞' : `${availableStock}/${item.stock}`}
+          {t('menu.stock')}: {isInfiniteStock ? '∞' : `${availableStock}/${item.stock}`}
         </span>
         <span>
-          Vendidos: {item.soldCount}
+          {t('menu.sold')}: {item.soldCount}
         </span>
         {isOutOfStock && (
           <span style={{ color: Colors.danger, fontWeight: 600 }}>
-            Esgotado
+            {t('menu.soldOut')}
           </span>
         )}
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CreateEventInput, EventCategory } from '@cantina-pos/shared';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
@@ -17,6 +18,7 @@ export const EventForm: React.FC<EventFormProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [categoryId, setCategoryId] = useState(preSelectedCategoryId || '');
   const [name, setName] = useState('');
   const [dates, setDates] = useState<string[]>([]);
@@ -43,15 +45,15 @@ export const EventForm: React.FC<EventFormProps> = ({
     const newErrors: Record<string, string> = {};
     
     if (!categoryId) {
-      newErrors.categoryId = 'Selecione uma categoria';
+      newErrors.categoryId = t('events.categoryRequired');
     }
     
     if (!name.trim()) {
-      newErrors.name = 'O nome é obrigatório';
+      newErrors.name = t('events.nameRequired');
     }
     
     if (dates.length === 0) {
-      newErrors.dates = 'Selecione pelo menos uma data';
+      newErrors.dates = t('events.selectAtLeastOneDate');
     }
 
     setErrors(newErrors);
@@ -95,12 +97,12 @@ export const EventForm: React.FC<EventFormProps> = ({
   return (
     <form onSubmit={handleSubmit} style={{ padding: Spacing.md }}>
       <h2 style={{ fontSize: FontSizes.xl, fontWeight: 600, color: Colors.text, marginBottom: Spacing.lg }}>
-        Novo Evento
+        {t('events.newEvent')}
       </h2>
 
       {/* Categoria */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Categoria *</label>
+        <label style={labelStyle}>{t('events.category')} *</label>
         <select
           value={categoryId}
           onChange={(e) => {
@@ -113,7 +115,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           }}
           disabled={loading}
         >
-          <option value="">Selecione uma categoria</option>
+          <option value="">{t('events.selectCategory')}</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -125,7 +127,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
       {/* Nome */}
       <div style={{ marginBottom: Spacing.md }}>
-        <label style={labelStyle}>Nome do Evento *</label>
+        <label style={labelStyle}>{t('events.name')} *</label>
         <input
           type="text"
           value={name}
@@ -145,7 +147,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
       {/* Datas */}
       <div style={{ marginBottom: Spacing.lg }}>
-        <label style={labelStyle}>Datas do Evento *</label>
+        <label style={labelStyle}>{t('events.dates')} *</label>
         <input
           type="date"
           onChange={(e) => handleAddDate(e.target.value)}
@@ -195,7 +197,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           </div>
         )}
         <p style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: Spacing.xs }}>
-          Pode selecionar múltiplas datas não sequenciais
+          {t('events.multipleDatesHint')}
         </p>
       </div>
 
@@ -215,7 +217,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           }}
           disabled={loading}
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
@@ -232,7 +234,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           }}
           disabled={loading}
         >
-          {loading ? 'A criar...' : 'Criar Evento'}
+          {loading ? t('common.creating') : t('events.create')}
         </button>
       </div>
     </form>

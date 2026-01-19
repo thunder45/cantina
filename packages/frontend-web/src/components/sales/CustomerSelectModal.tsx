@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   ApiClient,
@@ -25,6 +26,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
   onSelect,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<CustomerWithBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
       );
       setCustomers(customersWithBalances);
     } catch {
-      setError('Erro ao carregar clientes');
+      setError(t('errors.loadCustomers'));
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
       const customer = await customerService.createCustomer(newCustomerName.trim());
       onSelect(customer);
     } catch {
-      setError('Erro ao criar cliente');
+      setError(t('errors.createCustomer'));
       setCreating(false);
     }
   };
@@ -93,7 +95,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
       >
         {/* Header */}
         <div style={{ ...modalStyles.header, flexShrink: 0 }}>
-          <h3 style={modalStyles.title}>Selecionar Cliente</h3>
+          <h3 style={modalStyles.title}>{t('sales.selectCustomer')}</h3>
           <button onClick={onCancel} style={modalStyles.closeButton}>×</button>
         </div>
 
@@ -106,7 +108,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar clientes..."
+                placeholder={t('customers.searchCustomer')}
                 autoFocus
                 style={{
                   width: '100%',
@@ -132,7 +134,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              + Novo
+              + {t('common.new')}
             </button>
           </div>
         </div>
@@ -148,13 +150,13 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
         <div style={{ flex: 1, overflow: 'auto', padding: Spacing.md }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
-              A carregar...
+              {t('common.loading')}
             </div>
           ) : customers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
               <p style={{ fontSize: 48, margin: 0 }}>👥</p>
               <p style={{ margin: `${Spacing.md}px 0 0` }}>
-                {searchQuery ? 'Nenhum cliente encontrado' : 'Nenhum cliente registado'}
+                {searchQuery ? t('customers.noCustomers') : t('customers.noCustomersRegistered')}
               </p>
               <button
                 onClick={() => setShowCreate(true)}
@@ -168,7 +170,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                Criar primeiro cliente
+                {t('customers.createFirst')}
               </button>
             </div>
           ) : (
@@ -248,7 +250,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
             flexShrink: 0,
           }}>
             <div style={{ fontWeight: 600, marginBottom: Spacing.sm, fontSize: FontSizes.sm }}>
-              Novo Cliente
+              {t('customers.newCustomer')}
             </div>
             <div style={{ display: 'flex', gap: Spacing.sm }}>
               <input
@@ -256,7 +258,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateCustomer()}
-                placeholder="Nome do cliente"
+                placeholder={t('customers.name')}
                 autoFocus
                 style={{
                   flex: 1,
@@ -276,7 +278,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreateCustomer}
@@ -291,7 +293,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
                   opacity: creating || !newCustomerName.trim() ? 0.6 : 1,
                 }}
               >
-                {creating ? '...' : 'Criar'}
+                {creating ? '...' : t('common.create')}
               </button>
             </div>
           </div>

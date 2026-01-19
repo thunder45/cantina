@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   EventCategory,
   CategoryReport,
@@ -21,6 +22,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
   category,
   onExportCSV,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<CategoryReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,12 +36,12 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
       const data = await reportService.getCategoryReport(category.id);
       setReport(data);
     } catch (err) {
-      setError('Erro ao carregar relatório da categoria');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load category report:', err);
     } finally {
       setLoading(false);
     }
-  }, [category.id]);
+  }, [category.id, t]);
 
   useEffect(() => {
     loadReport();
@@ -48,15 +50,8 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
   const getPaymentMethodLabel = (method: string): string => {
-    const labels: Record<string, string> = {
-      cash: 'Dinheiro',
-      card: 'Cartão',
-      transfer: 'Transferência',
-      credit: 'Fiado',
-      balance: 'Fiado Pago',
-      gift: 'Oferta',
-    };
-    return labels[method] || method;
+    const key = method === 'balance' ? 'balancePaid' : method;
+    return t(`payment.${key}`);
   };
 
   const getPaymentMethodColor = (method: string): string => {
@@ -74,7 +69,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
         height: 200,
         color: Colors.textSecondary,
       }}>
-        A carregar relatório da categoria...
+        {t('common.loading')}
       </div>
     );
   }
@@ -100,7 +95,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
             cursor: 'pointer',
           }}
         >
-          Tentar novamente
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -132,7 +127,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
             fontSize: FontSizes.sm,
             color: Colors.textSecondary,
           }}>
-            {report.eventCount} {report.eventCount === 1 ? 'evento' : 'eventos'}
+            {report.eventCount} {report.eventCount === 1 ? t('events.event') : t('nav.events').toLowerCase()}
           </p>
         </div>
         <button
@@ -147,7 +142,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
             cursor: 'pointer',
           }}
         >
-          📥 Exportar CSV
+          📥 {t('reports.exportCsv')}
         </button>
       </div>
 
@@ -159,22 +154,22 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
         marginBottom: Spacing.lg,
       }}>
         <SummaryCard
-          title="Total Vendas"
+          title={t('reports.totalSales')}
           value={formatPrice(report.totalSales)}
           color={Colors.primary}
         />
         <SummaryCard
-          title="Total Pago"
+          title={t('reports.totalPaid')}
           value={formatPrice(report.totalPaid)}
           color={Colors.success}
         />
         <SummaryCard
-          title="Fiado"
+          title={t('reports.totalPending')}
           value={formatPrice(report.totalPending)}
           color={Colors.warning}
         />
         <SummaryCard
-          title="Estornado"
+          title={t('reports.totalRefunded')}
           value={formatPrice(report.totalRefunded)}
           color={Colors.danger}
         />
@@ -199,7 +194,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Vendas por Evento
+            {t('reports.salesByEvent')}
           </h3>
         </div>
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -209,14 +204,14 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
               textAlign: 'center',
               color: Colors.textSecondary,
             }}>
-              Nenhum evento com vendas
+              {t('reports.noData')}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: Colors.backgroundSecondary }}>
-                  <th style={tableHeaderStyle}>Evento</th>
-                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Total</th>
+                  <th style={tableHeaderStyle}>{t('events.event')}</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>{t('common.total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,7 +226,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
               </tbody>
               <tfoot>
                 <tr style={{ backgroundColor: Colors.backgroundSecondary }}>
-                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>Total</td>
+                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{t('common.total')}</td>
                   <td style={{ ...tableCellStyle, textAlign: 'right', fontWeight: 700, color: Colors.primary }}>
                     {formatPrice(report.totalSales)}
                   </td>
@@ -260,7 +255,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
             fontWeight: 600,
             color: Colors.text,
           }}>
-            Formas de Pagamento
+            {t('payment.paymentMethods')}
           </h3>
         </div>
         <div style={{ padding: Spacing.md }}>
@@ -269,7 +264,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
               textAlign: 'center',
               color: Colors.textSecondary,
             }}>
-              Nenhum pagamento registado
+              {t('reports.noPayments')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: Spacing.sm }}>

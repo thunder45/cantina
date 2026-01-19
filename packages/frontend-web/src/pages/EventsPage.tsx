@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Event, EventCategory, CreateEventInput } from '@cantina-pos/shared';
 import { EventApiService, EventCategoryApiService, ApiClient, ReportApiService } from '@cantina-pos/shared';
 import { Colors, Spacing, getModalStyles, FontSizes, BorderRadius } from '@cantina-pos/shared';
@@ -16,6 +17,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   apiClient,
   onEventSelect,
 }) => {
+  const { t } = useTranslation();
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('categories');
   const [categories, setCategories] = useState<EventCategory[]>([]);
@@ -61,12 +63,12 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       );
       setEventCounts(counts);
     } catch (err) {
-      setError('Erro ao carregar categorias. Tente novamente.');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load categories:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Load events for a category
   const loadCategoryEvents = useCallback(async (categoryId: string) => {
@@ -78,12 +80,12 @@ export const EventsPage: React.FC<EventsPageProps> = ({
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
     } catch (err) {
-      setError('Erro ao carregar eventos. Tente novamente.');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load events:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Load all events
   const loadAllEvents = useCallback(async () => {
@@ -95,12 +97,12 @@ export const EventsPage: React.FC<EventsPageProps> = ({
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
     } catch (err) {
-      setError('Erro ao carregar eventos. Tente novamente.');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load events:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadCategories();
@@ -122,7 +124,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       setEventCounts({ ...eventCounts, [newCategory.id]: 0 });
       setShowCategoryForm(false);
     } catch (err) {
-      setError('Erro ao criar categoria. Verifique os dados e tente novamente.');
+      setError(t('errors.saveFailed'));
       console.error('Failed to create category:', err);
     } finally {
       setFormLoading(false);
@@ -138,7 +140,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       setCategories(categories.map(c => c.id === updated.id ? updated : c));
       setEditingCategory(null);
     } catch (err) {
-      setError('Erro ao atualizar categoria. Tente novamente.');
+      setError(t('errors.saveFailed'));
       console.error('Failed to update category:', err);
     } finally {
       setFormLoading(false);
@@ -158,8 +160,8 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       setDeleteConfirm(null);
     } catch (err: any) {
       const message = err?.message?.includes('eventos') 
-        ? 'Não é possível excluir categoria com eventos associados.'
-        : 'Erro ao excluir categoria. Tente novamente.';
+        ? t('events.cannotDeleteWithEvents')
+        : t('errors.deleteFailed');
       setError(message);
       console.error('Failed to delete category:', err);
     } finally {
@@ -183,7 +185,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       
       setShowEventForm(false);
     } catch (err) {
-      setError('Erro ao criar evento. Verifique os dados e tente novamente.');
+      setError(t('errors.saveFailed'));
       console.error('Failed to create event:', err);
     } finally {
       setFormLoading(false);
@@ -191,13 +193,13 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   };
 
   const handleCloseEvent = async (event: Event) => {
-    if (!window.confirm(`Tem certeza que deseja encerrar o evento "${event.name}"?`)) return;
+    if (!window.confirm(t('events.confirmClose', { name: event.name }))) return;
     try {
       setError(null);
       const updated = await eventService.updateEventStatus(event.id, 'closed');
       setEvents(events.map(e => e.id === updated.id ? updated : e));
     } catch (err) {
-      setError('Erro ao encerrar evento.');
+      setError(t('errors.generic'));
       console.error('Failed to close event:', err);
     }
   };
@@ -233,12 +235,12 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError('Erro ao exportar relatório');
+      setError(t('errors.generic'));
       console.error('Failed to export CSV:', err);
     } finally {
       setExporting(false);
     }
-  }, [reportCategory]);
+  }, [reportCategory, t]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: Colors.backgroundSecondary }}>
@@ -264,7 +266,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               textDecoration: 'underline',
             }}
           >
-            Fechar
+            {t('common.close')}
           </button>
         </div>
       )}
@@ -289,7 +291,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               cursor: 'pointer',
             }}
           >
-            Categorias
+            {t('events.categories')}
           </button>
           <button
             onClick={handleViewAllEvents}
@@ -304,7 +306,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               cursor: 'pointer',
             }}
           >
-            Todos os Eventos
+            {t('events.allEvents')}
           </button>
           {viewMode === 'category-events' && selectedCategory && (
             <span style={{
@@ -382,10 +384,10 @@ export const EventsPage: React.FC<EventsPageProps> = ({
           <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: Spacing.md }}>
               <h2 style={{ fontSize: FontSizes.xl, fontWeight: 600, color: Colors.text, marginBottom: Spacing.md }}>
-                Confirmar Exclusão
+                {t('events.confirmDelete')}
               </h2>
               <p style={{ fontSize: FontSizes.md, color: Colors.textSecondary, marginBottom: Spacing.lg }}>
-                Tem certeza que deseja excluir a categoria "{deleteConfirm.name}"?
+                {t('events.confirmDeleteCategory', { name: deleteConfirm.name })}
               </p>
               <div style={{ display: 'flex', gap: Spacing.sm, justifyContent: 'flex-end' }}>
                 <button
@@ -401,7 +403,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                   }}
                   disabled={formLoading}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleDeleteCategory}
@@ -418,7 +420,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                   }}
                   disabled={formLoading}
                 >
-                  {formLoading ? 'A excluir...' : 'Excluir'}
+                  {formLoading ? t('common.loading') : t('common.delete')}
                 </button>
               </div>
             </div>
@@ -461,7 +463,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               borderBottom: `1px solid ${Colors.border}`,
             }}>
               <h2 style={{ margin: 0, fontSize: FontSizes.lg, fontWeight: 600, color: Colors.text }}>
-                Relatório: {reportCategory.name}
+                {t('reports.title')}: {reportCategory.name}
               </h2>
               <button
                 onClick={() => setReportCategory(null)}
@@ -484,7 +486,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 textAlign: 'center',
                 fontSize: FontSizes.sm,
               }}>
-                A exportar relatório...
+                {t('reports.exporting')}
               </div>
             )}
             <CategoryReportView

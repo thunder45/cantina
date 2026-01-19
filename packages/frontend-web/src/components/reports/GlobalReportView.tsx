@@ -88,7 +88,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       });
       setReport(data);
     } catch (err) {
-      setError('Erro ao carregar relatório');
+      setError(t('errors.loadFailed'));
       console.error('Failed to load report:', err);
     } finally {
       setLoading(false);
@@ -221,7 +221,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       {report.categoryBreakdown.length > 0 && (
         <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, marginBottom: Spacing.lg, overflow: 'hidden' }}>
           <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Por Categoria</h3>
+            <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>{t('reports.byCategory')}</h3>
             <button onClick={() => setCategoryCollapsed(!categoryCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{categoryCollapsed ? '▼' : '▲'}</button>
           </div>
           {!categoryCollapsed && (

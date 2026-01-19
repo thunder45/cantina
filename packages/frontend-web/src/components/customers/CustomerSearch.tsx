@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Customer,
   ApiClient,
@@ -27,6 +28,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
   onSelectCustomer,
   onCreateCustomer,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<CustomerWithBalance[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
       
       setCustomers(customersWithBalances);
     } catch (err) {
-      setError('Erro ao carregar clientes');
+      setError(t('errors.loadCustomers'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
       setNewInitialBalanceStr('0');
       onSelectCustomer(customer);
     } catch {
-      setError('Erro ao criar cliente');
+      setError(t('errors.createCustomer'));
     } finally {
       setCreating(false);
     }
@@ -146,7 +148,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Pesquisar clientes..."
+              placeholder={t('customers.searchCustomer')}
               style={{
                 width: '100%',
                 padding: `${Spacing.sm}px ${Spacing.sm}px ${Spacing.sm}px 40px`,
@@ -172,22 +174,22 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
               whiteSpace: 'nowrap',
             }}
           >
-            + Novo Cliente
+            + {t('customers.newCustomer')}
           </button>
         </div>
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: Spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={filter} onChange={(e) => setFilter(e.target.value as FilterType)} style={selectStyle}>
-            <option value="all">Todos ({customers.length})</option>
-            <option value="withBalance">Em dívida ({customersWithDebt})</option>
-            <option value="noBalance">Sem dívida ({customers.length - customersWithDebt})</option>
+            <option value="all">{t('common.all')} ({customers.length})</option>
+            <option value="withBalance">{t('customers.withDebt')} ({customersWithDebt})</option>
+            <option value="noBalance">{t('customers.withoutDebt')} ({customers.length - customersWithDebt})</option>
           </select>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortType)} style={selectStyle}>
-            <option value="name-asc">Nome A-Z</option>
-            <option value="name-desc">Nome Z-A</option>
-            <option value="balance-desc">Maior dívida</option>
-            <option value="recent">Mais recente</option>
+            <option value="name-asc">{t('customers.nameAZ')}</option>
+            <option value="name-desc">{t('customers.nameZA')}</option>
+            <option value="balance-desc">{t('customers.highestDebt')}</option>
+            <option value="recent">{t('customers.mostRecent')}</option>
           </select>
           {customersWithDebt > 0 && (
             <span style={{ 
@@ -198,7 +200,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
               fontSize: FontSizes.xs,
               fontWeight: 600,
             }}>
-              ⚠️ {customersWithDebt} em dívida
+              ⚠️ {customersWithDebt} {t('customers.inDebt')}
             </span>
           )}
         </div>
@@ -215,13 +217,13 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
       <div style={{ flex: 1, overflow: 'auto', padding: Spacing.md }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
-            A carregar...
+            {t('common.loading')}
           </div>
         ) : filteredCustomers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: Spacing.xl, color: Colors.textSecondary }}>
             <p style={{ fontSize: 48, margin: 0 }}>👥</p>
             <p style={{ margin: `${Spacing.md}px 0 0` }}>
-              {searchQuery ? 'Nenhum cliente encontrado' : 'Nenhum cliente registado'}
+              {searchQuery ? t('customers.noCustomers') : t('customers.noCustomersRegistered')}
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
@@ -235,7 +237,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Criar primeiro cliente
+              {t('customers.createFirst')}
             </button>
           </div>
         ) : (
@@ -287,7 +289,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                     {customer.name}
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>
-                    Cliente desde {new Date(customer.createdAt).toLocaleDateString('pt-PT')}
+                    {t('customers.customerSince')} {new Date(customer.createdAt).toLocaleDateString('pt-PT')}
                   </div>
                 </div>
 
@@ -301,7 +303,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                     {formatCurrency(Math.abs(customer.balance || 0))}
                   </div>
                   <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                    {(customer.balance || 0) < 0 ? 'em dívida' : (customer.balance || 0) > 0 ? 'crédito' : 'sem saldo'}
+                    {(customer.balance || 0) < 0 ? t('customers.inDebt') : (customer.balance || 0) > 0 ? t('customers.creditBalance') : t('customers.noBalance')}
                   </div>
                 </div>
 
@@ -341,13 +343,13 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: 0, marginBottom: Spacing.md, fontSize: FontSizes.lg }}>
-              Novo Cliente
+              {t('customers.newCustomer')}
             </h3>
             <input
               type="text"
               value={newCustomerName}
               onChange={(e) => setNewCustomerName(e.target.value)}
-              placeholder="Nome do cliente"
+              placeholder={t('customers.name')}
               autoFocus
               style={{
                 width: '100%',
@@ -361,7 +363,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
             />
             <div style={{ marginBottom: Spacing.md }}>
               <label style={{ display: 'block', fontSize: FontSizes.sm, color: Colors.textSecondary, marginBottom: Spacing.xs }}>
-                Saldo inicial (opcional)
+                {t('customers.initialBalance')}
               </label>
               <input
                 type="number"
@@ -379,7 +381,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                 }}
               />
               <p style={{ margin: 0, marginTop: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>
-                Use valor negativo se o cliente já tinha dívida
+                {t('customers.initialBalanceHint')}
               </p>
             </div>
             <div style={{ display: 'flex', gap: Spacing.sm, justifyContent: 'flex-end' }}>
@@ -393,7 +395,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreateCustomer}
@@ -408,7 +410,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                   opacity: creating || !newCustomerName.trim() ? 0.6 : 1,
                 }}
               >
-                {creating ? 'A criar...' : 'Criar Cliente'}
+                {creating ? t('common.creating') : t('customers.create')}
               </button>
             </div>
           </div>

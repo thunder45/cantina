@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Event,
   ApiClient,
@@ -21,6 +22,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
   apiClient,
   event,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ReportTab>('global');
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -45,12 +47,12 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      setExportError('Erro ao exportar relatório');
+      setExportError(t('errors.generic'));
       console.error('Failed to export CSV:', err);
     } finally {
       setExporting(false);
     }
-  }, [event]);
+  }, [event, t]);
 
   return (
     <div style={{
@@ -71,7 +73,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           fontWeight: 600,
           color: Colors.text,
         }}>
-          Relatórios
+          {t('reports.title')}
         </h2>
         <p style={{
           margin: 0,
@@ -79,7 +81,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           fontSize: FontSizes.sm,
           color: Colors.textSecondary,
         }}>
-          {activeTab === 'global' ? 'Visão geral de todas as vendas' : event?.name || 'Selecione um evento'}
+          {activeTab === 'global' ? t('reports.globalDescription') : event?.name || t('events.selectEvent')}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               textDecoration: 'underline',
             }}
           >
-            Fechar
+            {t('common.close')}
           </button>
         </div>
       )}
@@ -118,7 +120,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           textAlign: 'center',
           fontSize: FontSizes.sm,
         }}>
-          A exportar relatório...
+          {t('reports.exporting')}
         </div>
       )}
 
@@ -143,7 +145,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
             cursor: 'pointer',
           }}
         >
-          📊 Geral
+          📊 {t('reports.global')}
         </button>
         {event && (
           <>
@@ -160,7 +162,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              📅 Evento
+              📅 {t('events.event')}
             </button>
             <button
               onClick={() => setActiveTab('stock')}
@@ -175,7 +177,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                 cursor: 'pointer',
               }}
             >
-              📦 Estoque
+              📦 {t('menu.stock')}
             </button>
           </>
         )}
