@@ -29,6 +29,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string; shortcut: string }
   { value: 'card', label: 'Cartão', shortcut: '2' },
   { value: 'transfer', label: 'Transferência', shortcut: '3' },
   { value: 'credit', label: 'Anotar (Fiado)', shortcut: '4' },
+  { value: 'gift', label: 'Oferta', shortcut: '5' },
 ];
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({

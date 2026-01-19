@@ -20,7 +20,7 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
     sales = filterSalesByPeriod(sales, filter.startDate, filter.endDate);
   }
 
-  let totalSales = 0, totalPaid = 0, totalPending = 0, totalRefunded = 0;
+  let totalSales = 0, totalPaid = 0, totalGifted = 0, totalPending = 0, totalRefunded = 0;
   const itemsMap = new Map<string, ItemSoldSummary>();
   const paymentMap = new Map<PaymentMethod, number>();
   const saleDetails: SaleDetail[] = [];
@@ -51,6 +51,8 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
       continue;
     }
     totalSales += sale.total;
+    const giftAmount = sale.payments.filter(p => p.method === 'gift').reduce((s, p) => s + p.amount, 0);
+    totalGifted += giftAmount;
     if (sale.isPaid) {
       totalPaid += sale.total;
     } else {
@@ -78,6 +80,7 @@ export async function aggregateEventReport(eventId: string, filter?: ReportFilte
     eventId,
     totalSales,
     totalPaid,
+    totalGifted,
     totalPending,
     totalRefunded,
     itemsSold: Array.from(itemsMap.values()).sort((a, b) => b.quantity - a.quantity),

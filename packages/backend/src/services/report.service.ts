@@ -15,7 +15,7 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
   const categories = await eventCategoryRepository.getCategories();
   const categoryMap = new Map(categories.map(c => [c.id, c.name]));
   
-  let totalSales = 0, totalPaid = 0, totalPending = 0, totalRefunded = 0;
+  let totalSales = 0, totalPaid = 0, totalGifted = 0, totalPending = 0, totalRefunded = 0;
   const itemsMap = new Map<string, { description: string; quantity: number; total: number }>();
   const paymentMap = new Map<PaymentMethod, number>();
   const categoryStatsMap = new Map<string, CategoryBreakdownItem>();
@@ -57,6 +57,8 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
         totalRefunded += sale.total;
       } else {
         totalSales += sale.total;
+        const giftAmount = sale.payments.filter(p => p.method === 'gift').reduce((s, p) => s + p.amount, 0);
+        totalGifted += giftAmount;
         if (sale.isPaid) totalPaid += sale.total;
         else {
           const creditAmount = sale.payments.filter(p => p.method === 'credit').reduce((s, p) => s + p.amount, 0);
@@ -121,6 +123,7 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
   return {
     totalSales,
     totalPaid,
+    totalGifted,
     totalPending,
     totalRefunded,
     itemsSold: Array.from(itemsMap.values()).sort((a, b) => b.quantity - a.quantity),
@@ -132,7 +135,7 @@ export async function getGlobalReport(filter?: GlobalReportFilter): Promise<Glob
 
 export async function getReportByPeriod(startDate: string, endDate: string): Promise<EventReport> {
   const events = await eventRepository.getEvents();
-  let totalSales = 0, totalPaid = 0, totalPending = 0, totalRefunded = 0;
+  let totalSales = 0, totalPaid = 0, totalGifted = 0, totalPending = 0, totalRefunded = 0;
   const itemsMap = new Map<string, { description: string; quantity: number; total: number }>();
   const paymentMap = new Map<PaymentMethod, number>();
   const allSales: EventReport['sales'] = [];
@@ -141,6 +144,7 @@ export async function getReportByPeriod(startDate: string, endDate: string): Pro
     const report = await reportRepository.aggregateEventReport(event.id, { startDate, endDate });
     totalSales += report.totalSales;
     totalPaid += report.totalPaid;
+    totalGifted += report.totalGifted;
     totalPending += report.totalPending;
     totalRefunded += report.totalRefunded;
     allSales.push(...report.sales);
@@ -164,6 +168,7 @@ export async function getReportByPeriod(startDate: string, endDate: string): Pro
     eventId: 'all',
     totalSales,
     totalPaid,
+    totalGifted,
     totalPending,
     totalRefunded,
     itemsSold: Array.from(itemsMap.values()).sort((a, b) => b.quantity - a.quantity),
@@ -189,7 +194,7 @@ function escapeCSV(value: string): string {
 }
 
 function translatePaymentMethod(method: PaymentMethod): string {
-  const translations: Record<PaymentMethod, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Saldo', credit: 'Fiado' };
+  const translations: Record<PaymentMethod, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Saldo', credit: 'Fiado', gift: 'Oferta' };
   return translations[method] || method;
 }
 

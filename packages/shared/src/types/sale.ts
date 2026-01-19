@@ -5,7 +5,7 @@ import { OrderItem } from './order';
  * balance = usar saldo do cliente
  * credit = fiado (cria dívida)
  */
-export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'balance' | 'credit';
+export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'balance' | 'credit' | 'gift';
 
 /**
  * PaymentPart - Parte de um pagamento (para pagamentos mistos)

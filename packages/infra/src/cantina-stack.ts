@@ -52,6 +52,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-categories`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -59,6 +60,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-events`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     eventsTable.addGlobalSecondaryIndex({
@@ -70,6 +72,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-menu-items`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     menuItemsTable.addGlobalSecondaryIndex({
@@ -81,6 +84,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-orders`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     ordersTable.addGlobalSecondaryIndex({
@@ -92,6 +96,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-sales`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     salesTable.addGlobalSecondaryIndex({
@@ -108,6 +113,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-customers`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -116,6 +122,7 @@ export class CantinaStack extends cdk.Stack {
       partitionKey: { name: 'customerId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     customerTransactionsTable.addGlobalSecondaryIndex({
@@ -127,6 +134,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-menu-groups`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -134,6 +142,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-catalog-items`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -149,6 +158,7 @@ export class CantinaStack extends cdk.Stack {
       tableName: `${envPrefix}cantina-audit-logs`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     auditLogsTable.addGlobalSecondaryIndex({

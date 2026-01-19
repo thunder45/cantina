@@ -12,6 +12,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   transfer: 'Transferência',
   credit: 'Anotado (Fiado)',
   balance: 'Saldo',
+  gift: 'Oferta',
 };
 
 const formatPrice = (price: number): string => `€${price.toFixed(2)}`;

@@ -7,6 +7,7 @@ export interface EventReport {
   eventId: string;
   totalSales: number;
   totalPaid: number;
+  totalGifted: number;
   totalPending: number;
   totalRefunded: number;
   itemsSold: ItemSoldSummary[];
@@ -77,6 +78,7 @@ export interface GlobalReportFilter {
 export interface GlobalReport {
   totalSales: number;
   totalPaid: number;
+  totalGifted: number;
   totalPending: number;
   totalRefunded: number;
   itemsSold: ItemSoldSummary[];

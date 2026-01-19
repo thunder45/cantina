@@ -7,9 +7,15 @@ import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from './hooks';
 import { getResponsiveNavStyles, getTouchButtonStyles } from './styles';
 import { AuthProvider, ProtectedRoute, useAuth } from './auth';
 
-// Create API client instance
+// Create API client instance - uses relative URL in production (CloudFront routes /api/*)
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  if (window.location.hostname === 'localhost') return 'http://localhost:3001/api';
+  return '/api'; // Production: relative URL via CloudFront
+};
+
 const apiClient = new ApiClient({
-  baseUrl: (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api',
+  baseUrl: getApiBaseUrl(),
   getAuthToken: async () => localStorage.getItem('session'),
   onUnauthorized: () => {
     window.location.reload(); // Will show login page

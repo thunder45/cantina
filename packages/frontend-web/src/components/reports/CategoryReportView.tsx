@@ -54,8 +54,15 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
       transfer: 'Transferência',
       credit: 'Fiado',
       balance: 'Fiado Pago',
+      gift: 'Oferta',
     };
     return labels[method] || method;
+  };
+
+  const getPaymentMethodColor = (method: string): string => {
+    if (method === 'credit') return Colors.warning;
+    if (method === 'gift') return '#8b5cf6';
+    return Colors.success;
   };
 
   if (loading) {
@@ -281,7 +288,7 @@ export const CategoryReportView: React.FC<CategoryReportViewProps> = ({
                   <span style={{ fontSize: FontSizes.sm, color: Colors.text }}>
                     {getPaymentMethodLabel(payment.method)}
                   </span>
-                  <span style={{ fontSize: FontSizes.md, fontWeight: 600, color: Colors.primary }}>
+                  <span style={{ fontSize: FontSizes.md, fontWeight: 600, color: getPaymentMethodColor(payment.method) }}>
                     {formatPrice(payment.total)}
                   </span>
                 </div>

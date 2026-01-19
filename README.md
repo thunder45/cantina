@@ -2,196 +2,160 @@
 
 Sistema de Ponto de Venda para Cantinas com gestão de eventos, menus, vendas, estoque e pagamentos.
 
-## 🚀 Quick Start - Local Testing
+## 🌐 Ambientes
 
-### 1. Instalar Dependências
+| Ambiente | URL | Auth | Dados |
+|----------|-----|------|-------|
+| **Produção** | https://cantina.advm.lu | Zoho OAuth (domínio @advm.lu) | Dados reais |
+| **Beta** | https://cantina-beta.advm.lu | Sem auth (VITE_SKIP_AUTH=true) | Dados de teste |
+| **Local** | http://localhost:3000 | Sem auth | In-memory |
 
-```bash
-npm install
-```
+## 🏗️ Infraestrutura AWS
 
-### 2. Iniciar Backend (Terminal 1)
+- **Região:** eu-west-1
+- **Account:** 625272706584
+- **Profile AWS CLI:** `cantina`
+
+### Recursos por Ambiente
+
+| Recurso | Produção | Beta |
+|---------|----------|------|
+| CloudFront | cantina.advm.lu | cantina-beta.advm.lu |
+| S3 Frontend | cantina-frontend-625272706584 | beta-cantina-frontend-625272706584 |
+| Lambda | cantina-api | beta-cantina-api |
+| DynamoDB | cantina-* (11 tabelas) | beta-cantina-* (11 tabelas) |
+
+### Tabelas DynamoDB (com PITR habilitado)
+- `cantina-categories`, `cantina-events`, `cantina-menu-items`
+- `cantina-orders`, `cantina-sales`, `cantina-customers`
+- `cantina-customer-transactions`, `cantina-menu-groups`
+- `cantina-catalog-items`, `cantina-audit-logs`
+- `cantina-sessions` (sem PITR, dados efémeros com TTL)
+
+## 🚀 Deploy
+
+### Backend (Lambda via CDK)
 
 ```bash
 cd packages/backend
-npm run dev
+npm run build:lambda
+
+cd ../infra
+# Beta
+npx cdk deploy --context subDomain=cantina-beta --profile cantina --require-approval never
+
+# Produção
+npx cdk deploy --profile cantina --require-approval never
 ```
 
-O backend estará disponível em `http://localhost:3001`
-
-### 3. Iniciar Frontend (Terminal 2)
+### Frontend (S3 + CloudFront)
 
 ```bash
 cd packages/frontend-web
-npm start
+
+# Beta
+VITE_SKIP_AUTH=true VITE_API_URL=https://cantina-beta.advm.lu npm run build
+aws s3 sync dist/ s3://beta-cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E3RFATVK47GGJ7 --paths "/*" --profile cantina
+
+# Produção
+npm run build
+aws s3 sync dist/ s3://cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" --profile cantina
 ```
 
-O frontend abrirá automaticamente em `http://localhost:3000`
+## 🚀 Quick Start - Local
 
-## 📋 Scripts Disponíveis
+```bash
+# Instalar dependências
+npm install
 
-### Raiz do Projeto
-- `npm install` - Instala todas as dependências (workspaces)
-- `npm test` - Roda todos os testes
-- `npm run build` - Builda todos os packages
+# Terminal 1: Backend
+cd packages/backend && npm run dev
+
+# Terminal 2: Frontend
+cd packages/frontend-web && npm start
+```
+
+## 📋 Scripts
 
 ### Backend (`packages/backend`)
-- `npm run dev` - Inicia servidor local (Express)
-- `npm test` - Roda 250+ testes unitários
+- `npm run dev` - Servidor local (Express, porta 3001)
 - `npm run build` - Compila TypeScript
+- `npm run build:lambda` - Bundle para Lambda (esbuild)
+- `npm test` - 221 testes unitários
 
-### Frontend Web (`packages/frontend-web`)
-- `npm start` - Inicia dev server (React)
-- `npm test` - Roda testes do frontend
-- `npm run build` - Build para produção
+### Frontend (`packages/frontend-web`)
+- `npm start` - Dev server (porta 3000)
+- `npm run build` - Build produção (Vite)
+- `npm test` - Testes React
 
-## 🧪 Testing Local
-
-### Testes Automáticos
-```bash
-# Todos os testes
-npm test
-
-# Apenas backend
-cd packages/backend && npm test
-
-# Com coverage
-npm test -- --coverage
-```
-
-### Testes Manuais no Browser
-
-1. **Criar Evento**
-   - Acesse Events page
-   - Crie evento com múltiplas datas
-   - Adicione categorias
-
-2. **Montar Menu**
-   - Selecione o evento
-   - Adicione items do catálogo
-   - Crie novos items se necessário
-   - Configure preços e stocks (use 0 para infinito)
-
-3. **Fazer Vendas**
-   - Clique em "Iniciar Vendas"
-   - Adicione items ao pedido
-   - Teste pagamento cash/card
-   - Teste pagamento misto
-   - Teste venda a crédito (fiado)
-
-4. **Gestão de Clientes**
-   - Crie clientes
-   - Veja histórico de compras
-   - Registe pagamentos parciais/totais
-
-5. **Relatórios**
-   - Veja relatórios de vendas
-   - Filtre por categoria/período
-   - Exporte CSV
-   - Veja relatório de estoque
+### Shared (`packages/shared`)
+- `npm run build` - Compila tipos (necessário antes de backend/frontend)
 
 ## 📊 Estrutura do Projeto
 
 ```
-cantina-advm/
+cantina/
 ├── packages/
 │   ├── shared/          # Tipos, API client, design system
-│   ├── backend/         # Services, repositories, API
+│   ├── backend/         # Services, repositories, API, Lambda
 │   ├── frontend-web/    # React web app
-│   └── frontend-mobile/ # React Native (futuro)
+│   └── infra/           # CDK stacks (AWS infrastructure)
 ├── package.json         # Workspace root
 └── README.md
 ```
 
-## 🔧 Tecnologias
+## 💳 Métodos de Pagamento
 
-- **Backend:** TypeScript, Express (local), Lambda (produção)
-- **Frontend:** React, TypeScript
-- **State:** React hooks + Context
-- **Styling:** Platform-agnostic design tokens
-- **Testing:** Jest + fast-check
-- **Build:** npm workspaces
+| Método | Código | Descrição |
+|--------|--------|-----------|
+| Dinheiro | `cash` | Pagamento em espécie |
+| Cartão | `card` | Cartão débito/crédito |
+| Transferência | `transfer` | Transferência bancária |
+| Fiado | `credit` | Venda a crédito (gera dívida) |
+| Saldo | `balance` | Usa saldo do cliente |
+| Oferta | `gift` | Cortesia (não gera receita) |
 
-## 📦 Packages
+## ✨ Features
 
-### @cantina-advm/shared (1,582 linhas)
-- Tipos TypeScript compartilhados
-- API Client com offline queue
-- Design system e componentes
-- State management
-
-### @cantina-advm/backend (8,194 linhas)
-- 8 services (Event, Menu, Order, Sales, Customer, Report)
-- 8 repositories (in-memory para dev)
-- 26 REST API endpoints
-- 250+ testes unitários
-
-### @cantina-advm/frontend-web (7,041 linhas)
-- 24 componentes React
-- 5 páginas principais
-- Responsive design (tablet/desktop/mobile)
-- Offline-first architecture
-
-## ✨ Features Implementadas
-
-- ✅ Gestão de eventos com múltiplas datas
+- ✅ Gestão de eventos com múltiplas datas e categorias
 - ✅ Catálogo de items reutilizável
 - ✅ Menu dinâmico por evento
-- ✅ Controle de estoque (incluindo infinito)
+- ✅ Controle de estoque (incluindo infinito com stock=0)
 - ✅ Vendas com múltiplas formas de pagamento
-- ✅ Pagamento misto (cash + card, etc.)
+- ✅ Pagamento misto (ex: €5 cash + €3 card)
 - ✅ Sistema de crédito (fiado) com clientes
-- ✅ Pagamentos parciais
-- ✅ Estorno de vendas
+- ✅ Sistema de ofertas/cortesias com tracking
+- ✅ Pagamentos parciais de dívidas (FIFO)
+- ✅ Estorno de vendas com motivo
 - ✅ Recibos detalhados
-- ✅ Relatórios com filtros
+- ✅ Relatórios com filtros (evento, categoria, período, pagamento, cliente)
 - ✅ Exportação CSV
-- ✅ Audit log (rastreabilidade)
-- ✅ Multi-platform responsive
+- ✅ Audit log completo
+- ✅ Auth via Zoho OAuth (produção)
+- ✅ Point-in-Time Recovery (backup 35 dias)
 
-## 📱 Plataformas Suportadas
+## 🔧 Tecnologias
 
-- ✅ Android Tablet (principal)
-- ✅ Web Browser (PC/MacOS)
-- ✅ iOS Mobile
-- ✅ Android Mobile
+- **Backend:** TypeScript, Express (local), Lambda (prod), DynamoDB
+- **Frontend:** React 18, TypeScript, Vite
+- **Infra:** AWS CDK, CloudFront, S3, API Gateway, Route53
+- **Auth:** Zoho OAuth 2.0 (produção)
+- **Testing:** Jest
 
-## 🎯 Requirements Coverage
+## 📱 Plataformas
 
-100% dos requirements principais implementados:
-- Events (1.1-1.4)
-- Menu Management (2.1-4.5)
-- Sales & Stock (5.1-6.4)
-- Payments (7.1-8.4)
-- Customer Management (9.1-9.6)
-- Reports (10.1-10.6)
-- Persistence (11.1-11.3)
-- Multi-Platform (12.1-12.3)
-- Cancellation/Refunds (13.1-14.4)
-- Validations (15.1-15.4)
-- Receipts & Audit (16.1-17.3)
+- ✅ Web Browser (desktop/tablet/mobile)
+- ✅ Android Tablet (principal uso)
+- ✅ iOS Safari
 
-## 🔮 Próximos Passos (Produção)
+## 📄 Documentação Adicional
 
-1. Migrar repositories para DynamoDB
-2. Configurar AWS Cognito authentication
-3. Deploy com CDK/CloudFormation
-4. CI/CD pipeline
-5. Monitoring e alerting
-6. Property-based tests
-7. React Native mobile apps
-
-## 📄 Documentação
-
-- `requirements.md` - Requirements completos
-- `design.md` - Design técnico e propriedades
-- `tasks.md` - Plano de implementação
-
-## 👥 Time
-
-Desenvolvido seguindo a spec do Kiro.
+- `requirements.md` - Requirements funcionais
+- `design.md` - Design técnico
+- `tasks.md` - Histórico de implementação
 
 ---
 
-**Total:** 16,817 linhas de código TypeScript
-**Status:** ✅ Production-ready para MVP
+**Status:** ✅ Em produção com usuários reais

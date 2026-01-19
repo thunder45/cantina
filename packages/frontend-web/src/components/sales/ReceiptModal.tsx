@@ -24,6 +24,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: 'Cartão',
   transfer: 'Transferência',
   credit: 'Anotado (Fiado)',
+  gift: 'Oferta',
 };
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({

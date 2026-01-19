@@ -323,7 +323,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                     const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;
                     const balanceAmount = sale.payments.find(p => p.method === 'balance')?.amount || 0;
                     const hadCredit = creditAmount > 0 || balanceAmount > 0;
-                    const labels: Record<string, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Fiado Pago', credit: 'Fiado' };
+                    const labels: Record<string, string> = { cash: 'Dinheiro', card: 'Cartão', transfer: 'Transferência', balance: 'Fiado Pago', credit: 'Fiado', gift: 'Oferta' };
                     const paymentStr = sale.payments.map(p => `${labels[p.method] || p.method}: ${formatPrice(p.amount)}`).join(' + ');
                     
                     return (
@@ -347,8 +347,7 @@ export const SalesPage: React.FC<SalesPageProps> = ({
                         <span style={{ fontSize: FontSizes.sm, fontWeight: 600, color: sale.isRefunded ? Colors.danger : creditAmount > 0 ? Colors.warning : Colors.success, textDecoration: sale.isRefunded ? 'line-through' : 'none' }}>{formatPrice(sale.total)}</span>
                       </div>
                       <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>{sale.items.map(i => `${i.quantity}x ${i.description}`).join(', ')}</div>
-                      <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>{paymentStr}</div>
-                      {hadCredit && sale.customerName && <div style={{ fontSize: FontSizes.xs, color: Colors.text, marginTop: 2 }}>• {sale.customerName}</div>}
+                      <div style={{ fontSize: FontSizes.xs, color: Colors.textSecondary, marginTop: 2 }}>{paymentStr}{hadCredit && sale.customerName && ` • ${sale.customerName}`}</div>
                       {sale.isRefunded && <span style={{ fontSize: FontSizes.xs, color: Colors.danger }}>ESTORNADO</span>}
                     </button>
                   );})}

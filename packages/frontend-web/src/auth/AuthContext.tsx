@@ -17,7 +17,12 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (window.location.hostname === 'localhost') return 'http://localhost:3001';
+  return ''; // Production: relative URL
+};
+const API_BASE = getApiBase();
 const SKIP_AUTH = import.meta.env.VITE_SKIP_AUTH === 'true';
 
 interface AuthProviderProps {

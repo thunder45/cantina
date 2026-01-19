@@ -13,7 +13,7 @@ export const UpdateCustomerSchema = z.object({
 
 export const TransactionSchema = z.object({
   amount: z.number().positive('Valor deve ser positivo'),
-  paymentMethod: z.enum(['cash', 'card', 'transfer', 'balance', 'credit']),
+  paymentMethod: z.enum(['cash', 'card', 'transfer', 'balance', 'credit', 'gift']),
   description: z.string().optional(),
 });
 
@@ -82,7 +82,7 @@ export const UpdateOrderItemSchema = z.object({
 export const ConfirmSaleSchema = z.object({
   orderId: z.string().min(1, 'Pedido é obrigatório'),
   payments: z.array(z.object({
-    method: z.enum(['cash', 'card', 'transfer', 'balance', 'credit']),
+    method: z.enum(['cash', 'card', 'transfer', 'balance', 'credit', 'gift']),
     amount: z.number().positive(),
   })).min(1, 'Pelo menos uma forma de pagamento é obrigatória'),
   customerId: z.string().optional(),
