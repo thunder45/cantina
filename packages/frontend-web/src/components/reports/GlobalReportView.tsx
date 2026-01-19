@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GlobalReport,
   Event,
@@ -30,6 +31,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   eventId,
   onExportCSV,
 }) => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<GlobalReport | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
@@ -113,15 +115,8 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   const formatPrice = (price: number): string => `€${price.toFixed(2)}`;
 
   const getPaymentMethodLabel = (method: string): string => {
-    const labels: Record<string, string> = {
-      cash: 'Dinheiro',
-      card: 'Cartão',
-      transfer: 'Transferência',
-      balance: 'Fiado Pago',
-      credit: 'Fiado',
-      gift: 'Oferta',
-    };
-    return labels[method] || method;
+    const key = method === 'balance' ? 'payment.balancePaid' : `payment.${method}`;
+    return t(key);
   };
 
   const getPaymentMethodColor = (method: string): string => {
@@ -133,7 +128,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
   if (loading && !report) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, color: Colors.textSecondary }}>
-        A carregar relatório...
+        {t('common.loading')}
       </div>
     );
   }
@@ -143,7 +138,7 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       <div style={{ padding: Spacing.lg, textAlign: 'center', color: Colors.danger }}>
         {error}
         <button onClick={loadReport} style={{ display: 'block', margin: `${Spacing.md}px auto 0`, padding: `${Spacing.sm}px ${Spacing.md}px`, backgroundColor: Colors.primary, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.md, cursor: 'pointer' }}>
-          Tentar novamente
+          {t('common.confirm')}
         </button>
       </div>
     );
@@ -160,66 +155,66 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
         {showAllFilters && (
           <>
             <div>
-              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Evento</label>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('events.title')}</label>
               <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
-                <option value="">Todos</option>
+                <option value="">{t('reports.allEvents')}</option>
                 {events.map(evt => <option key={evt.id} value={evt.id}>{evt.name}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Categoria</label>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('events.category')}</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
-                <option value="">Todas</option>
+                <option value="">{t('reports.allCategories')}</option>
                 {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Início</label>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('reports.startDate')}</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Data Fim</label>
+              <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('reports.endDate')}</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md }} />
             </div>
           </>
         )}
         <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Pagamento</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('receipt.payment')}</label>
           <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
-            <option value="">Todos</option>
-            <option value="cash">Dinheiro</option>
-            <option value="card">Cartão</option>
-            <option value="transfer">Transferência</option>
-            <option value="credit">Fiado</option>
-            <option value="gift">Oferta</option>
+            <option value="">{t('reports.allPayments')}</option>
+            <option value="cash">{t('payment.cash')}</option>
+            <option value="card">{t('payment.card')}</option>
+            <option value="transfer">{t('payment.transfer')}</option>
+            <option value="credit">{t('payment.credit')}</option>
+            <option value="gift">{t('payment.gift')}</option>
           </select>
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>Cliente</label>
+          <label style={{ display: 'block', marginBottom: Spacing.xs, fontSize: FontSizes.xs, color: Colors.textSecondary }}>{t('receipt.customer')}</label>
           <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} style={{ padding: Spacing.sm, fontSize: FontSizes.sm, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, minWidth: 120 }}>
-            <option value="">Todos</option>
+            <option value="">{t('reports.allCustomers')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         {(eventFilter || categoryFilter || startDate || endDate || paymentMethodFilter || customerFilter) && (
           <button onClick={() => { setEventFilter(''); setCategoryFilter(''); setStartDate(''); setEndDate(''); setPaymentMethodFilter(''); setCustomerFilter(''); }} style={{ padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, border: `1px solid ${Colors.border}`, borderRadius: BorderRadius.md, fontSize: FontSizes.sm, cursor: 'pointer' }}>
-            Limpar
+            {t('common.cancel')}
           </button>
         )}
         {onExportCSV && (
           <button onClick={onExportCSV} style={{ marginLeft: 'auto', padding: `${Spacing.sm}px ${Spacing.md}px`, backgroundColor: Colors.secondary, color: Colors.textLight, border: 'none', borderRadius: BorderRadius.md, fontSize: FontSizes.sm, cursor: 'pointer' }}>
-            📥 Exportar CSV
+            📥 {t('reports.exportCsv')}
           </button>
         )}
       </div>
 
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: Spacing.md, marginBottom: Spacing.lg }}>
-        <SummaryCard title="Total Vendas" value={formatPrice(report.totalSales)} color={Colors.primary} />
-        <SummaryCard title="Total Pago" value={formatPrice(report.totalPaid)} color={Colors.success} />
-        <SummaryCard title="Fiado" value={formatPrice(report.totalPending)} color={Colors.warning} />
-        <SummaryCard title="Ofertado" value={formatPrice(report.totalGifted)} color="#8b5cf6" />
-        <SummaryCard title="Estornado" value={formatPrice(report.totalRefunded)} color={Colors.danger} />
+        <SummaryCard title={t('reports.totalSales')} value={formatPrice(report.totalSales)} color={Colors.primary} />
+        <SummaryCard title={t('reports.totalPaid')} value={formatPrice(report.totalPaid)} color={Colors.success} />
+        <SummaryCard title={t('reports.totalPending')} value={formatPrice(report.totalPending)} color={Colors.warning} />
+        <SummaryCard title={t('reports.totalGifted')} value={formatPrice(report.totalGifted)} color="#8b5cf6" />
+        <SummaryCard title={t('reports.totalRefunded')} value={formatPrice(report.totalRefunded)} color={Colors.danger} />
       </div>
 
       {/* Category Breakdown */}
@@ -248,13 +243,13 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       {/* Payment Breakdown */}
       <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, marginBottom: Spacing.lg, overflow: 'hidden' }}>
         <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Formas de Pagamento</h3>
+          <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>{t('payment.paymentMethods')}</h3>
           <button onClick={() => setPaymentCollapsed(!paymentCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{paymentCollapsed ? '▼' : '▲'}</button>
         </div>
         {!paymentCollapsed && (
         <div style={{ padding: Spacing.md }}>
           {report.paymentBreakdown.length === 0 ? (
-            <div style={{ textAlign: 'center', color: Colors.textSecondary }}>Nenhum pagamento</div>
+            <div style={{ textAlign: 'center', color: Colors.textSecondary }}>{t('reports.noPayments')}</div>
           ) : (
             report.paymentBreakdown.map((p, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.sm, backgroundColor: Colors.backgroundSecondary, borderRadius: BorderRadius.md, marginBottom: Spacing.xs }}>
@@ -270,13 +265,13 @@ export const GlobalReportView: React.FC<GlobalReportViewProps> = ({
       {/* Sales Detail */}
       <div style={{ backgroundColor: Colors.background, borderRadius: BorderRadius.lg, border: `1px solid ${Colors.border}`, overflow: 'hidden' }}>
         <div style={{ padding: Spacing.md, borderBottom: `1px solid ${Colors.border}`, backgroundColor: Colors.backgroundSecondary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>Vendas ({report.sales.length})</h3>
+          <h3 style={{ margin: 0, fontSize: FontSizes.md, fontWeight: 600, color: Colors.text }}>{t('nav.sales')} ({report.sales.length})</h3>
           <button onClick={() => setSalesCollapsed(!salesCollapsed)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: FontSizes.md, color: Colors.textSecondary }}>{salesCollapsed ? '▼' : '▲'}</button>
         </div>
         {!salesCollapsed && (
         <div style={{ padding: Spacing.md, maxHeight: 400, overflow: 'auto' }}>
           {report.sales.length === 0 ? (
-            <div style={{ textAlign: 'center', color: Colors.textSecondary }}>Nenhuma venda</div>
+            <div style={{ textAlign: 'center', color: Colors.textSecondary }}>{t('sales.noSales')}</div>
           ) : (
             report.sales.map((sale) => {
               const creditAmount = sale.payments.find(p => p.method === 'credit')?.amount || 0;

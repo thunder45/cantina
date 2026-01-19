@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Order,
   Customer,
@@ -24,12 +25,12 @@ interface PaymentModalProps {
   loading?: boolean;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; shortcut: string }[] = [
-  { value: 'cash', label: 'Dinheiro', shortcut: '1' },
-  { value: 'card', label: 'Cartão', shortcut: '2' },
-  { value: 'transfer', label: 'Transferência', shortcut: '3' },
-  { value: 'credit', label: 'Anotar (Fiado)', shortcut: '4' },
-  { value: 'gift', label: 'Oferta', shortcut: '5' },
+const PAYMENT_METHOD_KEYS: { value: PaymentMethod; labelKey: string; shortcut: string }[] = [
+  { value: 'cash', labelKey: 'payment.cash', shortcut: '1' },
+  { value: 'card', labelKey: 'payment.card', shortcut: '2' },
+  { value: 'transfer', labelKey: 'payment.transfer', shortcut: '3' },
+  { value: 'credit', labelKey: 'payment.creditNote', shortcut: '4' },
+  { value: 'gift', labelKey: 'payment.gift', shortcut: '5' },
 ];
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -39,6 +40,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isMixedPayment, setIsMixedPayment] = useState(false);
   const [payments, setPayments] = useState<PaymentPart[]>([]);
@@ -333,14 +335,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: platform === 'tablet' ? Spacing.md : Spacing.sm,
               }}>
-                {PAYMENT_METHODS.map(method => (
+                {PAYMENT_METHOD_KEYS.map(method => (
                   <button
                     key={method.value}
                     onClick={() => handleMethodSelect(method.value)}
                     style={getPaymentButtonStyle(selectedMethod === method.value)}
                     title={platform === 'desktop' ? `Press ${method.shortcut}` : undefined}
                   >
-                    {method.label}
+                    {t(method.labelKey)}
                     {platform === 'desktop' && (
                       <span style={{ 
                         marginLeft: Spacing.xs, 
@@ -395,7 +397,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   fontWeight: 500,
                   color: Colors.text,
                 }}>
-                  Valor ({PAYMENT_METHODS.find(m => m.value === selectedMethod)?.label})
+                  Valor ({t(PAYMENT_METHOD_KEYS.find(m => m.value === selectedMethod)?.labelKey || '')})
                 </label>
                 <div style={{ display: 'flex', gap: Spacing.sm }}>
                   <input
@@ -471,7 +473,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       }}
                     >
                       <span style={{ fontSize: getResponsiveFontSize(styleOptions, 'sm') }}>
-                        {PAYMENT_METHODS.find(m => m.value === payment.method)?.label}
+                        {t(PAYMENT_METHOD_KEYS.find(m => m.value === payment.method)?.labelKey || '')}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: Spacing.sm }}>
                         <span style={{ fontWeight: 600 }}>{formatPrice(payment.amount)}</span>

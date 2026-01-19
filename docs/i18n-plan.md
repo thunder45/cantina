@@ -3,7 +3,18 @@
 ## Objetivo
 Adicionar suporte multi-idioma ao Sistema POS Cantina: Português (default), Inglês e Francês.
 
-## Status: 🟡 Planeado (não iniciado)
+## Status: 🟡 Em progresso
+
+### Progresso
+- [x] Fase 1: Setup (i18next instalado e configurado)
+- [x] Fase 2: Extrair strings PT (pt.json criado)
+- [x] Fase 3: Traduzir EN/FR (en.json e fr.json criados)
+- [x] Fase 4: Migrar componentes (parcial - App.tsx, PaymentModal, GlobalReportView)
+- [x] Fase 5: Language Selector (implementado no header)
+- [ ] Fase 6: Backend i18n
+- [ ] Fase 7: Testes e Polish
+
+### Deployed em Beta para testes: https://cantina-beta.advm.lu
 
 ---
 
@@ -42,64 +53,43 @@ packages/frontend-web/src/
 
 ## Fases de Implementação
 
-### Fase 1: Setup ⬜
-- [ ] Instalar dependências: `npm install i18next react-i18next i18next-browser-languagedetector`
-- [ ] Criar `packages/shared/src/i18n/index.ts` com config base
-- [ ] Criar `packages/shared/src/i18n/types.ts` com tipos
-- [ ] Exportar i18n do shared package
+### Fase 1: Setup ✅
+- [x] Instalar dependências: `npm install i18next react-i18next i18next-browser-languagedetector`
+- [x] Criar `packages/shared/src/i18n/index.ts` com config base
+- [x] Exportar i18n do shared package
 
-### Fase 2: Extrair Strings PT ⬜
-- [ ] Criar `packages/shared/src/i18n/locales/pt.json` com namespaces:
-  - `common` - botões, ações genéricas
-  - `nav` - navegação
-  - `payment` - métodos de pagamento
-  - `events` - gestão de eventos
-  - `menu` - gestão de menu
-  - `sales` - vendas e checkout
-  - `customers` - clientes
-  - `reports` - relatórios
-  - `errors` - mensagens de erro
-  - `validation` - validações
+### Fase 2: Extrair Strings PT ✅
+- [x] Criar `packages/shared/src/i18n/locales/pt.json` com namespaces
 
-### Fase 3: Traduzir EN/FR ⬜
-- [ ] Criar `en.json` baseado em `pt.json`
-- [ ] Criar `fr.json` baseado em `pt.json`
+### Fase 3: Traduzir EN/FR ✅
+- [x] Criar `en.json` baseado em `pt.json`
+- [x] Criar `fr.json` baseado em `pt.json`
 
-### Fase 4: Migrar Componentes ⬜
-Ficheiros a migrar (por ordem de prioridade):
+### Fase 4: Migrar Componentes 🟡
+Ficheiros migrados:
+- [x] `packages/frontend-web/src/App.tsx` (nav labels, logout)
+- [x] `packages/frontend-web/src/components/sales/PaymentModal.tsx`
+- [x] `packages/frontend-web/src/components/reports/GlobalReportView.tsx`
 
-**Shared/Common:**
-- [ ] `packages/frontend-web/src/App.tsx` (nav labels)
-
-**Pagamentos:**
-- [ ] `packages/frontend-web/src/components/sales/PaymentModal.tsx`
+Ficheiros pendentes:
 - [ ] `packages/frontend-web/src/components/sales/ReceiptModal.tsx`
 - [ ] `packages/frontend-web/src/components/common/ReceiptView.tsx`
-
-**Relatórios:**
-- [ ] `packages/frontend-web/src/components/reports/GlobalReportView.tsx`
 - [ ] `packages/frontend-web/src/components/reports/EventReportView.tsx`
 - [ ] `packages/frontend-web/src/components/reports/CategoryReportView.tsx`
 - [ ] `packages/frontend-web/src/pages/ReportsPage.tsx`
-
-**Clientes:**
 - [ ] `packages/frontend-web/src/components/customers/CustomerHistory.tsx`
 - [ ] `packages/frontend-web/src/components/customers/TransactionModal.tsx`
 - [ ] `packages/frontend-web/src/components/customers/PaymentRegistrationModal.tsx`
 - [ ] `packages/frontend-web/src/pages/CustomersPage.tsx`
-
-**Vendas:**
 - [ ] `packages/frontend-web/src/pages/SalesPage.tsx`
-
-**Eventos/Menu:**
 - [ ] `packages/frontend-web/src/pages/EventsPage.tsx`
 - [ ] `packages/frontend-web/src/pages/MenuPage.tsx`
 - [ ] `packages/frontend-web/src/components/events/CategoryList.tsx`
 
-### Fase 5: Language Selector ⬜
-- [ ] Criar `LanguageSelector.tsx` componente
-- [ ] Adicionar ao header do `App.tsx`
-- [ ] Persistir escolha em localStorage
+### Fase 5: Language Selector ✅
+- [x] Criar `LanguageSelector.tsx` componente
+- [x] Adicionar ao header do `App.tsx`
+- [x] Persistir escolha em localStorage (via i18next-browser-languagedetector)
 
 ### Fase 6: Backend i18n ⬜
 - [ ] Criar traduções em `packages/backend/src/i18n/translations.ts`

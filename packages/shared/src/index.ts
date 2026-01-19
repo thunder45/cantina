@@ -4,3 +4,4 @@ export * from './components';
 export * from './api';
 export * from './state';
 export * from './utils/platform';
+export * from './i18n';

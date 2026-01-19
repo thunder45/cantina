@@ -1,11 +1,16 @@
 import React, { useState, useReducer, useMemo, useEffect } from 'react';
-import { Event, Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
+import { useTranslation } from 'react-i18next';
+import { Event, Colors, Spacing, FontSizes, BorderRadius, i18n } from '@cantina-pos/shared';
 import { ApiClient } from '@cantina-pos/shared';
 import { appReducer, initialState } from '@cantina-pos/shared';
 import { EventsPage, MenuPage, SalesPage, CustomersPage, ReportsPage } from './pages';
 import { usePlatform, useKeyboardShortcuts, KeyboardShortcut } from './hooks';
 import { getResponsiveNavStyles, getTouchButtonStyles } from './styles';
 import { AuthProvider, ProtectedRoute, useAuth } from './auth';
+import { LanguageSelector } from './components/common/LanguageSelector';
+
+// Initialize i18n
+i18n;
 
 // Create API client instance - uses relative URL in production (CloudFront routes /api/*)
 const getApiBaseUrl = () => {
@@ -37,6 +42,7 @@ const getStoredEvent = (): Event | null => {
 };
 
 const AppContent: React.FC = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [currentView, setCurrentView] = useState<AppView>(getViewFromHash);
@@ -159,7 +165,7 @@ const AppContent: React.FC = () => {
             style={getNavButtonStyle(currentView === 'events')}
             title={platform === 'desktop' ? 'Press E' : undefined}
           >
-            {platform !== 'mobile' && 'Eventos'}
+            {platform !== 'mobile' && t('nav.events')}
             {platform === 'mobile' && '📅'}
           </button>
           {selectedEvent && (
@@ -169,14 +175,14 @@ const AppContent: React.FC = () => {
                 style={getNavButtonStyle(currentView === 'menu')}
                 title={platform === 'desktop' ? 'Press M' : undefined}
               >
-                Menu
+                {t('nav.menu')}
               </button>
               <button
                 onClick={() => setCurrentView('sales')}
                 style={getNavButtonStyle(currentView === 'sales')}
                 title={platform === 'desktop' ? 'Press S' : undefined}
               >
-                Vendas
+                {t('nav.sales')}
               </button>
             </>
           )}
@@ -185,14 +191,14 @@ const AppContent: React.FC = () => {
             style={getNavButtonStyle(currentView === 'customers')}
             title={platform === 'desktop' ? 'Press C' : undefined}
           >
-            Clientes
+            {t('nav.customers')}
           </button>
           <button
             onClick={() => setCurrentView('reports')}
             style={getNavButtonStyle(currentView === 'reports')}
             title={platform === 'desktop' ? 'Press R' : undefined}
           >
-            Relatórios
+            {t('nav.reports')}
           </button>
         </div>
 
@@ -220,6 +226,7 @@ const AppContent: React.FC = () => {
               {selectedEvent.name}
             </span>
           )}
+          <LanguageSelector />
           {user && (
             <button
               onClick={logout}
@@ -234,7 +241,7 @@ const AppContent: React.FC = () => {
               }}
               title={user.email}
             >
-              Sair
+              {t('common.logout')}
             </button>
           )}
         </div>
