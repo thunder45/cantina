@@ -1,22 +1,28 @@
 # CONTEXT.md - Cantina POS System
 
+> Documento de referência para desenvolvimento e manutenção do sistema.
+> Última atualização: Janeiro 2026
+
+---
+
 ## 1. VISÃO GERAL DO PRODUTO
 
 ### Propósito
-Sistema de Ponto de Venda (POS) para cantinas de eventos religiosos/comunitários. Gerencia vendas, estoque, clientes com crédito (fiado), e relatórios financeiros.
+Sistema de Ponto de Venda (POS) para cantinas de eventos religiosos/comunitários. Gerencia eventos, menus, vendas, estoque, clientes e pagamentos.
 
 ### Público-Alvo
-- **Operadores de caixa**: Registram vendas durante eventos
-- **Administradores**: Configuram eventos, menus, categorias e visualizam relatórios
-- **Clientes**: Famílias que compram a crédito e pagam posteriormente
+- **Operadores de caixa**: Voluntários em tablets Android durante eventos
+- **Gestores**: Administradores que configuram eventos e analisam relatórios
+- **Clientes**: Participantes que compram produtos (alguns com sistema de crédito/fiado)
 
-### Principais Funcionalidades
-- Gestão de eventos com múltiplas datas e categorias (Culto, Casais, Kids)
+### Funcionalidades Principais
+- Gestão de eventos com múltiplas datas e categorias
+- Catálogo de produtos reutilizável entre eventos
 - Menu dinâmico por evento com controle de estoque
-- Vendas com múltiplas formas de pagamento (cash, card, PIX, balance, credit)
-- Sistema de crédito (fiado) com FIFO automático para pagamentos
-- Relatórios por evento, categoria e global
-- Histórico completo de transações por cliente
+- Vendas com 6 formas de pagamento (incluindo misto)
+- Sistema de crédito (fiado) com FIFO para pagamentos
+- Relatórios com filtros e exportação CSV
+- Suporte multi-idioma (PT/EN/FR)
 
 ---
 
@@ -26,187 +32,148 @@ Sistema de Ponto de Venda (POS) para cantinas de eventos religiosos/comunitário
 
 | Camada | Tecnologia | Versão |
 |--------|------------|--------|
-| Frontend | React + TypeScript | 18.2 / 5.3 |
-| Build Tool | Vite | 5.4 |
-| Backend | Node.js + TypeScript | 18+ / 5.3 |
-| Runtime | AWS Lambda | Node 18.x |
-| API | API Gateway REST | - |
+| Frontend | React + TypeScript | 18.x |
+| Build Tool | Vite | 5.x |
+| Backend | Node.js + TypeScript | 20.x |
+| Runtime Prod | AWS Lambda | Node 20 |
+| Runtime Local | Express | 4.x |
 | Database | DynamoDB | - |
-| CDN | CloudFront | - |
-| Storage | S3 | - |
-| IaC | AWS CDK | 2.x |
-| Auth | Cognito (opcional) | - |
+| Infra | AWS CDK | 2.x |
+| Auth | Zoho OAuth 2.0 | - |
+| i18n | react-i18next | 14.x |
+| Validation | Zod | 3.x |
+| Testing | Jest | 29.x |
 
 ### Estrutura de Diretórios
 
 ```
 cantina/
 ├── packages/
-│   ├── shared/           # Tipos, API client, design tokens
+│   ├── shared/           # Tipos, API client, design system, i18n
 │   │   └── src/
-│   │       ├── types/    # Interfaces TypeScript
+│   │       ├── types/    # Interfaces TypeScript compartilhadas
 │   │       ├── api/      # ApiClient e services
-│   │       └── design/   # Colors, Spacing, FontSizes
+│   │       ├── components/ # Design tokens e style generators
+│   │       ├── i18n/     # Configuração e locales (pt/en/fr)
+│   │       └── state/    # Reducer e tipos de estado
 │   │
-│   ├── backend/          # Lambda + Express (dev)
+│   ├── backend/          # API e lógica de negócio
 │   │   └── src/
-│   │       ├── api/
-│   │       │   ├── handlers/   # Um handler por domínio
-│   │       │   ├── router.ts   # Roteamento de paths
-│   │       │   ├── response.ts # Helpers de resposta
-│   │       │   └── validation.ts
-│   │       ├── services/       # Lógica de negócio
-│   │       └── repositories/   # Acesso a dados
+│   │       ├── api/      # Handlers, router, validation
+│   │       ├── services/ # Lógica de negócio
+│   │       ├── repositories/ # Acesso a dados (DynamoDB)
+│   │       └── auth/     # Zoho OAuth, sessions
 │   │
 │   ├── frontend-web/     # React SPA
 │   │   └── src/
-│   │       ├── components/     # Por domínio (sales, customers, reports)
-│   │       ├── pages/          # Páginas principais
-│   │       ├── auth/           # Contexto de autenticação
-│   │       └── hooks/          # Custom hooks
+│   │       ├── pages/    # Páginas principais
+│   │       ├── components/ # Componentes por domínio
+│   │       ├── hooks/    # Custom hooks (usePlatform, etc)
+│   │       ├── auth/     # AuthContext, ProtectedRoute
+│   │       └── styles/   # Responsive utilities
 │   │
-│   └── infra/            # CDK Stack
+│   └── infra/            # CDK stacks
 │       └── src/
 │           └── cantina-stack.ts
 ```
 
-### Diagrama de Arquitetura
+### Fluxo de Dados
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  CloudFront │────▶│     S3      │     │   Cognito   │
-│   (CDN)     │     │  (Frontend) │     │   (Auth)    │
+│   Frontend  │────▶│  CloudFront │────▶│   Lambda    │
+│   (React)   │     │   + S3      │     │  (Express)  │
 └─────────────┘     └─────────────┘     └─────────────┘
-       │                                       │
-       ▼                                       ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ API Gateway │────▶│   Lambda    │────▶│  DynamoDB   │
-│   (REST)    │     │  (Backend)  │     │  (9 tables) │
-└─────────────┘     └─────────────┘     └─────────────┘
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    ▼                         ▼                         ▼
+              ┌──────────┐            ┌──────────────┐          ┌──────────┐
+              │ DynamoDB │            │ Secrets Mgr  │          │  Zoho    │
+              │ (11 tabs)│            │ (OAuth keys) │          │  OAuth   │
+              └──────────┘            └──────────────┘          └──────────┘
 ```
 
-### Tabelas DynamoDB
+### Ambientes
 
-| Tabela | PK | GSI |
-|--------|----|----|
-| cantina-categories | id | - |
-| cantina-events | id | categoryId-index |
-| cantina-menu-items | id | eventId-index |
-| cantina-menu-groups | id | eventId-index |
-| cantina-orders | id | eventId-index |
-| cantina-sales | id | eventId-index, customerId-index, yearMonth-createdAt-index |
-| cantina-customers | id | - (transações usam pk=customerId) |
-| cantina-catalog-items | id | - |
-| cantina-audit-logs | id | - |
-
-**Nota**: O GSI `yearMonth-createdAt-index` permite queries eficientes por período (YYYY-MM) para relatórios globais.
+| Ambiente | URL | Auth | Prefixo DynamoDB |
+|----------|-----|------|------------------|
+| Produção | cantina.advm.lu | Zoho OAuth | `cantina-*` |
+| Beta | cantina-beta.advm.lu | Desabilitado | `beta-cantina-*` |
+| Local | localhost:3000/3001 | Desabilitado | In-memory |
 
 ---
 
 ## 3. DECISÕES DE DESIGN FUNDAMENTAIS
 
-### 3.1 Monorepo com npm Workspaces
+### 3.1 Monorepo com Workspaces NPM
 
-**Decisão**: Usar npm workspaces em vez de Lerna/Nx.
+**Decisão**: Usar npm workspaces com pacote `shared` para tipos e utilitários.
 
-**Motivo**: Simplicidade. O projeto é pequeno o suficiente para não precisar de ferramentas complexas.
+**Motivo**: 
+- Tipos compartilhados entre frontend e backend
+- Design system consistente
+- Build único do shared antes de outros pacotes
 
-**Implicação**: Use `npm run build --workspace=@cantina-pos/backend` para builds específicos.
+**Implicação**: Sempre execute `npm run build` no `shared` antes de buildar outros pacotes.
 
-### 3.2 Shared Package para Tipos
+### 3.2 Stock Zero = Infinito
 
-**Decisão**: Todos os tipos TypeScript ficam em `@cantina-pos/shared`.
+**Decisão**: `stock: 0` significa estoque infinito (sem limite de vendas).
 
-**Motivo**: Garantir consistência entre frontend e backend. Evitar duplicação.
+**Motivo**: Simplifica UI - não precisa de checkbox separado para "infinito".
 
-**Implicação**: Sempre importe tipos do shared: `import { Customer } from '@cantina-pos/shared'`
-
-### 3.3 Repository Pattern com Dual Mode
-
-**Decisão**: Repositories funcionam com Map<> local (dev) ou DynamoDB (prod).
-
-**Motivo**: Permitir desenvolvimento local sem AWS. Testes rápidos sem mocks.
-
+**Código**:
 ```typescript
-const isProduction = !!process.env.CUSTOMERS_TABLE;
+// Verificar disponibilidade
+const isAvailable = item.stock === 0 || item.soldCount < item.stock;
+const availableStock = item.stock === 0 ? Infinity : item.stock - item.soldCount;
+```
 
-if (isProduction) {
-  await docClient.send(new PutCommand({ TableName, Item }));
-} else {
-  customers.set(id, customer);
+### 3.3 FIFO para Pagamento de Dívidas
+
+**Decisão**: Pagamentos de dívida aplicam-se às compras mais antigas primeiro (FIFO).
+
+**Motivo**: Transparência e previsibilidade para clientes e operadores.
+
+**Implicação**: Campo `amountPaid` em `CustomerTransaction` rastreia quanto de cada compra foi pago.
+
+### 3.4 Pagamentos Mistos
+
+**Decisão**: Uma venda pode ter múltiplas formas de pagamento.
+
+**Exemplo**: €10 total = €5 cash + €3 card + €2 balance
+
+**Estrutura**:
+```typescript
+interface Sale {
+  payments: PaymentPart[];  // Array, não único método
+}
+interface PaymentPart {
+  method: PaymentMethod;
+  amount: number;
 }
 ```
 
-**Implicação**: Nunca acesse DynamoDB diretamente nos services. Sempre via repository.
-
-### 3.4 FIFO para Pagamentos de Crédito
-
-**Decisão**: Depósitos pagam compras antigas primeiro (First In, First Out).
-
-**Motivo**: Justo para o cliente. Compras mais antigas são quitadas primeiro.
-
-**Campos envolvidos**:
-- `CustomerTransaction.amountPaid`: Quanto desta compra já foi pago
-- `Sale.payments`: Array com breakdown (balance vs credit)
-
-**Implementação atômica** (desde 2026-01-05):
-- `applyPaymentFIFO` usa `TransactWriteCommand` em batches de 10 purchases (20 items max)
-- Em caso de falha, `reconciliationService.handleFIFOFailure()` tenta reconciliar
-- Job de reconciliação semanal verifica consistência de todos os clientes
-
-**Arquivos relacionados**:
-- `src/services/customer.service.ts` - `applyPaymentFIFO()`, `buildUpdatedSalePayments()`
-- `src/services/reconciliation.service.ts` - `reconcileCustomer()`, `reconcileAll()`
-- `src/repositories/dynamodb-transactions.ts` - `executeTransaction()`, `executeTransactionBatches()`
-
 ### 3.5 Soft Delete para Clientes
 
-**Decisão**: Clientes não são deletados fisicamente. Usam `deletedAt`.
+**Decisão**: Clientes com vendas não podem ser deletados fisicamente.
 
-**Motivo**: Preservar histórico de transações e integridade referencial.
+**Motivo**: Preservar integridade de relatórios e histórico.
 
-### 3.6 Ambiente Beta Separado
+**Implementação**: Campo `deletedAt` para soft delete.
 
-**Decisão**: Beta usa prefixo `beta-` em todas as tabelas e subdomínio `cantina-beta`.
+### 3.6 Optimistic Locking
 
-**Motivo**: Testar mudanças sem afetar produção.
+**Decisão**: Usar campo `version` para controle de concorrência.
 
-**URLs**:
-- Beta: https://cantina-beta.advm.lu
-- Produção: https://cantina.advm.lu
+**Motivo**: Evitar race conditions em operações críticas (vendas, estoque).
 
-**Deploy beta**:
-```bash
-# Backend
-cd packages/infra
-npx cdk deploy CantinaBetaStack -c subDomain=cantina-beta --profile cantina --require-approval never
-
-# Frontend
-cd packages/frontend-web
-VITE_API_URL="https://cantina-beta.advm.lu" VITE_SKIP_AUTH=true npm run build
-aws s3 sync dist/ s3://beta-cantina-frontend-625272706584 --delete --profile cantina
-aws cloudfront create-invalidation --distribution-id E3RFATVK47GGJ7 --paths "/*" --profile cantina
+**Código**:
+```typescript
+// No repository
+ConditionExpression: 'version = :currentVersion',
+UpdateExpression: 'SET version = version + 1, ...'
 ```
-
-**Deploy produção**:
-```bash
-# Backend
-cd packages/infra
-npx cdk deploy CantinaStack --profile cantina --require-approval never
-
-# Frontend
-cd packages/frontend-web
-VITE_API_URL="https://cantina.advm.lu" npm run build
-aws s3 sync dist/ s3://cantina-frontend-625272706584 --delete --profile cantina
-aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" --profile cantina
-```
-
-### 3.7 Arquivos de Infraestrutura
-
-| Arquivo | Propósito |
-|---------|-----------|
-| `repositories/dynamodb-transactions.ts` | Helper para `TransactWriteCommand` com batches |
-| `services/reconciliation.service.ts` | Detecta e corrige inconsistências FIFO |
 
 ---
 
@@ -214,212 +181,207 @@ aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" 
 
 ### 4.1 Naming Conventions
 
-| Elemento | Convenção | Exemplo |
+| Contexto | Convenção | Exemplo |
 |----------|-----------|---------|
-| Arquivos TS | kebab-case | `customer.service.ts` |
-| Componentes React | PascalCase | `CustomerHistory.tsx` |
-| Funções | camelCase | `getCustomerBalance()` |
-| Interfaces | PascalCase | `CustomerTransaction` |
-| Constantes | UPPER_SNAKE | `BATCH_SIZE` |
+| Arquivos TS/TSX | kebab-case | `customer-search.tsx` |
+| Componentes React | PascalCase | `CustomerSearch` |
+| Funções/variáveis | camelCase | `getCustomerBalance` |
+| Constantes | UPPER_SNAKE | `DEFAULT_RETRY_CONFIG` |
+| Tipos/Interfaces | PascalCase | `CustomerWithBalance` |
 | Tabelas DynamoDB | kebab-case | `cantina-customers` |
 | Erros | ERR_UPPER_SNAKE | `ERR_CUSTOMER_NOT_FOUND` |
 
-### 4.2 Estrutura de Handler (com Zod)
+### 4.2 Estrutura de Componentes React
 
 ```typescript
-// packages/backend/src/api/handlers/[domain].handler.ts
-import { validateBody } from '../validation';
-import { CreateEntitySchema } from '../schemas';
+// 1. Imports (react, libs externas, shared, locais)
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Colors, Spacing } from '@cantina-pos/shared';
+import { usePlatform } from '../hooks';
 
-export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const { httpMethod, pathParameters, path } = event;
-  const resourceId = pathParameters?.id;
-
-  try {
-    if (httpMethod === 'GET' && resourceId) {
-      return await getResource(resourceId);
-    }
-    if (httpMethod === 'POST' && !resourceId) {
-      const v = validateBody(event.body, CreateEntitySchema);
-      if (!v.success) return v.response;
-      const entity = await entityService.create(v.data);
-      return created(entity);
-    }
-    // ... mais rotas
-    return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
-  } catch (err) {
-    return handleError(err);
-  }
-}
-```
-
-**Validação com Zod** (desde Task 005):
-- Schemas declarativos em `src/api/schemas.ts`
-- Helper `validateBody()` retorna `{ success, data }` ou `{ success: false, response }`
-- Trim automático em strings antes de validar `min(1)`
-
-### 4.3 Estrutura de Service
-
-```typescript
-// packages/backend/src/services/[domain].service.ts
-
-import * as repository from '../repositories/[domain].repository';
-
-export async function getById(id: string): Promise<Entity> {
-  const entity = await repository.getById(id);
-  if (!entity) throw new Error('ERR_NOT_FOUND');
-  return entity;
+// 2. Interface de Props
+interface CustomerCardProps {
+  customer: Customer;
+  onSelect: (id: string) => void;
 }
 
-export async function create(input: CreateInput): Promise<Entity> {
-  // Validações de negócio
-  if (!input.name?.trim()) throw new Error('ERR_EMPTY_NAME');
-  
-  // Delegue persistência ao repository
-  return repository.create(input);
-}
-```
-
-### 4.4 Estrutura de Repository
-
-```typescript
-// packages/backend/src/repositories/[domain].repository.ts
-
-const TABLE_NAME = process.env.[DOMAIN]_TABLE;
-const isProduction = !!TABLE_NAME;
-
-// In-memory para dev
-let entities: Map<string, Entity> = new Map();
-
-export async function getById(id: string): Promise<Entity | undefined> {
-  if (isProduction) {
-    const result = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
-    return result.Item as Entity | undefined;
-  }
-  return entities.get(id);
-}
-```
-
-### 4.5 Tratamento de Erros
-
-Use códigos de erro padronizados:
-
-```typescript
-// No service
-throw new Error('ERR_CUSTOMER_NOT_FOUND');
-throw new Error('ERR_INVALID_AMOUNT');
-throw new Error('ERR_CUSTOMER_HAS_SALES');
-
-// No handler - handleError converte para HTTP
-return handleError(err); // Mapeia ERR_* para status codes
-```
-
-### 4.6 Componentes React
-
-```typescript
-// packages/frontend-web/src/components/[domain]/[Component].tsx
-
-interface ComponentProps {
-  apiClient: ApiClient;
-  entity: Entity;
-  onAction: () => void;
-}
-
-export const Component: React.FC<ComponentProps> = ({
-  apiClient,
-  entity,
-  onAction,
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const service = new EntityApiService(apiClient);
-  
-  // ... lógica
-  
-  return (
-    <div style={{ padding: Spacing.md }}>
-      {/* Use design tokens do shared */}
-    </div>
-  );
+// 3. Componente funcional
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onSelect }) => {
+  const { t } = useTranslation();
+  // ... implementação
 };
+```
+
+### 4.3 Estrutura de Services (Backend)
+
+```typescript
+// services/example.service.ts
+
+// 1. Imports
+import { EntityType } from '@cantina-pos/shared';
+import * as repository from '../repositories/example.repository';
+
+// 2. Funções públicas (ordem: create, get, update, delete)
+export async function createEntity(input: CreateInput): Promise<Entity> {
+  // Validação de negócio
+  if (!input.name?.trim()) throw new Error('ERR_EMPTY_NAME');
+  // Delegação ao repository
+  return repository.createEntity(input);
+}
+
+// 3. Reset para testes
+export function resetService(): void {
+  repository.resetRepository();
+}
+```
+
+### 4.4 Tratamento de Erros
+
+**Backend - Use códigos de erro padronizados**:
+```typescript
+// ✅ Correto
+throw new Error('ERR_CUSTOMER_NOT_FOUND');
+throw new Error('ERR_INSUFFICIENT_STOCK');
+
+// ❌ Errado
+throw new Error('Customer not found');
+throw new Error('Estoque insuficiente');
+```
+
+**Frontend - Use i18n para mensagens**:
+```typescript
+// ✅ Correto
+setError(t('errors.customerNotFound'));
+
+// ❌ Errado
+setError('Cliente não encontrado');
+```
+
+### 4.5 Validação com Zod
+
+```typescript
+// schemas.ts
+export const CreateCustomerSchema = z.object({
+  name: z.string()
+    .transform(s => s.trim())
+    .pipe(z.string().min(1, 'Nome é obrigatório').max(100)),
+  initialBalance: z.number().optional().default(0),
+});
+
+// handler.ts
+const input = CreateCustomerSchema.parse(body);
+```
+
+### 4.6 Testes
+
+**Estrutura de teste**:
+```typescript
+describe('Sales Service', () => {
+  beforeEach(async () => {
+    // Reset todos os services/repositories
+    salesService.resetService();
+    orderService.resetService();
+    // Setup dados de teste
+  });
+
+  describe('confirmSale', () => {
+    it('should confirm a sale with cash payment', async () => {
+      // Arrange
+      const order = await orderService.createOrder(eventId);
+      await orderService.addItem(order.id, { menuItemId, quantity: 2 });
+      
+      // Act
+      const sale = await salesService.confirmSale(
+        order.id, 
+        [{ method: 'cash', amount: 20 }], 
+        'user1'
+      );
+      
+      // Assert
+      expect(sale.total).toBe(20);
+      expect(sale.payments[0].method).toBe('cash');
+    });
+  });
+});
 ```
 
 ---
 
 ## 5. ANTI-PATTERNS E REGRAS CRÍTICAS
 
-### ⚠️ NUNCA Faça
+### ⚠️ NUNCA faça isso:
 
-1. **Nunca acesse DynamoDB diretamente em services**
-   ```typescript
-   // ❌ ERRADO
-   await docClient.send(new GetCommand(...));
-   
-   // ✅ CORRETO
-   await repository.getById(id);
-   ```
+#### 5.1 Hardcode de Strings em Português
+```typescript
+// ❌ PROIBIDO
+<button>Cancelar</button>
+setError('Erro ao carregar');
 
-2. **Nunca crie tipos duplicados**
-   ```typescript
-   // ❌ ERRADO - tipo local
-   interface Customer { ... }
-   
-   // ✅ CORRETO - importe do shared
-   import { Customer } from '@cantina-pos/shared';
-   ```
+// ✅ CORRETO
+<button>{t('common.cancel')}</button>
+setError(t('errors.loadFailed'));
+```
 
-3. **Nunca use `any` sem justificativa**
-   ```typescript
-   // ❌ ERRADO
-   const data: any = response;
-   
-   // ✅ CORRETO
-   const data = response as CustomerTransaction;
-   ```
+#### 5.2 Acesso Direto ao DynamoDB em Services
+```typescript
+// ❌ PROIBIDO - Service acessando DynamoDB diretamente
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 
-4. **Nunca delete dados em produção sem backup**
-   ```bash
-   # ❌ ERRADO
-   aws dynamodb delete-item ...
-   
-   # ✅ CORRETO - primeiro backup
-   aws dynamodb scan --table-name X > backup.json
-   ```
+// ✅ CORRETO - Service usa Repository
+import * as customerRepository from '../repositories/customer.repository';
+```
 
-5. **Nunca faça deploy de frontend sem invalidar CloudFront**
-   ```bash
-   # ❌ INCOMPLETO
-   aws s3 sync dist/ s3://bucket
-   
-   # ✅ CORRETO
-   aws s3 sync dist/ s3://bucket
-   aws cloudfront create-invalidation --distribution-id X --paths "/*"
-   ```
+#### 5.3 Lógica de Negócio em Handlers
+```typescript
+// ❌ PROIBIDO - Handler com lógica de negócio
+export async function handler(req) {
+  const customer = await repo.getById(id);
+  if (customer.balance < amount) throw new Error('...');
+  // ... mais lógica
+}
 
-### 🚨 Armadilhas Conhecidas
+// ✅ CORRETO - Handler delega ao Service
+export async function handler(req) {
+  return customerService.withdraw(id, amount, userId);
+}
+```
 
-1. **Input de números negativos em React**
-   - Problema: `useState<number>` não permite digitar "-" antes do número
-   - Solução: Use `useState<string>` e converta no submit
-   ```typescript
-   const [valueStr, setValueStr] = useState('0');
-   const value = parseFloat(valueStr) || 0;
-   ```
+#### 5.4 Ignorar Optimistic Locking
+```typescript
+// ❌ PROIBIDO - Update sem version check
+await docClient.update({
+  Key: { id },
+  UpdateExpression: 'SET balance = :balance',
+});
 
-2. **CloudFront cache agressivo**
-   - Problema: Usuários veem versão antiga após deploy
-   - Solução: Sempre invalidar após deploy + hard refresh no browser
+// ✅ CORRETO - Com version check
+await docClient.update({
+  Key: { id },
+  ConditionExpression: 'version = :currentVersion',
+  UpdateExpression: 'SET balance = :balance, version = version + 1',
+});
+```
 
-3. **Transações DynamoDB - Atomicidade**
-   - Problema: Operações que atualizam múltiplos items podem falhar parcialmente
-   - Solução: `TransactWriteCommand` para operações críticas (limite: 25 items)
-   - Para FIFO com muitas compras: batches de 20 items + reconciliação automática em falha
-   - Arquivos: `dynamodb-transactions.ts`, `reconciliation.service.ts`
+#### 5.5 Esquecer de Buildar Shared
+```bash
+# ❌ PROIBIDO - Build direto do frontend/backend
+cd packages/frontend-web && npm run build
 
-4. **GSI eventual consistency**
-   - Problema: Query em GSI pode não retornar item recém-criado
-   - Solução: Para leituras críticas, use GetItem com PK
+# ✅ CORRETO - Build shared primeiro
+cd packages/shared && npm run build
+cd ../frontend-web && npm run build
+```
+
+#### 5.6 Usar Valores Mágicos para Stock
+```typescript
+// ❌ PROIBIDO
+if (item.stock === -1) // infinito?
+if (item.isInfinite) // campo extra desnecessário
+
+// ✅ CORRETO
+if (item.stock === 0) // stock=0 significa infinito
+```
 
 ---
 
@@ -427,414 +389,345 @@ export const Component: React.FC<ComponentProps> = ({
 
 ### 6.1 Adicionar Nova Feature
 
-1. Crie branch: `git checkout -b feature/nome-da-feature`
-2. Adicione tipos em `packages/shared/src/types/`
-3. Implemente repository em `packages/backend/src/repositories/`
-4. Implemente service em `packages/backend/src/services/`
-5. Adicione handler em `packages/backend/src/api/handlers/`
-6. Registre rotas em `packages/backend/src/api/router.ts`
-7. Adicione API client em `packages/shared/src/api/services.ts`
-8. Implemente componentes React
-9. Teste localmente: `npm run dev` em backend e frontend
-10. Deploy beta, teste, merge para main, deploy prod (ver seção 3.6)
+1. **Tipos** - Adicione interfaces em `packages/shared/src/types/`
+2. **Repository** - Implemente acesso a dados em `packages/backend/src/repositories/`
+3. **Service** - Implemente lógica de negócio em `packages/backend/src/services/`
+4. **Handler** - Exponha via API em `packages/backend/src/api/handlers/`
+5. **API Client** - Adicione métodos em `packages/shared/src/api/services.ts`
+6. **Componentes** - Implemente UI em `packages/frontend-web/src/components/`
+7. **i18n** - Adicione traduções nos 3 arquivos de locale
+8. **Testes** - Adicione testes unitários
 
-### 6.2 Build Completo
+### 6.2 Deploy
 
+#### Beta (para testes)
 ```bash
-# Build shared + backend
-npm run build --workspace=@cantina-pos/shared
-npm run build:lambda --workspace=@cantina-pos/backend
+# 1. Build shared
+cd packages/shared && npm run build
+
+# 2. Build e deploy frontend
+cd ../frontend-web
+VITE_SKIP_AUTH=true VITE_API_URL=https://cantina-beta.advm.lu npm run build
+aws s3 sync dist/ s3://beta-cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E3RFATVK47GGJ7 --paths "/*" --profile cantina
+
+# 3. Deploy backend (se necessário)
+cd ../backend && npm run build:lambda
+cd ../infra && npx cdk deploy --context subDomain=cantina-beta --profile cantina
 ```
 
-Ver seção **3.6 Ambiente Beta Separado** para comandos de deploy.
-
-### 6.3 Corrigir Dados em Produção
-
+#### Produção
 ```bash
-# 1. SEMPRE faça backup primeiro
-aws dynamodb scan --table-name cantina-customers --profile cantina > backup-customers.json
+# 1. Build shared
+cd packages/shared && npm run build
 
-# 2. Use update-item para correções pontuais
-aws dynamodb update-item --table-name cantina-customers \
-  --key '{"id":{"S":"xxx"}}' \
-  --update-expression "SET amountPaid = :ap" \
-  --expression-attribute-values '{":ap":{"N":"100"}}' \
-  --profile cantina
+# 2. Build e deploy frontend
+cd ../frontend-web && npm run build
+aws s3 sync dist/ s3://cantina-frontend-625272706584 --delete --profile cantina
+aws cloudfront create-invalidation --distribution-id E7R30G3Z8J2DI --paths "/*" --profile cantina
+
+# 3. Deploy backend (se necessário)
+cd ../backend && npm run build:lambda
+cd ../infra && npx cdk deploy --profile cantina
+```
+
+### 6.3 Adicionar Traduções
+
+1. Adicione a chave nos 3 arquivos:
+   - `packages/shared/src/i18n/locales/pt.json`
+   - `packages/shared/src/i18n/locales/en.json`
+   - `packages/shared/src/i18n/locales/fr.json`
+
+2. Use no componente:
+```typescript
+import { useTranslation } from 'react-i18next';
+const { t } = useTranslation();
+// ...
+<span>{t('namespace.key')}</span>
 ```
 
 ---
 
 ## 7. DEPENDÊNCIAS E INTEGRAÇÕES
 
-### Bibliotecas Obrigatórias
+### AWS Services
+| Serviço | Uso |
+|---------|-----|
+| DynamoDB | 11 tabelas de dados |
+| Lambda | API backend |
+| API Gateway | Roteamento HTTP |
+| CloudFront | CDN + routing |
+| S3 | Hosting frontend |
+| Secrets Manager | Credenciais Zoho OAuth |
+| Route53 | DNS |
+| ACM | Certificados SSL |
 
-| Package | Uso | Versão |
-|---------|-----|--------|
-| @aws-sdk/client-dynamodb | Acesso DynamoDB | ^3.946 |
-| @aws-sdk/lib-dynamodb | Document client | ^3.946 |
-| uuid | Geração de IDs | ^9.0 |
-| zod | Validação de schemas | ^3.24 |
-| react | UI | ^18.2 |
-| vite | Build frontend | ^5.4 |
-| aws-cdk-lib | Infraestrutura | ^2.x |
+### Bibliotecas Críticas
 
-### Variáveis de Ambiente (Lambda)
+**Backend**:
+- `zod` - Validação de schemas
+- `@aws-sdk/client-dynamodb` - Acesso DynamoDB
+- `uuid` - Geração de IDs
 
-```
-CUSTOMERS_TABLE=cantina-customers
-SALES_TABLE=cantina-sales
-EVENTS_TABLE=cantina-events
-CATEGORIES_TABLE=cantina-categories
-MENU_ITEMS_TABLE=cantina-menu-items
-MENU_GROUPS_TABLE=cantina-menu-groups
-ORDERS_TABLE=cantina-orders
-CATALOG_ITEMS_TABLE=cantina-catalog-items
-AUDIT_LOGS_TABLE=cantina-audit-logs
-SESSIONS_TABLE=cantina-sessions
-COGNITO_USER_POOL_ID=xxx (opcional)
-SKIP_AUTH=true (beta only)
-```
+**Frontend**:
+- `react-i18next` - Internacionalização
+- `i18next-browser-languagedetector` - Detecção de idioma
 
-### Variáveis de Ambiente (Frontend)
-
-```
-VITE_API_URL=https://cantina.advm.lu
-VITE_SKIP_AUTH=true (beta only)
-```
+**Shared**:
+- Nenhuma dependência externa (apenas tipos)
 
 ---
 
 ## 8. EXEMPLOS DE REFERÊNCIA
 
-### 8.1 Novo Repository
-
-```typescript
-// packages/backend/src/repositories/example.repository.ts
-import { Example } from '@cantina-pos/shared';
-import { v4 as uuidv4 } from 'uuid';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-
-const TABLE_NAME = process.env.EXAMPLES_TABLE;
-const isProduction = !!TABLE_NAME;
-
-let docClient: DynamoDBDocumentClient | null = null;
-if (isProduction) {
-  docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-}
-
-let examples: Map<string, Example> = new Map();
-
-export async function create(name: string): Promise<Example> {
-  const example: Example = {
-    id: uuidv4(),
-    name,
-    createdAt: new Date().toISOString(),
-    version: 1,
-  };
-
-  if (isProduction) {
-    await docClient!.send(new PutCommand({ TableName: TABLE_NAME, Item: example }));
-  } else {
-    examples.set(example.id, example);
-  }
-  return example;
-}
-
-export async function getById(id: string): Promise<Example | undefined> {
-  if (isProduction) {
-    const result = await docClient!.send(new GetCommand({ TableName: TABLE_NAME, Key: { id } }));
-    return result.Item as Example | undefined;
-  }
-  return examples.get(id);
-}
-
-export async function getAll(): Promise<Example[]> {
-  if (isProduction) {
-    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
-    return (result.Items || []) as Example[];
-  }
-  return Array.from(examples.values());
-}
-
-// Para testes
-export function resetRepository(): void {
-  examples.clear();
-}
-```
-
-### 8.2 Novo Service
+### 8.1 Novo Service
 
 ```typescript
 // packages/backend/src/services/example.service.ts
-import { Example } from '@cantina-pos/shared';
+import { Example, CreateExampleInput } from '@cantina-pos/shared';
 import * as exampleRepository from '../repositories/example.repository';
+import * as auditLogService from './audit-log.service';
 
-export async function create(name: string): Promise<Example> {
-  if (!name?.trim()) throw new Error('ERR_EMPTY_NAME');
-  return exampleRepository.create(name.trim());
+export async function createExample(
+  input: CreateExampleInput, 
+  createdBy: string
+): Promise<Example> {
+  // 1. Validação de negócio
+  if (!input.name?.trim()) {
+    throw new Error('ERR_EMPTY_NAME');
+  }
+
+  // 2. Verificações de existência
+  if (await exampleRepository.existsByName(input.name)) {
+    throw new Error('ERR_DUPLICATE_NAME');
+  }
+
+  // 3. Criação
+  const example = await exampleRepository.create(input);
+
+  // 4. Audit log
+  await auditLogService.logItemCreation(
+    'example', 
+    example.id, 
+    createdBy, 
+    JSON.stringify(input)
+  );
+
+  return example;
 }
 
-export async function getById(id: string): Promise<Example> {
+export async function getExample(id: string): Promise<Example> {
   const example = await exampleRepository.getById(id);
   if (!example) throw new Error('ERR_EXAMPLE_NOT_FOUND');
   return example;
 }
 
-export async function getAll(): Promise<Example[]> {
-  return exampleRepository.getAll();
+export function resetService(): void {
+  exampleRepository.resetRepository();
 }
 ```
 
-### 8.3 Novo Handler
+### 8.2 Novo Componente React
 
 ```typescript
-// packages/backend/src/api/handlers/examples.handler.ts
-import { APIGatewayEvent, APIGatewayResponse } from '../types';
-import { success, created, handleError, error } from '../response';
-import { parseBody } from '../validation';
-import * as exampleService from '../../services/example.service';
+// packages/frontend-web/src/components/example/ExampleCard.tsx
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Colors, Spacing, FontSizes, BorderRadius } from '@cantina-pos/shared';
 
-interface CreateExampleBody {
-  name: string;
+interface ExampleCardProps {
+  title: string;
+  value: number;
+  onPress: () => void;
 }
 
-export async function handler(event: APIGatewayEvent): Promise<APIGatewayResponse> {
-  const { httpMethod, pathParameters } = event;
-  const exampleId = pathParameters?.id;
-
-  try {
-    if (httpMethod === 'POST' && !exampleId) {
-      const body = parseBody<CreateExampleBody>(event.body);
-      if (!body) return error('ERR_INVALID_BODY', 'Corpo inválido', 400);
-      const example = await exampleService.create(body.name);
-      return created(example);
-    }
-    if (httpMethod === 'GET' && exampleId) {
-      const example = await exampleService.getById(exampleId);
-      return success(example);
-    }
-    if (httpMethod === 'GET' && !exampleId) {
-      const examples = await exampleService.getAll();
-      return success(examples);
-    }
-    return error('ERR_METHOD_NOT_ALLOWED', 'Método não permitido', 405);
-  } catch (err) {
-    return handleError(err);
-  }
-}
-```
-
-### 8.4 Componente React com API
-
-```typescript
-// packages/frontend-web/src/components/examples/ExampleList.tsx
-import React, { useState, useEffect } from 'react';
-import { Example, ApiClient, Colors, Spacing, FontSizes } from '@cantina-pos/shared';
-
-interface ExampleListProps {
-  apiClient: ApiClient;
-  onSelect: (example: Example) => void;
-}
-
-export const ExampleList: React.FC<ExampleListProps> = ({ apiClient, onSelect }) => {
-  const [examples, setExamples] = useState<Example[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadExamples();
-  }, []);
-
-  const loadExamples = async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient.get<Example[]>('/examples');
-      setExamples(data);
-    } catch (err) {
-      setError('Erro ao carregar exemplos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div style={{ color: Colors.error }}>{error}</div>;
+export const ExampleCard: React.FC<ExampleCardProps> = ({ 
+  title, 
+  value, 
+  onPress 
+}) => {
+  const { t } = useTranslation();
 
   return (
-    <div style={{ padding: Spacing.md }}>
-      {examples.map(example => (
-        <div
-          key={example.id}
-          onClick={() => onSelect(example)}
-          style={{
-            padding: Spacing.sm,
-            marginBottom: Spacing.xs,
-            backgroundColor: Colors.background,
-            borderRadius: 4,
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{ fontSize: FontSizes.md }}>{example.name}</span>
-        </div>
-      ))}
+    <div
+      onClick={onPress}
+      style={{
+        backgroundColor: Colors.background,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        cursor: 'pointer',
+      }}
+    >
+      <h3 style={{ 
+        fontSize: FontSizes.md, 
+        color: Colors.text,
+        margin: 0,
+      }}>
+        {title}
+      </h3>
+      <p style={{ 
+        fontSize: FontSizes.lg, 
+        color: Colors.primary,
+        margin: `${Spacing.sm}px 0 0`,
+      }}>
+        {t('common.currency', { value })}
+      </p>
     </div>
   );
 };
 ```
 
+### 8.3 Teste Unitário
+
+```typescript
+// packages/backend/src/services/__tests__/example.service.test.ts
+import * as exampleService from '../example.service';
+import * as auditLogRepository from '../../repositories/audit-log.repository';
+
+describe('Example Service', () => {
+  beforeEach(() => {
+    exampleService.resetService();
+    auditLogRepository.resetRepository();
+  });
+
+  describe('createExample', () => {
+    it('should create example with valid input', async () => {
+      const result = await exampleService.createExample(
+        { name: 'Test' },
+        'user1'
+      );
+
+      expect(result.id).toBeDefined();
+      expect(result.name).toBe('Test');
+    });
+
+    it('should throw error for empty name', async () => {
+      await expect(
+        exampleService.createExample({ name: '' }, 'user1')
+      ).rejects.toThrow('ERR_EMPTY_NAME');
+    });
+
+    it('should throw error for duplicate name', async () => {
+      await exampleService.createExample({ name: 'Test' }, 'user1');
+      
+      await expect(
+        exampleService.createExample({ name: 'Test' }, 'user1')
+      ).rejects.toThrow('ERR_DUPLICATE_NAME');
+    });
+  });
+});
+```
+
 ---
 
-## 9. HISTÓRICO DE MUDANÇAS INCREMENTAIS
+## 9. HISTÓRICO DE MUDANÇAS
 
-### Janeiro 2026
+### Janeiro 2026 - i18n Completo
+- Implementado suporte multi-idioma (PT/EN/FR)
+- Migrados 30+ componentes para usar `react-i18next`
+- Adicionado seletor de idioma com bandeiras
 
-#### Validação com Zod (Task 005)
-- **Mudança**: Todos os handlers migrados para validação declarativa com Zod
-- **Arquivos**: `src/api/schemas.ts`, `src/api/validation.ts`, todos os handlers
-- **Benefícios**: Type-safe, mensagens de erro consistentes, trim automático
+### Dezembro 2025 - Sistema de Crédito FIFO
+- Implementado pagamento de dívidas com FIFO
+- Adicionado campo `amountPaid` em transações
+- Criado serviço de reconciliação
 
-#### GSI para Relatórios por Data (Task 004)
-- **Mudança**: Adicionado GSI `yearMonth-createdAt-index` na tabela de sales
-- **Campo novo**: `Sale.yearMonth` (formato YYYY-MM)
-- **Motivo**: Queries eficientes por período sem scan completo
+### Novembro 2025 - Pagamentos Mistos
+- Refatorado `Sale.payments` de único para array
+- Suporte a múltiplas formas de pagamento por venda
 
-#### Melhorias de UX nos Relatórios
-- **Widgets colapsáveis**: Resumo, Itens Vendidos, Pagamentos podem ser colapsados
-- **Filtros por pagamento/cliente**: EventReportView permite filtrar vendas
-- **Formato de vendas padronizado**: 4 linhas (data+total, items, pagamentos, cliente)
-
-#### Correções de Bugs
-- **endDate inclusivo**: Filtro de data agora inclui o dia inteiro (T23:59:59.999Z)
-- **totalPending**: Corrigido para somar apenas compras com `isPaid === false`
-- **EventReportView**: Tab "📅 Evento" agora usa componente correto
-
-#### Padronização de Terminologia
-- "Anotado" → "Fiado" (compra a crédito)
-- "Saldo" → "Fiado Pago" (pagamento de dívida)
-
-#### Remoção Completa do creditLimit (Task 002)
-- **Mudança**: Campo `creditLimit` removido completamente do sistema
-- **Removido de**: Customer interface, createCustomer, updateCreditLimit, canPurchase, rota /credit-limit
-- **Motivo**: Clientes podem comprar a crédito sem limite - campo não era mais usado
-
-#### Transações DynamoDB Atômicas (Task 001)
-- **Mudança**: `applyPaymentFIFO` agora usa `TransactWriteCommand` em batches
-- **Arquivos**: `dynamodb-transactions.ts`, `reconciliation.service.ts`, `customer.service.ts`
-- **Motivo**: Garantir consistência entre CustomerTransaction e Sale.payments
-
-#### FIFO Auto-Pay from Balance
-- **Mudança**: Compras a crédito agora usam saldo positivo automaticamente
-- **Motivo**: Se cliente tem €200 de saldo e compra €275, €200 é pago do saldo
-- **Implementação**: `recordPurchase()` calcula `effectivePaidAmount` baseado no saldo
-
-#### Delete Customer
-- **Mudança**: Adicionada funcionalidade de apagar cliente
-- **Regra**: Só permite se cliente não tiver transações de compra
-- **Endpoint**: `DELETE /customers/{id}`
-
-#### Collapsible Header no CustomerHistory
-- **Mudança**: Header com nome e saldo pode ser colapsado
-- **Motivo**: Economizar espaço vertical, mostrar mais transações
-
-### Dezembro 2025
-
-#### Global Reports
-- **Mudança**: Adicionado relatório global independente de evento
-- **Motivo**: Ver todas as vendas com filtros por categoria, evento, período
-- **Tipos**: `GlobalReport`, `GlobalReportFilter`, `GlobalSaleDetail`
-
-#### Customer History Enrichment
-- **Mudança**: Transações de compra agora incluem dados do evento/categoria
-- **Campos adicionados**: `eventId`, `eventName`, `categoryId`, `categoryName`, `items`
-
-#### Beta Environment
-- **Mudança**: Criado ambiente beta separado
-- **Configuração**: Prefixo `beta-` nas tabelas, subdomínio `cantina-beta`
-- **Auth**: `skipAuth=true` para testes
+### Outubro 2025 - Catálogo Reutilizável
+- Separado `CatalogItem` de `MenuItem`
+- Catálogo compartilhado entre eventos
 
 ---
 
 ## 10. CASOS DE USO PRINCIPAIS
 
-### 10.1 Venda a Crédito (Fiado)
+### 10.1 Realizar Venda
 
 **Fluxo**:
-1. Operador seleciona items do menu
-2. Seleciona cliente
-3. Escolhe pagamento "Fiado" (credit)
-4. Sistema verifica saldo do cliente
-5. Se saldo positivo, usa automaticamente (FIFO)
-6. Cria `Sale` com payments breakdown
-7. Cria `CustomerTransaction` tipo `purchase` com `amountPaid`
+1. Operador seleciona evento ativo
+2. Adiciona itens do menu ao pedido
+3. Sistema verifica estoque disponível
+4. Operador seleciona forma(s) de pagamento
+5. Se usar saldo/crédito, seleciona cliente
+6. Confirma venda
+7. Sistema atualiza estoque e gera recibo
 
 **Regras de Negócio**:
-- Saldo positivo é usado automaticamente
-- `amountPaid` = min(saldo_disponível, valor_compra)
-- `Sale.payments` reflete: balance (pago) + credit (pendente)
+- Soma dos pagamentos deve igualar total
+- `balance` e `credit` requerem cliente
+- `stock=0` permite vendas ilimitadas
+- Estoque é decrementado atomicamente
 
-**Componentes**: `PaymentModal`, `CustomerSelectModal`, `sales.service.ts`
+**Componentes**: `SalesPage`, `OrderBuilder`, `PaymentModal`, `CustomerSelectModal`
 
-### 10.2 Depósito de Cliente
+### 10.2 Pagar Dívida de Cliente
 
 **Fluxo**:
-1. Operador acessa histórico do cliente
-2. Clica "Depositar"
-3. Informa valor e método de pagamento
-4. Sistema cria transação de depósito
-5. Aplica FIFO: paga compras antigas primeiro
-6. Atualiza `amountPaid` das compras
-7. Atualiza `Sale.payments` (credit → balance)
+1. Operador busca cliente
+2. Visualiza histórico e saldo devedor
+3. Registra pagamento (cash/card/transfer)
+4. Sistema aplica FIFO às compras pendentes
+5. Atualiza `amountPaid` das transações
 
 **Regras de Negócio**:
-- Depósito negativo = correção/estorno
+- Pagamento não pode exceder dívida total
 - FIFO: compras mais antigas são pagas primeiro
-- `Sale.payments` é sincronizado automaticamente
+- Transações parcialmente pagas são rastreadas
 
-**Componentes**: `TransactionModal`, `CustomerHistory`, `customer.service.ts`
+**Componentes**: `CustomerHistory`, `PaymentRegistrationModal`
 
-### 10.3 Relatório de Evento
-
-**Fluxo**:
-1. Admin acessa página de relatórios
-2. Seleciona evento
-3. Sistema busca todas as vendas do evento
-4. Calcula totais: vendas, pago, pendente, estornado
-5. Agrupa por item vendido e método de pagamento
-6. Exibe lista de vendas com status de pagamento
-
-**Regras de Negócio**:
-- `isPaid`: true se não tem pagamento `credit` ou `credit.amount = 0`
-- Vendas com `credit > 0` mostram badge "Fiado"
-- Vendas parcialmente pagas mostram "Fiado (parcial)"
-
-**Componentes**: `EventReportView`, `report.service.ts`
-
-### 10.4 Criar Novo Evento
+### 10.3 Estornar Venda
 
 **Fluxo**:
-1. Admin seleciona categoria (Culto, Casais, Kids)
-2. Informa nome e datas do evento
-3. Sistema cria evento vinculado à categoria
-4. Admin monta menu: adiciona items do catálogo
-5. Configura preços e estoque por item
-6. Evento fica pronto para vendas
+1. Operador acessa relatório de vendas
+2. Seleciona venda a estornar
+3. Informa motivo obrigatório
+4. Sistema reverte estoque
+5. Se tinha cliente, reverte transação
 
 **Regras de Negócio**:
-- Evento pertence a uma categoria
-- Menu é específico por evento
-- Estoque 0 = infinito (sem controle)
+- Motivo é obrigatório
+- Venda já estornada não pode ser estornada novamente
+- Estoque é incrementado de volta
+- Saldo do cliente é restaurado
 
-**Componentes**: `EventForm`, `CategoryList`, `AddMenuItemForm`
+**Componentes**: `EventReportView`, `ReceiptModal`
 
 ---
 
-## Checklist para Novos Desenvolvedores
+## Referências Rápidas
 
-- [ ] Leia este documento completamente
-- [ ] Configure AWS CLI com profile `cantina`
-- [ ] Clone o repo e rode `npm install`
-- [ ] Teste localmente: `npm run dev` em backend e frontend
-- [ ] Faça uma mudança pequena e deploy para beta
-- [ ] Verifique os logs no CloudWatch se algo falhar
-- [ ] Pergunte antes de fazer deploy em produção
+### IDs de Recursos AWS
+
+| Recurso | Produção | Beta |
+|---------|----------|------|
+| CloudFront | E7R30G3Z8J2DI | E3RFATVK47GGJ7 |
+| S3 Frontend | cantina-frontend-625272706584 | beta-cantina-frontend-625272706584 |
+| Account | 625272706584 | 625272706584 |
+| Region | eu-west-1 | eu-west-1 |
+| Profile | cantina | cantina |
+
+### Métodos de Pagamento
+
+| Código | Nome PT | Descrição |
+|--------|---------|-----------|
+| `cash` | Dinheiro | Pagamento em espécie |
+| `card` | Cartão | Débito/crédito |
+| `transfer` | Transferência | Bancária |
+| `balance` | Saldo | Usa saldo do cliente |
+| `credit` | Fiado | Cria dívida |
+| `gift` | Oferta | Cortesia |
+
+### Códigos de Erro Comuns
+
+| Código | Significado |
+|--------|-------------|
+| `ERR_CUSTOMER_NOT_FOUND` | Cliente não existe |
+| `ERR_INSUFFICIENT_STOCK` | Estoque insuficiente |
+| `ERR_PAYMENT_MISMATCH` | Soma pagamentos ≠ total |
+| `ERR_ORDER_NOT_PENDING` | Pedido já confirmado/cancelado |
+| `ERR_SALE_ALREADY_REFUNDED` | Venda já estornada |
+| `ERR_CUSTOMER_REQUIRED` | Cliente obrigatório para balance/credit |
