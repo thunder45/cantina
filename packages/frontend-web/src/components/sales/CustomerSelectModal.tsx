@@ -44,17 +44,7 @@ export const CustomerSelectModal: React.FC<CustomerSelectModalProps> = ({
       setLoading(true);
       setError(null);
       const results = await customerService.searchCustomers(query);
-      const customersWithBalances = await Promise.all(
-        results.map(async (customer) => {
-          try {
-            const balance = await customerService.getCustomerBalance(customer.id);
-            return { ...customer, balance };
-          } catch {
-            return { ...customer, balance: 0 };
-          }
-        })
-      );
-      setCustomers(customersWithBalances);
+      setCustomers(results);
     } catch {
       setError(t('errors.loadCustomers'));
     } finally {

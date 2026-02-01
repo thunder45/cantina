@@ -9,6 +9,10 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as sns_subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -274,10 +278,61 @@ export class CantinaStack extends cdk.Stack {
       target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
     });
 
+    // ========== Monitoring & Alerts ==========
+    const alertTopic = new sns.Topic(this, 'AlertTopic', {
+      topicName: `${envPrefix}cantina-alerts`,
+      displayName: 'Cantina POS Alerts',
+    });
+    alertTopic.addSubscription(
+      new sns_subscriptions.EmailSubscription('fabricio.gouvea@gmail.com')
+    );
+
+    // Lambda Errors
+    const lambdaErrorsAlarm = new cloudwatch.Alarm(this, 'LambdaErrorsAlarm', {
+      metric: backendLambda.metricErrors({ period: cdk.Duration.minutes(5) }),
+      threshold: 1,
+      evaluationPeriods: 1,
+    } as cloudwatch.AlarmProps);
+    lambdaErrorsAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alertTopic));
+
+    // API Gateway 5xx Errors
+    const apiGateway5xxAlarm = new cloudwatch.Alarm(this, 'ApiGateway5xxAlarm', {
+      metric: api.metricServerError({ period: cdk.Duration.minutes(5) }),
+      threshold: 1,
+      evaluationPeriods: 1,
+    } as cloudwatch.AlarmProps);
+    apiGateway5xxAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alertTopic));
+
+    // CloudFront Error Rate (5xx)
+    const cloudFront5xxAlarm = new cloudwatch.Alarm(this, 'CloudFront5xxAlarm', {
+      metric: new cloudwatch.Metric({
+        namespace: 'AWS/CloudFront',
+        metricName: '5xxErrorRate',
+        dimensionsMap: {
+          DistributionId: distribution.distributionId,
+          Region: 'Global',
+        },
+        statistic: 'Average',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+    } as cloudwatch.AlarmProps);
+    cloudFront5xxAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alertTopic));
+
+    // Lambda Throttles
+    const lambdaThrottlesAlarm = new cloudwatch.Alarm(this, 'LambdaThrottlesAlarm', {
+      metric: backendLambda.metricThrottles({ period: cdk.Duration.minutes(5) }),
+      threshold: 1,
+      evaluationPeriods: 1,
+    } as cloudwatch.AlarmProps);
+    lambdaThrottlesAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alertTopic));
+
     // ========== Outputs ==========
     new cdk.CfnOutput(this, 'WebsiteURL', { value: `https://${fullDomain}` });
     new cdk.CfnOutput(this, 'ApiURL', { value: api.url });
     new cdk.CfnOutput(this, 'BucketName', { value: websiteBucket.bucketName });
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+    new cdk.CfnOutput(this, 'AlertTopicArn', { value: alertTopic.topicArn });
   }
 }

@@ -1,7 +1,7 @@
 # CONTEXT.md - Cantina POS System
 
 > Documento de referência para desenvolvimento e manutenção do sistema.
-> Última atualização: Janeiro 2026
+> Última atualização: Fevereiro 2026
 
 ---
 
@@ -461,6 +461,8 @@ const { t } = useTranslation();
 | Secrets Manager | Credenciais Zoho OAuth |
 | Route53 | DNS |
 | ACM | Certificados SSL |
+| CloudWatch | Métricas e alarmes |
+| SNS | Notificações de alertas |
 
 ### Bibliotecas Críticas
 
@@ -622,6 +624,12 @@ describe('Example Service', () => {
 
 ## 9. HISTÓRICO DE MUDANÇAS
 
+### Fevereiro 2026 - Monitoramento e Otimização
+- Adicionado CloudWatch Alarms para Lambda, API Gateway e CloudFront
+- Configurado SNS para notificações de erros por email
+- Corrigido problema de N+1 queries no frontend (listagem de clientes)
+- Removidas chamadas redundantes de `getCustomerBalance` no frontend
+
 ### Janeiro 2026 - i18n Completo
 - Implementado suporte multi-idioma (PT/EN/FR)
 - Migrados 30+ componentes para usar `react-i18next`
@@ -731,3 +739,123 @@ describe('Example Service', () => {
 | `ERR_ORDER_NOT_PENDING` | Pedido já confirmado/cancelado |
 | `ERR_SALE_ALREADY_REFUNDED` | Venda já estornada |
 | `ERR_CUSTOMER_REQUIRED` | Cliente obrigatório para balance/credit |
+
+---
+
+## 11. MONITORAMENTO E ALERTAS
+
+### CloudWatch Alarms
+
+| Alarm | Métrica | Threshold | Ação |
+|-------|---------|-----------|------|
+| `LambdaErrorsAlarm` | Lambda Errors | ≥1 em 5min | SNS → Email |
+| `ApiGateway5xxAlarm` | API Gateway 5XXError | ≥1 em 5min | SNS → Email |
+| `CloudFront5xxAlarm` | CloudFront 5xxErrorRate | >5% em 5min | SNS → Email |
+| `LambdaThrottlesAlarm` | Lambda Throttles | ≥1 em 5min | SNS → Email |
+
+### SNS Topic
+- **Nome**: `cantina-alerts`
+- **Subscribers**: fabricio.gouvea@gmail.com
+
+### Verificar Status dos Alarms
+```bash
+aws cloudwatch describe-alarms --alarm-name-prefix "CantinaStack" \
+  --profile cantina --region eu-west-1 \
+  --query 'MetricAlarms[*].[AlarmName,StateValue]' --output table
+```
+
+### Verificar Logs de Erro
+```bash
+# Últimos erros do Lambda
+aws logs filter-log-events \
+  --log-group-name "/aws/lambda/cantina-api" \
+  --start-time $(date -v-1H +%s000) \
+  --filter-pattern "ERROR" \
+  --profile cantina --region eu-west-1
+
+# Verificar throttles
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/Lambda --metric-name Throttles \
+  --dimensions Name=FunctionName,Value=cantina-api \
+  --start-time $(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
+  --period 3600 --statistics Sum \
+  --profile cantina --region eu-west-1
+```
+
+---
+
+## 12. OTIMIZAÇÕES FUTURAS
+
+### 12.1 N+1 Queries no Backend (Prioridade Alta)
+
+**Problema**: `getCustomersWithBalances()` faz 2 queries DynamoDB por cliente.
+
+```typescript
+// Atual - O(n) queries
+async function getCustomersWithBalances() {
+  const customers = await getAllCustomers(); // 1 query
+  return Promise.all(customers.map(async c => ({
+    ...c,
+    balance: await calculateBalance(c.id), // 2 queries por cliente!
+  })));
+}
+```
+
+**Solução proposta**: Batch query para transações.
+```typescript
+// Otimizado - O(1) queries
+async function getCustomersWithBalances() {
+  const [customers, allTransactions] = await Promise.all([
+    getAllCustomers(),
+    getAllTransactions(), // Nova função com scan
+  ]);
+  const txByCustomer = groupBy(allTransactions, 'customerId');
+  return customers.map(c => ({
+    ...c,
+    balance: calculateBalanceFromTxs(c, txByCustomer[c.id] || []),
+  }));
+}
+```
+
+### 12.2 Armazenar Saldo no Customer (Prioridade Média)
+
+**Problema**: Saldo é recalculado somando todas as transações a cada request.
+
+**Solução proposta**: Manter `balance` como campo no Customer e atualizar atomicamente.
+```typescript
+// Em cada transação, atualizar atomicamente:
+await docClient.update({
+  Key: { id: customerId },
+  UpdateExpression: 'SET balance = balance + :delta, version = version + 1',
+  ConditionExpression: 'version = :currentVersion',
+  ExpressionAttributeValues: {
+    ':delta': transactionAmount,
+    ':currentVersion': customer.version,
+  },
+});
+```
+
+**Benefícios**:
+- Leitura de saldo: O(1) em vez de O(n transações)
+- Listagem de clientes: 1 query em vez de 1 + 2n
+
+**Riscos**:
+- Requer migração de dados
+- Necessário reconciliação periódica para garantir consistência
+
+### 12.3 Aumentar Quota de Concorrência Lambda (Prioridade Alta)
+
+**Problema**: Limite atual de 10 concurrent executions causa throttling.
+
+**Solução**: Solicitar aumento via Service Quotas.
+```bash
+aws service-quotas request-service-quota-increase \
+  --service-code lambda \
+  --quota-code L-B99A9384 \
+  --desired-value 500 \
+  --region eu-west-1 \
+  --profile cantina
+```
+
+**Link**: https://eu-west-1.console.aws.amazon.com/servicequotas/home/services/lambda/quotas/L-B99A9384

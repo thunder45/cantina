@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Customer,
+  CustomerWithBalance,
   ApiClient,
   CustomerApiService,
   Colors,
@@ -10,13 +11,9 @@ import {
   BorderRadius,
 } from '@cantina-pos/shared';
 
-interface CustomerWithBalance extends Customer {
-  balance?: number;
-}
-
 interface CustomerSearchProps {
   apiClient: ApiClient;
-  onSelectCustomer: (customer: Customer) => void;
+  onSelectCustomer: (customer: CustomerWithBalance) => void;
   onCreateCustomer?: (name: string, initialBalance?: number) => Promise<Customer>;
 }
 
@@ -48,23 +45,8 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const results = query.trim() 
-        ? await customerService.searchCustomers(query)
-        : await customerService.searchCustomers('');
-      
-      // Fetch balances for all customers
-      const customersWithBalances = await Promise.all(
-        results.map(async (customer) => {
-          try {
-            const balance = await customerService.getCustomerBalance(customer.id);
-            return { ...customer, balance };
-          } catch {
-            return { ...customer, balance: 0 };
-          }
-        })
-      );
-      
-      setCustomers(customersWithBalances);
+      const results = await customerService.searchCustomers(query);
+      setCustomers(results);
     } catch (err) {
       setError(t('errors.loadCustomers'));
     } finally {
@@ -117,7 +99,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
       setShowCreateModal(false);
       setNewCustomerName('');
       setNewInitialBalanceStr('0');
-      onSelectCustomer(customer);
+      onSelectCustomer({ ...customer, balance: initialBalance });
     } catch {
       setError(t('errors.createCustomer'));
     } finally {

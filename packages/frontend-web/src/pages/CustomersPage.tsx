@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Customer,
+  CustomerWithBalance,
   ApiClient,
   CustomerApiService,
   Colors,
@@ -20,22 +21,16 @@ interface CustomersPageProps {
 
 export const CustomersPage: React.FC<CustomersPageProps> = ({ apiClient }) => {
   const { t } = useTranslation();
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithBalance | null>(null);
   const [customerBalance, setCustomerBalance] = useState<number>(0);
   const [modalType, setModalType] = useState<'deposit' | 'withdraw' | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const customerService = new CustomerApiService(apiClient);
 
-  const handleSelectCustomer = useCallback(async (customer: Customer) => {
+  const handleSelectCustomer = useCallback(async (customer: CustomerWithBalance) => {
     setSelectedCustomer(customer);
-    try {
-      const balance = await customerService.getCustomerBalance(customer.id);
-      setCustomerBalance(balance);
-    } catch (err) {
-      console.error('Failed to get customer balance:', err);
-      setCustomerBalance(0);
-    }
+    setCustomerBalance(customer.balance ?? 0);
   }, []);
 
   const handleCreateCustomer = useCallback(async (name: string, initialBalance?: number): Promise<Customer> => {

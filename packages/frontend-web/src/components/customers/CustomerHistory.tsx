@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Customer,
+  CustomerWithBalance,
   CustomerTransaction,
   EventCategory,
   ApiClient,
@@ -19,11 +20,11 @@ import { ReceiptView } from '../common/ReceiptView';
 
 interface CustomerHistoryProps {
   apiClient: ApiClient;
-  customer: Customer;
+  customer: CustomerWithBalance;
   onDeposit: () => void;
   onWithdraw: () => void;
   onBack: () => void;
-  onCustomerUpdated?: (customer: Customer) => void;
+  onCustomerUpdated?: (customer: CustomerWithBalance) => void;
 }
 
 export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
@@ -122,7 +123,8 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({
       if (balanceChanged) updates.initialBalance = newInitialBalance;
       
       const updated = await customerService.updateCustomer(customer.id, updates);
-      onCustomerUpdated?.(updated);
+      const newBalance = balanceChanged ? await customerService.getCustomerBalance(customer.id) : balance;
+      onCustomerUpdated?.({ ...updated, balance: newBalance });
       setEditing(false);
       if (balanceChanged) loadCustomerData();
     } catch (err) {
