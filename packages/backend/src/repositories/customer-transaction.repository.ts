@@ -60,6 +60,15 @@ export async function getTransactionsByCustomer(customerId: string): Promise<Cus
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export async function getAllTransactions(): Promise<CustomerTransaction[]> {
+  if (isProduction) {
+    const { ScanCommand } = await import('@aws-sdk/lib-dynamodb');
+    const result = await docClient!.send(new ScanCommand({ TableName: TABLE_NAME }));
+    return (result.Items || []) as CustomerTransaction[];
+  }
+  return Array.from(transactions.values());
+}
+
 export async function getTransactionBySaleId(saleId: string): Promise<CustomerTransaction | undefined> {
   if (isProduction) {
     const result = await docClient!.send(new QueryCommand({

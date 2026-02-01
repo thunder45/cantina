@@ -40,6 +40,10 @@ async function calculateBalance(customerId: string): Promise<number> {
   const customer = await customerRepository.getCustomerById(customerId);
   const initialBalance = customer?.initialBalance || 0;
   const txs = await transactionRepository.getTransactionsByCustomer(customerId);
+  return calculateBalanceFromTransactions(initialBalance, txs);
+}
+
+function calculateBalanceFromTransactions(initialBalance: number, txs: CustomerTransaction[]): number {
   return txs.reduce((balance, tx) => {
     if (tx.type === 'deposit' || tx.type === 'refund') {
       return balance + tx.amount;
@@ -61,11 +65,23 @@ export async function getCustomerWithBalance(customerId: string): Promise<Custom
 }
 
 export async function getCustomersWithBalances(): Promise<CustomerWithBalance[]> {
-  const customers = await customerRepository.getAllCustomers();
-  return Promise.all(customers.map(async c => ({
+  const [customers, allTransactions] = await Promise.all([
+    customerRepository.getAllCustomers(),
+    transactionRepository.getAllTransactions(),
+  ]);
+  
+  // Group transactions by customerId
+  const txByCustomer = new Map<string, CustomerTransaction[]>();
+  for (const tx of allTransactions) {
+    const list = txByCustomer.get(tx.customerId) || [];
+    list.push(tx);
+    txByCustomer.set(tx.customerId, list);
+  }
+  
+  return customers.map(c => ({
     ...c,
-    balance: await calculateBalance(c.id),
-  })));
+    balance: calculateBalanceFromTransactions(c.initialBalance || 0, txByCustomer.get(c.id) || []),
+  }));
 }
 
 export async function getCustomerHistory(customerId: string, filter?: CustomerHistoryFilter): Promise<CustomerHistory> {

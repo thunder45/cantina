@@ -787,33 +787,22 @@ aws cloudwatch get-metric-statistics \
 
 ## 12. OTIMIZAÇÕES FUTURAS
 
-### 12.1 N+1 Queries no Backend (Prioridade Alta)
+### 12.1 ~~N+1 Queries no Backend~~ ✅ RESOLVIDO (Fev 2026)
 
-**Problema**: `getCustomersWithBalances()` faz 2 queries DynamoDB por cliente.
+**Problema**: `getCustomersWithBalances()` fazia 2 queries DynamoDB por cliente.
 
+**Solução implementada**: Batch query para todas as transações + cálculo em memória.
 ```typescript
-// Atual - O(n) queries
-async function getCustomersWithBalances() {
-  const customers = await getAllCustomers(); // 1 query
-  return Promise.all(customers.map(async c => ({
-    ...c,
-    balance: await calculateBalance(c.id), // 2 queries por cliente!
-  })));
-}
-```
-
-**Solução proposta**: Batch query para transações.
-```typescript
-// Otimizado - O(1) queries
+// Otimizado - 2 queries totais (customers + transactions)
 async function getCustomersWithBalances() {
   const [customers, allTransactions] = await Promise.all([
     getAllCustomers(),
-    getAllTransactions(), // Nova função com scan
+    getAllTransactions(),
   ]);
   const txByCustomer = groupBy(allTransactions, 'customerId');
   return customers.map(c => ({
     ...c,
-    balance: calculateBalanceFromTxs(c, txByCustomer[c.id] || []),
+    balance: calculateBalanceFromTransactions(c.initialBalance, txByCustomer[c.id] || []),
   }));
 }
 ```
